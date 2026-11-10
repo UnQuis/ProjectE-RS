@@ -1,7 +1,7 @@
 //! The Transmutation Table's custom screen.
 //!
 //! The screen is a **menu screen**: the table's block entity declares a
-//! 54-slot container with a vanilla six-row chest menu, and this module draws
+//! nine-slot container with a vanilla single-row chest menu, and this module draws
 //! that menu. Doing it that way is what makes the slots real — item pickup,
 //! placement, splitting, shift-clicking and the return of whatever is still in
 //! them when the screen closes are the game's own menu engine acting on the
