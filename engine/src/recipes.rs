@@ -602,7 +602,8 @@ mod tests {
                 kind == "minecraft:crafting_shaped" || kind == "minecraft:crafting_shapeless",
                 "{key}: {kind}"
             );
-            assert_eq!(value["result"]["count"].as_u64(), Some(1), "{key}");
+            let expected_count = if key.ends_with("_from_block") { 9 } else { 1 };
+            assert_eq!(value["result"]["count"].as_u64(), Some(expected_count), "{key}");
             if kind == "minecraft:crafting_shaped" {
                 assert_eq!(value["pattern"].as_array().map(|rows| rows.len()), Some(3));
             } else {
