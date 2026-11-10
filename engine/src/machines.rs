@@ -3,9 +3,10 @@
 //! Machine EMC is stored in the block entity's saved NBT compound. This is a
 //! deliberate compatibility workaround, documented in API_WORKAROUNDS.md.
 
-use horizon_client::mod_api::{Compound, Host, Tag, Text};
+use horizon_client::items::ItemStack;
+use horizon_client::mod_api::{Compound, Host, ModBlockEntity, ModContainer, Tag, Text};
 
-use crate::data;
+use crate::{data, emc, energy};
 
 pub(crate) const COLLECTOR: &str = "projecte:energy_collector";
 pub(crate) const RELAY: &str = "projecte:antimatter_relay";
@@ -35,7 +36,27 @@ pub(crate) fn block_entity(block: &str) -> Option<(String, Compound)> {
 }
 
 pub(crate) fn has_tick(block: &str) -> bool {
-    block == COLLECTOR
+    is_machine(block)
+}
+
+pub(crate) fn container(block: &str) -> Option<ModContainer> {
+    if !is_machine(block) {
+        return None;
+    }
+    Some(ModContainer {
+        slots: 3,
+        faces: [
+            vec![2, 1],
+            vec![0],
+            vec![1],
+            vec![1],
+            vec![1],
+            vec![1],
+        ],
+        inputs: vec![0, 1],
+        outputs: vec![2],
+        menu: Some("minecraft:furnace".to_string()),
+    })
 }
 
 fn capacity(block: &str) -> Option<i64> {
@@ -65,19 +86,48 @@ fn next_buffer(current: i64, rate: i64, max: i64) -> i64 {
         .min(max)
 }
 
-/// The collector generates one EMC per tick and sends up to four EMC per
-/// adjacent relay per tick. With the current one-EMC/tick generation this
-/// also supports multiple collectors feeding a single relay.
-pub(crate) fn tick(host: &mut dyn Host, event: &mut horizon_client::mod_api::BlockEntityTickEvent<'_>) {
-    if event.entity.id != BLOCK_ENTITY || host.block(event.pos) != COLLECTOR {
+fn take_one(slot: &mut Option<ItemStack>) {
+    if let Some(stack) = slot.as_mut() {
+        stack.count = stack.count.saturating_sub(1);
+        if stack.count == 0 {
+            *slot = None;
+        }
+    }
+}
+
+fn move_full_star(entity: &mut ModBlockEntity, input_slot: usize) {
+    if input_slot >= entity.items.len() || entity.items[input_slot].is_none() {
         return;
     }
+    if entity.items.get(2).is_some_and(Option::is_some) {
+        return;
+    }
+    entity.items[2] = entity.items[input_slot].take();
+}
 
+/// Collector generates EMC, charges a star in slot 0, and feeds adjacent
+/// Relays. Slot 1 is reserved for a future fuel-lock/upgrade feature.
+fn collector_tick(
+    host: &mut dyn Host,
+    event: &mut horizon_client::mod_api::BlockEntityTickEvent<'_>,
+) {
     let mut stored = next_buffer(
         read_emc(&event.entity.nbt),
         COLLECTOR_RATE,
         COLLECTOR_CAPACITY,
     );
+
+    if let Some(mut star) = event.entity.items[0].clone() {
+        let moved = energy::charge(host, &mut star, stored.min(RELAY_TRANSFER));
+        stored -= moved;
+        event.entity.items[0] = Some(star);
+        let full = event.entity.items[0].as_ref().is_some_and(|s| {
+            energy::stored_emc(host, s) >= energy::capacity(&s.item).unwrap_or(i64::MAX)
+        });
+        if full {
+            move_full_star(event.entity, 0);
+        }
+    }
 
     for face in FACES {
         if stored == 0 {
@@ -108,6 +158,68 @@ pub(crate) fn tick(host: &mut dyn Host, event: &mut horizon_client::mod_api::Blo
     }
 
     write_emc(&mut event.entity.nbt, stored);
+    event.entity.data = vec![stored as i32, COLLECTOR_CAPACITY as i32, 0, 1];
+}
+
+/// Relay accepts EMC-bearing items or Klein Stars in slot 0 and charges a
+/// Klein Star in slot 1. A full star moves to output slot 2.
+fn relay_tick(
+    host: &mut dyn Host,
+    event: &mut horizon_client::mod_api::BlockEntityTickEvent<'_>,
+) {
+    let mut stored = read_emc(&event.entity.nbt).min(RELAY_CAPACITY);
+
+    if let Some(mut input) = event.entity.items[0].clone() {
+        if energy::capacity(&input.item).is_some() {
+            let moved = energy::discharge(
+                host,
+                &mut input,
+                (RELAY_CAPACITY - stored).min(RELAY_TRANSFER),
+            );
+            stored += moved;
+            event.entity.items[0] = Some(input);
+        } else {
+            let value = emc::value(&input.item);
+            if value > 0 && value <= (RELAY_CAPACITY - stored) as u64 {
+                stored += value as i64;
+                take_one(&mut event.entity.items[0]);
+            }
+        }
+    }
+
+    if let Some(mut output) = event.entity.items[1].clone() {
+        if energy::capacity(&output.item).is_some() {
+            let moved = energy::charge(host, &mut output, stored.min(RELAY_TRANSFER));
+            stored -= moved;
+            event.entity.items[1] = Some(output);
+            let full = event.entity.items[1].as_ref().is_some_and(|s| {
+                energy::stored_emc(host, s) >= energy::capacity(&s.item).unwrap_or(i64::MAX)
+            });
+            if full {
+                move_full_star(event.entity, 1);
+            }
+        }
+    }
+
+    write_emc(&mut event.entity.nbt, stored);
+    event.entity.data = vec![stored as i32, RELAY_CAPACITY as i32, 0, 1];
+}
+
+pub(crate) fn tick(
+    host: &mut dyn Host,
+    event: &mut horizon_client::mod_api::BlockEntityTickEvent<'_>,
+) {
+    if event.entity.id != BLOCK_ENTITY {
+        return;
+    }
+    if event.entity.items.len() < 3 {
+        event.entity.items.resize(3, None);
+    }
+    match host.block(event.pos).as_str() {
+        COLLECTOR => collector_tick(host, event),
+        RELAY => relay_tick(host, event),
+        _ => {}
+    }
 }
 
 pub(crate) fn collect(host: &mut dyn Host, pos: [i32; 3], player: u128) {
@@ -151,10 +263,11 @@ mod tests {
         assert_eq!(capacity(RELAY), Some(RELAY_CAPACITY));
         assert_eq!(capacity("minecraft:furnace"), None);
         assert!(has_tick(COLLECTOR));
-        assert!(!has_tick(RELAY));
+        assert!(has_tick(RELAY));
         assert!(is_machine(COLLECTOR));
         assert!(is_machine(RELAY));
         assert!(!is_machine("minecraft:furnace"));
+        assert_eq!(container(COLLECTOR).unwrap().slots, 3);
     }
 
     #[test]

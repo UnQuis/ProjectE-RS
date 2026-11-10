@@ -35,7 +35,8 @@ We therefore cannot safely use Horizon's energy handler as the source of truth f
 **Current implementation**
 
 - All six Klein Star tiers declare a ProjectE-owned `projecte:stored_emc` component.
-- The component is read through `Host::component`; the value is clamped to the tier's capacity.
+- The component is read and updated through `Host::component`, `Host::set_component` and `Host::remove_component`; values are clamped to the tier's capacity.
+- Collector slot 0 charges a Klein Star from its buffer. Relay slot 0 empties a star into its buffer; slot 1 charges a star. A full star moves to output slot 2.
 - The tooltip displays stored EMC and capacity.
 
 **Why this is a workaround**
@@ -61,5 +62,5 @@ Do not replace this with a read-copy-write sequence: two machines could otherwis
 - The current Collector/Relay pair is the first energy slice, not the complete ProjectE machine lineup.
 - Current gameplay constants are preserved from ProjectE-RS PR #3: Collector generation 1 EMC/tick and 100,000 capacity; Relay capacity 1,000,000 and a 4 EMC/tick transfer limit.
 - Relays currently act as buffers and can receive from adjacent Collectors; Relay-to-Relay routing and machine input/output slots are not implemented yet.
-- Klein Stars now have capacity metadata and persistent component storage, but player charging/discharging and machine slot integration remain to be added.
+- Klein Stars have persistent component storage and can be charged/discharged through Collector and Relay machine slots. Direct player-inventory transfer is not implemented yet.
 - Attachment read/write errors in the existing player-data layer are a separate cleanup item; do not silently copy those patterns into the energy backend.

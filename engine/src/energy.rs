@@ -40,6 +40,41 @@ pub(crate) fn stored_emc(host: &dyn Host, stack: &ItemStack) -> i64 {
     }
 }
 
+/// Adds EMC to a Klein Star and returns the amount accepted.
+pub(crate) fn charge(host: &dyn Host, stack: &mut ItemStack, available: i64) -> i64 {
+    let Some(capacity) = capacity(&stack.item) else {
+        return 0;
+    };
+    let current = stored_emc(host, stack);
+    let moved = available.max(0).min(capacity - current);
+    if moved == 0 {
+        return 0;
+    }
+    if host
+        .set_component(stack, STORED_EMC_COMPONENT, Tag::Long(current + moved))
+        .is_ok()
+    {
+        moved
+    } else {
+        0
+    }
+}
+
+/// Removes EMC from a Klein Star and returns the amount extracted.
+pub(crate) fn discharge(host: &dyn Host, stack: &mut ItemStack, room: i64) -> i64 {
+    let current = stored_emc(host, stack);
+    let moved = current.min(room.max(0));
+    if moved == 0 {
+        return 0;
+    }
+    let result = if current == moved {
+        host.remove_component(stack, STORED_EMC_COMPONENT)
+    } else {
+        host.set_component(stack, STORED_EMC_COMPONENT, Tag::Long(current - moved))
+    };
+    if result.is_ok() { moved } else { 0 }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

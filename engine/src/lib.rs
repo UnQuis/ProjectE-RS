@@ -77,6 +77,14 @@ impl Hooks for ProjectE {
         event.ticks = machines::has_tick(event.block);
     }
 
+    fn block_entity_container(
+        &self,
+        _host: &mut dyn Host,
+        event: &mut BlockEntityContainerEvent<'_>,
+    ) -> Option<ModContainer> {
+        machines::container(event.block)
+    }
+
     fn block_entity_tick(&self, host: &mut dyn Host, event: &mut BlockEntityTickEvent<'_>) {
         machines::tick(host, event);
     }
@@ -95,6 +103,9 @@ impl Hooks for ProjectE {
             return Flow::Continue;
         }
         if machines::is_machine(&block) {
+            if !host.sneaking() {
+                return Flow::Continue;
+            }
             let Some(player) = host.acting_player() else {
                 return Flow::Continue;
             };
@@ -707,6 +718,30 @@ const RECIPES: &[(&str, &[&str], &str, u32)] = &[
             "minecraft:nether_star",
         ],
         "projecte:klein_star_vier",
+        1,
+    ),
+    (
+        "klein_star_sphere",
+        &[
+            "projecte:klein_star_vier",
+            "projecte:klein_star_vier",
+            "projecte:klein_star_vier",
+            "projecte:klein_star_vier",
+            "minecraft:nether_star",
+        ],
+        "projecte:klein_star_sphere",
+        1,
+    ),
+    (
+        "klein_star_omega",
+        &[
+            "projecte:klein_star_sphere",
+            "projecte:klein_star_sphere",
+            "projecte:klein_star_sphere",
+            "projecte:klein_star_sphere",
+            "minecraft:nether_star",
+        ],
+        "projecte:klein_star_omega",
         1,
     ),
 ];
