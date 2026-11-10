@@ -37,13 +37,22 @@ impl Hooks for ProjectE {
         table.template = "minecraft:crafting_table".to_string();
         table.item = true;
 
-        for id in machines::COLLECTORS.into_iter().chain(machines::RELAYS) {
+        for id in machines::COLLECTORS.into_iter()
+            .chain(machines::RELAYS)
+            .chain([condenser::ENERGY_CONDENSER])
+        {
             event.blocks.push(Default::default());
             let machine = event.blocks.last_mut().unwrap();
             machine.id = id.to_string();
             machine.template = "minecraft:furnace".to_string();
             machine.item = true;
         }
+
+        event.blocks.push(Default::default());
+        let chest = event.blocks.last_mut().unwrap();
+        chest.id = machines::ALCHEMICAL_CHEST.to_string();
+        chest.template = "minecraft:chest".to_string();
+        chest.item = true;
 
         // Fuel storage blocks. They borrow a vanilla template look until the
         // project's own models and textures exist.
@@ -111,7 +120,7 @@ impl Hooks for ProjectE {
             }
             return Flow::Continue;
         }
-        if machines::is_machine(&block) {
+        if machines::is_collectable(&block) {
             if !host.sneaking() {
                 return Flow::Continue;
             }

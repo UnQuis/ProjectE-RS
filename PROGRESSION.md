@@ -30,7 +30,7 @@ deliberate placeholders, not claims.
 | --- | --- | --- |
 | 0 — Foundation | Philosopher's Stone, Transmutation Table, EMC and knowledge | Stone implemented; table partial |
 | 1 — Alchemy | Alchemical Coal → Mobius Fuel → Aeternalis Fuel, fuel blocks, burn time | Fuels and blocks implemented; burn time blocked |
-| 2 — Machines | Collectors, Relays, Klein Stars, Condensers, Power Flower, Alchemical Chest, data-driven EMC | Collectors/Relays/Stars partial; the rest missing |
+| 2 — Machines | Collectors, Relays, Klein Stars, Condensers, Power Flower, Alchemical Chest, data-driven EMC | Collectors/Relays/Stars partial; Alchemical Chest, Condenser MK1 and Power Flower partial; MK2 and data-map EMC outstanding |
 | 3 — Matter | Dark Matter, Red Matter, matter blocks, tools, armor, Tablet, Tome | Matter items partial; everything built on them missing |
 | 4 — Endgame | Rings, amulets, bags, catalysts, advancements | Missing |
 
@@ -214,8 +214,7 @@ state and desynchronises the furnace's own fuel slot.
 - **Implemented today:** capacities 100,000/1,000,000/10,000,000, transfer
   limits 64/192/640 EMC per tick, transfer bonuses, relay-to-relay routing that
   only feeds a fuller-to-emptier target.
-- **Missing:** Condenser and player-inventory targets; a documented answer for
-  relay-to-relay ping-pong beyond the fill-ratio rule.
+- **Missing:** player-inventory targets and a documented answer for relay-to-relay ping-pong beyond the fill-ratio rule. Condenser routing is implemented as a terminal sink.
 - **Horizon dependencies:** `change_mod_block_entity` for neighbour writes.
 - **Workarounds:** same NBT backend as collectors (API_WORKAROUNDS §1, §3).
 

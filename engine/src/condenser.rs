@@ -24,6 +24,14 @@ pub struct CondenserSpec {
     pub max_output_items_per_tick: u32,
 }
 
+/// First playable Condenser tier.
+pub const ENERGY_CONDENSER: &str = "projecte:energy_condenser";
+pub const MK1_SPEC: CondenserSpec = CondenserSpec {
+    capacity: 10_000,
+    max_input_items_per_tick: 1,
+    max_output_items_per_tick: 1,
+};
+
 /// A rejected accounting operation. No state is mutated by any planner.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CondenserError {
@@ -244,11 +252,7 @@ pub fn plan_receive_emc(
 mod tests {
     use super::*;
 
-    const MK1: CondenserSpec = CondenserSpec {
-        capacity: 10_000,
-        max_input_items_per_tick: 1,
-        max_output_items_per_tick: 1,
-    };
+    const MK1: CondenserSpec = MK1_SPEC;
 
     const MK2: CondenserSpec = CondenserSpec {
         capacity: 100_000,

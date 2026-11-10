@@ -612,6 +612,25 @@ mod tests {
     }
 
     #[test]
+    fn condenser_recipe_chain_has_matching_emc_values() {
+        let chest = SHAPED.iter().find(|recipe| recipe.name == "alchemical_chest")
+            .expect("Alchemical Chest recipe");
+        assert_eq!(chest.result, ALCHEMICAL_CHEST);
+        assert_eq!(crate::emc::value(ALCHEMICAL_CHEST), 544);
+        assert_eq!(crate::emc::value(CHEST) * 1, 32);
+        assert_eq!(crate::emc::value(OBSIDIAN) * 8 + crate::emc::value(CHEST), 544);
+
+        let condenser = SHAPED.iter().find(|recipe| recipe.name == "energy_condenser")
+            .expect("Energy Condenser recipe");
+        assert_eq!(condenser.result, ENERGY_CONDENSER);
+        let recipe_cost = crate::emc::value(OBSIDIAN) * 4
+            + crate::emc::value(DIAMOND) * 4
+            + crate::emc::value(ALCHEMICAL_CHEST);
+        assert_eq!(crate::emc::value(ENERGY_CONDENSER), recipe_cost);
+        assert_eq!(recipe_cost, 33_568);
+    }
+
+    #[test]
     fn files_are_deterministic() {
         assert_eq!(files(), files());
     }

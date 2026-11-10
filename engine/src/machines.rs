@@ -7,7 +7,7 @@
 use horizon_client::items::ItemStack;
 use horizon_client::mod_api::{Compound, Holder, Host, ModBlockEntity, ModContainer, Tag, Text};
 
-use crate::{data, emc, energy};
+use crate::{condenser, data, emc, energy};
 
 pub(crate) const COLLECTORS: [&str; 3] = [
     "projecte:energy_collector",
@@ -21,6 +21,8 @@ pub(crate) const RELAYS: [&str; 3] = [
 ];
 pub(crate) const COLLECTOR: &str = COLLECTORS[0];
 pub(crate) const RELAY: &str = RELAYS[0];
+pub(crate) const ALCHEMICAL_CHEST: &str = "projecte:alchemical_chest";
+const ALCHEMICAL_CHEST_BLOCK_ENTITY: &str = "projecte:alchemical_chest";
 
 const BLOCK_ENTITY: &str = "projecte:machine";
 const EMC_KEY: &str = "emc";
@@ -40,10 +42,13 @@ const FACES: [[i32; 3]; 6] = [
 ];
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Machine { Collector(usize), Relay(usize) }
+enum Machine { Collector(usize), Relay(usize), Condenser(condenser::CondenserSpec) }
 
 impl Machine {
     fn of(block: &str) -> Option<Self> {
+        if block == condenser::ENERGY_CONDENSER {
+            return Some(Self::Condenser(condenser::MK1_SPEC));
+        }
         if let Some(tier) = COLLECTORS.iter().position(|id| *id == block) {
             return Some(Self::Collector(tier));
         }
@@ -54,12 +59,14 @@ impl Machine {
         match self {
             Self::Collector(tier) => COLLECTOR_CAPACITY[tier],
             Self::Relay(tier) => RELAY_CAPACITY[tier],
+            Self::Condenser(spec) => i64::try_from(spec.capacity).unwrap_or(i64::MAX),
         }
     }
 
     fn transfer(self) -> i64 {
         match self {
             Self::Collector(tier) | Self::Relay(tier) => TRANSFER_LIMIT[tier],
+            Self::Condenser(_) => 0,
         }
     }
 
@@ -69,8 +76,10 @@ impl Machine {
 
     fn feeds(self, target: Self, source_fill: f64, target_fill: f64) -> bool {
         match (self, target) {
-            (Self::Collector(_), Self::Relay(_)) => true,
+            (Self::Collector(_), Self::Relay(_) | Self::Condenser(_)) => true,
             (Self::Relay(_), Self::Relay(_)) => target_fill + 1e-9 < source_fill,
+            (Self::Relay(_), Self::Condenser(_)) => true,
+            (Self::Condenser(_), _) => false,
             _ => false,
         }
     }
@@ -78,14 +87,50 @@ impl Machine {
 
 pub(crate) fn is_machine(block: &str) -> bool { Machine::of(block).is_some() }
 
+pub(crate) fn is_collectable(block: &str) -> bool {
+    matches!(Machine::of(block), Some(Machine::Collector(_) | Machine::Relay(_)))
+}
+
 pub(crate) fn block_entity(block: &str) -> Option<(String, Compound)> {
+    if block == ALCHEMICAL_CHEST {
+        return Some((ALCHEMICAL_CHEST_BLOCK_ENTITY.to_owned(), Compound::new()));
+    }
     is_machine(block).then(|| (BLOCK_ENTITY.to_owned(), Compound::new()))
 }
 
 pub(crate) fn has_tick(block: &str) -> bool { is_machine(block) }
 
 pub(crate) fn container(block: &str) -> Option<ModContainer> {
-    if !is_machine(block) { return None; }
+    if block == ALCHEMICAL_CHEST {
+        let all_slots: Vec<usize> = (0..27).collect();
+        return Some(ModContainer {
+            slots: 27,
+            faces: [
+                all_slots.clone(), all_slots.clone(), all_slots.clone(),
+                all_slots.clone(), all_slots.clone(), all_slots.clone(),
+            ],
+            inputs: all_slots,
+            outputs: Vec::new(),
+            menu: Some("minecraft:generic_9x3".to_string()),
+        });
+    }
+    let machine = Machine::of(block)?;
+    if matches!(machine, Machine::Condenser(_)) {
+        return Some(ModContainer {
+            slots: 9,
+            faces: [
+                vec![2],
+                vec![0, 3, 4, 5, 6, 7, 8],
+                vec![0, 3, 4, 5, 6, 7, 8],
+                vec![0, 3, 4, 5, 6, 7, 8],
+                vec![0, 3, 4, 5, 6, 7, 8],
+                vec![0, 3, 4, 5, 6, 7, 8],
+            ],
+            inputs: vec![0, 3, 4, 5, 6, 7, 8],
+            outputs: vec![2],
+            menu: Some("minecraft:generic_9x1".to_string()),
+        });
+    }
     Some(ModContainer {
         slots: 3,
         faces: [vec![2, 1], vec![0], vec![1], vec![1], vec![1], vec![1]],
@@ -146,9 +191,30 @@ fn collector_generation(rate_per_second: i64, sun: u8, micro: i64) -> (i64, i64)
 }
 
 fn share(offer: i64, room: &[i64]) -> Vec<i64> {
-    if room.is_empty() || offer <= 0 { return vec![0; room.len()]; }
-    let each = offer / room.len() as i64;
-    room.iter().map(|available| each.min(*available).max(0)).collect()
+    let mut allocations = vec![0; room.len()];
+    let mut remaining = offer.max(0);
+    while remaining > 0 {
+        let active: Vec<usize> = room.iter().enumerate()
+            .filter_map(|(index, available)| {
+                (allocations[index] < (*available).max(0)).then_some(index)
+            })
+            .collect();
+        if active.is_empty() { break; }
+        let each = remaining / active.len() as i64;
+        let remainder = remaining % active.len() as i64;
+        let mut moved = 0;
+        for (rank, index) in active.into_iter().enumerate() {
+            let extra = if (rank as i64) < remainder { 1 } else { 0 };
+            let amount = (each + extra).max(1)
+                .min((room[index] - allocations[index]).max(0))
+                .min(remaining - moved);
+            allocations[index] += amount;
+            moved += amount;
+        }
+        if moved == 0 { break; }
+        remaining -= moved;
+    }
+    allocations
 }
 
 fn push_emc(host: &mut dyn Host, pos: [i32; 3], source: Machine, stored: i64, offer: i64) -> i64 {
@@ -295,6 +361,95 @@ fn relay_tick(
     event.entity.data = furnace_data(stored, capacity);
 }
 
+fn same_item_payload(left: &ItemStack, right: &ItemStack) -> bool {
+    left.item == right.item && left.damage == right.damage && left.extra == right.extra
+}
+
+/// One server-authoritative Condenser step. Slot 1 is the non-consumed target
+/// template, slot 2 is output, and slots 0/3..8 accept EMC-valued input.
+fn condenser_tick(
+    host: &dyn Host,
+    event: &mut horizon_client::mod_api::BlockEntityTickEvent<'_>,
+    spec: condenser::CondenserSpec,
+) {
+    let capacity = i64::try_from(spec.capacity).unwrap_or(i64::MAX);
+    let stored = read_emc(&event.entity.nbt).clamp(0, capacity);
+    let mut state = condenser::CondenserState { stored_emc: stored as u64 };
+
+    let Some(target) = event.entity.items.get(1).and_then(Option::as_ref).cloned() else {
+        write_emc(&mut event.entity.nbt, stored);
+        event.entity.data = furnace_data(stored, capacity);
+        return;
+    };
+    let target_value = emc::value(&target.item);
+    if target_value == 0 {
+        write_emc(&mut event.entity.nbt, stored);
+        event.entity.data = furnace_data(stored, capacity);
+        return;
+    }
+
+    // Process at most the tier budget. Invalid/unknown input stacks stay put;
+    // the first valid stack that fits is converted.
+    for slot in [0usize, 3, 4, 5, 6, 7, 8] {
+        let Some(input) = event.entity.items.get(slot).and_then(Option::as_ref).cloned() else {
+            continue;
+        };
+        let input_value = emc::value(&input.item);
+        if input_value == 0 { continue; }
+        let Ok(plan) = condenser::plan_input_conversion(state, spec, input_value, input.count) else {
+            continue;
+        };
+        let consumed = plan.consumed_items;
+        if consumed == 0 { continue; }
+        let Ok(settled) = condenser::settle_input_conversion(plan, consumed) else {
+            continue;
+        };
+        let remaining = input.count - consumed;
+        event.entity.items[slot] = (remaining > 0).then(|| ItemStack {
+            count: remaining,
+            ..input
+        });
+        state = settled.next_state;
+        break;
+    }
+
+    let max_stack = host.max_stack_size(&target.item).unwrap_or(64).max(1);
+    let output_room = match event.entity.items.get(2).and_then(Option::as_ref) {
+        None => max_stack,
+        Some(output) if same_item_payload(output, &target) => max_stack.saturating_sub(output.count),
+        Some(_) => 0,
+    };
+    if let Ok(plan) = condenser::plan_output_production(state, spec, target_value, output_room) {
+        let requested = plan.produced_items;
+        if requested > 0 {
+            let inserted = match event.entity.items.get(2).and_then(Option::as_ref).cloned() {
+                None => {
+                    let mut output = target.clone();
+                    output.count = requested;
+                    event.entity.items[2] = Some(output);
+                    requested
+                }
+                Some(mut output) if same_item_payload(&output, &target) => {
+                    if let Some(count) = output.count.checked_add(requested) {
+                        output.count = count;
+                        event.entity.items[2] = Some(output);
+                        requested
+                    } else {
+                        0
+                    }
+                }
+                Some(_) => 0,
+            };
+            if let Ok(settled) = condenser::settle_output_production(plan, inserted) {
+                state = settled.next_state;
+            }
+        }
+    }
+
+    write_emc(&mut event.entity.nbt, i64::try_from(state.stored_emc).unwrap_or(i64::MAX));
+    event.entity.data = furnace_data(state.stored_emc as i64, capacity);
+}
+
 pub(crate) fn tick(host: &mut dyn Host, event: &mut horizon_client::mod_api::BlockEntityTickEvent<'_>) {
     if event.entity.id != BLOCK_ENTITY { return; }
     let Some(machine) = Machine::of(&host.block(event.pos)) else { return };
@@ -303,11 +458,13 @@ pub(crate) fn tick(host: &mut dyn Host, event: &mut horizon_client::mod_api::Blo
     match machine {
         Machine::Collector(tier) => collector_tick(host, event.pos, event, tier),
         Machine::Relay(tier) => relay_tick(host, event.pos, event, tier),
+        Machine::Condenser(spec) => condenser_tick(host, event, spec),
     }
 }
 
 pub(crate) fn collect(host: &mut dyn Host, pos: [i32; 3], player: u128) {
     let Some(machine) = Machine::of(&host.block(pos)) else { return };
+    if matches!(machine, Machine::Condenser(_)) { return; }
     let mut collected = 0;
     host.change_mod_block_entity(pos, &mut |entity| {
         if entity.id != BLOCK_ENTITY { return; }
@@ -379,8 +536,30 @@ mod tests {
     }
 
     #[test]
-    fn share_never_exceeds_offer_or_target_room() {
-        assert_eq!(share(100, &[20, 80]), vec![20, 50]);
+    fn collector_and_relay_feed_condensers_but_condensers_never_forward() {
+        let collector = Machine::of(COLLECTORS[0]).unwrap();
+        let relay = Machine::of(RELAYS[0]).unwrap();
+        let condenser = Machine::of(condenser::ENERGY_CONDENSER).unwrap();
+        assert!(collector.feeds(condenser, 0.0, 0.0));
+        assert!(relay.feeds(condenser, 0.0, 0.0));
+        assert!(!condenser.feeds(relay, 1.0, 0.0));
+        assert!(!condenser.feeds(collector, 1.0, 0.0));
+        assert!(!condenser.feeds(condenser, 1.0, 0.0));
+    }
+
+    #[test]
+    fn relay_to_relay_still_requires_a_strictly_less_full_target() {
+        let relay = Machine::of(RELAYS[0]).unwrap();
+        assert!(relay.feeds(relay, 0.8, 0.2));
+        assert!(!relay.feeds(relay, 0.2, 0.8));
+        assert!(!relay.feeds(relay, 0.5, 0.5));
+    }
+
+    #[test]
+    fn share_redistributes_unused_capacity_and_never_exceeds_offer() {
+        assert_eq!(share(100, &[20, 80]), vec![20, 80]);
         assert_eq!(share(10, &[]), Vec::<i64>::new());
+        assert_eq!(share(1, &[20, 80]), vec![1, 0]);
+        assert_eq!(share(200, &[20, 30]), vec![20, 30]);
     }
 }
