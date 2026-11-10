@@ -402,9 +402,7 @@ impl Hooks for ProjectE {
             .push(NativeCommand::new("projecte value <item:word>"));
         event.commands.push(NativeCommand::new("projecte reset"));
         event.commands.push(NativeCommand::new("projecte roadmap"));
-        event
-            .commands
-            .push(NativeCommand::new("projecte deposit"));
+        event.commands.push(NativeCommand::new("projecte deposit"));
     }
 
     fn perform_command(&self, host: &mut dyn Host, event: &mut PerformCommandEvent<'_>) -> Flow {
@@ -624,7 +622,6 @@ impl Hooks for ProjectE {
     ) -> Flow {
         ui::screen::key_pressed(host, event.screen, event.key, event.repeat, event.modifiers)
     }
-
 }
 
 fn item(event: &mut ItemsEvent<'_>, id: &str, template: &str, max: u8) {
@@ -672,7 +669,14 @@ fn table_container() -> ModContainer {
         // table's storage behind the player's back. The two inputs are named
         // as the faces' fill targets for the API's sake; with every face list
         // empty nothing is ever pushed in.
-        faces: [Vec::new(), Vec::new(), Vec::new(), Vec::new(), Vec::new(), Vec::new()],
+        faces: [
+            Vec::new(),
+            Vec::new(),
+            Vec::new(),
+            Vec::new(),
+            Vec::new(),
+            Vec::new(),
+        ],
         inputs: ui::atlas::INPUT_SLOTS.to_vec(),
         outputs: Vec::new(),
         menu: Some(ui::atlas::MENU.to_owned()),

@@ -157,7 +157,13 @@ pub(crate) fn draw(host: &dyn Host, batch: &mut HudBatch, state: &TableScreen, o
     // The title, centred in the header band: part of the screen, not the menu
     // title the server sent.
     let title = state.text(localization::KEY_TITLE);
-    let at = centred(host, &layout, title, layout::PANEL_W / 2.0, Layout::title_y());
+    let at = centred(
+        host,
+        &layout,
+        title,
+        layout::PANEL_W / 2.0,
+        Layout::title_y(),
+    );
     text(host, batch, title, at, TEXT, true);
 
     // The slots' label, above the real slots.
@@ -267,7 +273,12 @@ fn panel_plate(host: &dyn Host, batch: &mut HudBatch, layout: &Layout, panel: Re
     outline(host, batch, panel, BORDER, unit);
     // The header band and the left column's plate, which separate the parts of
     // the layout without drawing a line around each one.
-    fill(host, batch, layout.at([0.0, 0.0, layout::PANEL_W, 24.0]), PANEL_EDGE);
+    fill(
+        host,
+        batch,
+        layout.at([0.0, 0.0, layout::PANEL_W, 24.0]),
+        PANEL_EDGE,
+    );
     fill(host, batch, layout.at([4.0, 24.0, 92.0, 136.0]), SECTION);
 }
 
@@ -309,7 +320,11 @@ fn draw_browser(host: &dyn Host, batch: &mut HudBatch, layout: &Layout, state: &
         host,
         batch,
         field,
-        if state.typing { SEARCH_FOCUS } else { SLOT_FRAME },
+        if state.typing {
+            SEARCH_FOCUS
+        } else {
+            SLOT_FRAME
+        },
         layout.len(1.0),
     );
     let pad = layout.len(3.0);
@@ -329,7 +344,14 @@ fn draw_browser(host: &dyn Host, batch: &mut HudBatch, layout: &Layout, state: &
             &state.browser.search,
             field[2] - pad * 2.0 - layout.len(2.0),
         );
-        text(host, batch, &shown, [field[0] + pad, field[1] + pad], TEXT, false);
+        text(
+            host,
+            batch,
+            &shown,
+            [field[0] + pad, field[1] + pad],
+            TEXT,
+            false,
+        );
         if state.typing {
             let after = host.text_width(&shown);
             fill(
@@ -375,8 +397,26 @@ fn draw_controls(host: &dyn Host, batch: &mut HudBatch, layout: &Layout, state: 
     // Pages: an arrow each side of the indicator. An arrow with nowhere to go
     // is drawn dim, but it still answers a press (with no change), so no
     // control on this screen ignores a click.
-    button(host, batch, layout, state, Part::PagePrev, Control::PagePrev, "<", false);
-    button(host, batch, layout, state, Part::PageNext, Control::PageNext, ">", false);
+    button(
+        host,
+        batch,
+        layout,
+        state,
+        Part::PagePrev,
+        Control::PagePrev,
+        "<",
+        false,
+    );
+    button(
+        host,
+        batch,
+        layout,
+        state,
+        Part::PageNext,
+        Control::PageNext,
+        ">",
+        false,
+    );
 
     let rect = layout.at(Layout::control(Control::PageLabel));
     let label = state.page_label(&items);
@@ -410,11 +450,19 @@ fn button(
         host,
         batch,
         rect,
-        if hovered || on { BORDER_LIGHT } else { SLOT_FRAME },
+        if hovered || on {
+            BORDER_LIGHT
+        } else {
+            SLOT_FRAME
+        },
         layout.len(1.0),
     );
     // A held button's label sinks by one GUI pixel, as vanilla's buttons do.
-    let sink = if state.is_held(part) { layout.len(1.0) } else { 0.0 };
+    let sink = if state.is_held(part) {
+        layout.len(1.0)
+    } else {
+        0.0
+    };
     let at = centred_in(host, rect, label, layout.len(1.0));
     text(
         host,
@@ -459,25 +507,45 @@ fn draw_emblem(host: &dyn Host, batch: &mut HudBatch, layout: &Layout, state: &T
     fill(
         host,
         batch,
-        [centre[0] - arm, centre[1] - unit * 1.5, arm * 2.0, unit * 3.0],
+        [
+            centre[0] - arm,
+            centre[1] - unit * 1.5,
+            arm * 2.0,
+            unit * 3.0,
+        ],
         EMBLEM_GOLD,
     );
     fill(
         host,
         batch,
-        [centre[0] - unit * 1.5, centre[1] - arm, unit * 3.0, arm * 2.0],
+        [
+            centre[0] - unit * 1.5,
+            centre[1] - arm,
+            unit * 3.0,
+            arm * 2.0,
+        ],
         EMBLEM_GOLD,
     );
     fill(
         host,
         batch,
-        [centre[0] - unit * 4.0, centre[1] - unit * 4.0, unit * 8.0, unit * 8.0],
+        [
+            centre[0] - unit * 4.0,
+            centre[1] - unit * 4.0,
+            unit * 8.0,
+            unit * 8.0,
+        ],
         EMBLEM_INK,
     );
     fill(
         host,
         batch,
-        [centre[0] - unit * 2.0, centre[1] - unit * 2.0, unit * 4.0, unit * 4.0],
+        [
+            centre[0] - unit * 2.0,
+            centre[1] - unit * 2.0,
+            unit * 4.0,
+            unit * 4.0,
+        ],
         ring,
     );
 
@@ -500,12 +568,7 @@ fn draw_emblem(host: &dyn Host, batch: &mut HudBatch, layout: &Layout, state: &T
 fn draw_emc(host: &dyn Host, batch: &mut HudBatch, layout: &Layout, state: &TableScreen) {
     let bar = layout.at(Layout::emc_bar());
     fill(host, batch, bar, SECTION_LINE);
-    fill(
-        host,
-        batch,
-        [bar[0], bar[1], bar[2] * 0.2, bar[3]],
-        ACCENT,
-    );
+    fill(host, batch, [bar[0], bar[1], bar[2] * 0.2, bar[3]], ACCENT);
     outline(host, batch, bar, SLOT_FRAME, layout.len(1.0));
     text(
         host,
@@ -537,21 +600,14 @@ fn draw_slots(host: &dyn Host, batch: &mut HudBatch, layout: &Layout, state: &Ta
         // An input slot is marked by a warmer frame, so the two the task calls
         // inputs are told apart from the storage at a glance.
         let input = index < INPUT_SLOTS.len();
-        let hovered = state
-            .hit()
-            .is_some_and(|hit| hit.part == Part::Slot(index));
+        let hovered = state.hit().is_some_and(|hit| hit.part == Part::Slot(index));
         let rect = layout.at(rect);
         slot_frame(host, batch, rect, hovered, layout.len(1.0));
         if input {
             fill(
                 host,
                 batch,
-                [
-                    rect[0] + 1.0,
-                    rect[1] + 1.0,
-                    rect[2] - 2.0,
-                    layout.len(2.0),
-                ],
+                [rect[0] + 1.0, rect[1] + 1.0, rect[2] - 2.0, layout.len(2.0)],
                 ACCENT,
             );
         }
@@ -589,7 +645,12 @@ fn slot_frame(host: &dyn Host, batch: &mut HudBatch, rect: Rect, hovered: bool, 
         fill(
             host,
             batch,
-            [rect[0] + unit, rect[1] + unit, rect[2] - unit * 2.0, rect[3] - unit * 2.0],
+            [
+                rect[0] + unit,
+                rect[1] + unit,
+                rect[2] - unit * 2.0,
+                rect[3] - unit * 2.0,
+            ],
             0x30_FF_FF_FF,
         );
     }
@@ -610,7 +671,12 @@ fn outline(host: &dyn Host, batch: &mut HudBatch, rect: Rect, argb: u32, width: 
         return;
     }
     fill(host, batch, [rect[0], rect[1], rect[2], width], argb);
-    fill(host, batch, [rect[0], rect[1] + rect[3] - width, rect[2], width], argb);
+    fill(
+        host,
+        batch,
+        [rect[0], rect[1] + rect[3] - width, rect[2], width],
+        argb,
+    );
     fill(host, batch, [rect[0], rect[1], width, rect[3]], argb);
     fill(
         host,
@@ -659,7 +725,12 @@ fn grid_centre_y() -> f32 {
 }
 
 fn expand(rect: Rect, by: f32) -> Rect {
-    [rect[0] - by, rect[1] - by, rect[2] + by * 2.0, rect[3] + by * 2.0]
+    [
+        rect[0] - by,
+        rect[1] - by,
+        rect[2] + by * 2.0,
+        rect[3] + by * 2.0,
+    ]
 }
 
 /// The end of `line` that fits in `width` screen pixels, at least one char.
@@ -705,7 +776,11 @@ mod tests {
         // Every slot of the menu is placed, at `Layout::slot`'s corner.
         for index in 0..SLOT_COUNT {
             let rect = Layout::slot(index).expect("a shown slot");
-            assert_eq!(native.slots[index], Some([rect[0], rect[1]]), "slot {index}");
+            assert_eq!(
+                native.slots[index],
+                Some([rect[0], rect[1]]),
+                "slot {index}"
+            );
         }
         // Nothing is hidden, so the server's menu is the whole menu.
         let shown = native.slots.iter().filter(|slot| slot.is_some()).count();
@@ -779,7 +854,12 @@ mod tests {
     fn the_browser_list_and_the_drawn_list_are_the_same_call() {
         let mut state = screen();
         let items = browse_items(&state);
-        assert_eq!(items, state.browser.visible(&crate::ui::state::PREVIEW_ITEMS, crate::emc::value));
+        assert_eq!(
+            items,
+            state
+                .browser
+                .visible(&crate::ui::state::PREVIEW_ITEMS, crate::emc::value)
+        );
         state.browser.filter = crate::ui::state::Filter::Tools;
         assert!(browse_items(&state).is_empty());
     }

@@ -257,7 +257,10 @@ pub(crate) fn apply(
     let mut redraw: Vec<Option<ItemStack>> = after;
     redraw.resize(SIZE, None);
     redraw[BALANCE] = Some(balance_stack(after_data.emc));
-    redraw[KNOWN] = Some(ItemStack::new(KNOWN_ITEM, count_shown(after_data.learned.len())));
+    redraw[KNOWN] = Some(ItemStack::new(
+        KNOWN_ITEM,
+        count_shown(after_data.learned.len()),
+    ));
     host.set_menu_items(uuid, redraw);
 
     Deposited::Ok {
@@ -403,6 +406,10 @@ mod tests {
         assert_eq!(count_shown(usize::MAX), 64);
         let icon = balance_stack(i64::MAX);
         assert!((1..=64).contains(&icon.count));
-        assert_eq!(balance_stack(0).count, 1, "a zero balance still shows an icon");
+        assert_eq!(
+            balance_stack(0).count,
+            1,
+            "a zero balance still shows an icon"
+        );
     }
 }

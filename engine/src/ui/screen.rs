@@ -243,11 +243,7 @@ pub(crate) fn char_typed(
         let response = state.typed(c);
         matches!(response, Response::Changed) || state.typing
     });
-    if taken {
-        Flow::Cancel
-    } else {
-        Flow::Continue
-    }
+    if taken { Flow::Cancel } else { Flow::Continue }
 }
 
 /// `native_screen_key_pressed_pre` (API 104): a named key on the screen.

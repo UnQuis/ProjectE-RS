@@ -366,7 +366,6 @@ impl Layout {
         [LEFT_X, EMC_BAR_Y, EMBLEM_SIZE, EMC_BAR_H]
     }
 
-
     /// Where the player's inventory block starts in panel coordinates: its
     /// first main slot column. `native_screen` lays the inventory out from
     /// here, so the drawing code must not place those slots itself.
@@ -473,7 +472,12 @@ mod tests {
         rects.extend((0..PAGE_SIZE).filter_map(Layout::cell));
         // The inventory block: its 27 main slots then the hotbar's 9, 58 below.
         let inventory = Layout::inventory_origin();
-        rects.push([inventory[0], inventory[1], 9.0 * (SLOT + SLOT_GAP) - SLOT_GAP, 3.0 * (SLOT + SLOT_GAP) - SLOT_GAP]);
+        rects.push([
+            inventory[0],
+            inventory[1],
+            9.0 * (SLOT + SLOT_GAP) - SLOT_GAP,
+            3.0 * (SLOT + SLOT_GAP) - SLOT_GAP,
+        ]);
         rects.push([
             inventory[0],
             inventory[1] + 58.0,
@@ -541,7 +545,10 @@ mod tests {
     fn the_hotbar_still_fits_below_the_panel() {
         let inventory = Layout::inventory_origin();
         let hotbar_bottom = inventory[1] + 58.0 + SLOT;
-        assert!(hotbar_bottom <= PANEL_H, "the hotbar ends at {hotbar_bottom}");
+        assert!(
+            hotbar_bottom <= PANEL_H,
+            "the hotbar ends at {hotbar_bottom}"
+        );
         assert!(hotbar_bottom > PANEL_H - 8.0, "the hotbar leaves a margin");
     }
 
@@ -550,10 +557,7 @@ mod tests {
         // The plate, the emblem and the emc bar are decorations drawn behind
         // one another; everything that holds or reacts to the pointer must be
         // disjoint, or a click would be ambiguous.
-        let mut rects: Vec<(String, Rect)> = vec![(
-            "grid".to_owned(),
-            Layout::grid(),
-        )];
+        let mut rects: Vec<(String, Rect)> = vec![("grid".to_owned(), Layout::grid())];
         for control in Control::ALL {
             rects.push((format!("{control:?}"), Layout::control(control)));
         }
@@ -565,7 +569,12 @@ mod tests {
         let column = 9.0 * (SLOT + SLOT_GAP) - SLOT_GAP;
         rects.push((
             "inventory".to_owned(),
-            [inventory[0], inventory[1], column, 3.0 * (SLOT + SLOT_GAP) - SLOT_GAP],
+            [
+                inventory[0],
+                inventory[1],
+                column,
+                3.0 * (SLOT + SLOT_GAP) - SLOT_GAP,
+            ],
         ));
         rects.push((
             "hotbar".to_owned(),
@@ -573,10 +582,7 @@ mod tests {
         ));
         for (i, (a_name, a)) in rects.iter().enumerate() {
             for (b_name, b) in rects.iter().skip(i + 1) {
-                assert!(
-                    !overlaps(*a, *b),
-                    "{a_name} {a:?} overlaps {b_name} {b:?}"
-                );
+                assert!(!overlaps(*a, *b), "{a_name} {a:?} overlaps {b_name} {b:?}");
             }
         }
     }
@@ -642,7 +648,11 @@ mod tests {
                 });
                 let inside = [rect[0] + rect[2] * 0.5, rect[1] + rect[3] * 0.5];
                 assert!(contains(rect, inside), "{gui:?} {part:?}");
-                assert_eq!(layout.hit(inside).map(|hit| hit.part), Some(part), "{gui:?}");
+                assert_eq!(
+                    layout.hit(inside).map(|hit| hit.part),
+                    Some(part),
+                    "{gui:?}"
+                );
             }
         }
     }
@@ -656,7 +666,10 @@ mod tests {
             let (col, y) = if index < 9 {
                 (index, INVENTORY_Y + 58.0)
             } else {
-                ((index - 9) % 9, INVENTORY_Y + ((index - 9) / 9) as f32 * 18.0)
+                (
+                    (index - 9) % 9,
+                    INVENTORY_Y + ((index - 9) / 9) as f32 * 18.0,
+                )
             };
             assert_eq!(rect[0], LEFT_X + col as f32 * 18.0);
             assert_eq!(rect[1], y);

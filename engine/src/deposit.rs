@@ -279,7 +279,12 @@ mod tests {
     fn a_count_whose_cost_overflows_is_refused() {
         // A stack of 8192-value items is nowhere near the limit: 8192 ×
         // u32::MAX is only ~3.5e13, which fits comfortably in i64.
-        assert!(plan(&[offered(0, "minecraft:diamond", u32::MAX)], 0, |_| 8192_u64).is_ok());
+        assert!(
+            plan(&[offered(0, "minecraft:diamond", u32::MAX)], 0, |_| {
+                8192_u64
+            })
+            .is_ok()
+        );
         // To overflow a single stack the *value* has to be huge too: 2^32
         // times u32::MAX does not fit in i64.
         let err = plan(&[offered(0, "x:y", u32::MAX)], 0, |_| 1_u64 << 32).unwrap_err();
@@ -295,19 +300,13 @@ mod tests {
     fn a_total_that_overflows_is_refused_even_when_each_stack_fits() {
         // Each stack fits; two of them do not.
         let big = u64::try_from(i64::MAX / 2 + 1).unwrap();
-        let err = plan(
-            &[offered(0, "x:y", 1), offered(1, "x:y", 1)],
-            0,
-            |_| big,
-        )
-        .unwrap_err();
+        let err = plan(&[offered(0, "x:y", 1), offered(1, "x:y", 1)], 0, |_| big).unwrap_err();
         assert_eq!(err, DepositError::Overflow);
     }
 
     #[test]
     fn a_balance_that_would_pass_the_limit_is_refused() {
-        let err = plan(&[offered(0, "minecraft:diamond", 2)], i64::MAX - 1, values)
-            .unwrap_err();
+        let err = plan(&[offered(0, "minecraft:diamond", 2)], i64::MAX - 1, values).unwrap_err();
         assert!(matches!(err, DepositError::BalanceOverflow { .. }));
     }
 
@@ -357,7 +356,11 @@ mod tests {
         let plan = plan(&[offered(0, "minecraft:coal", 3)], 5, values).unwrap();
         for left in 0..=6u32 {
             let s = settle(&plan, values, |_| left, &BTreeSet::new());
-            assert!(s.credited <= plan.emc, "left={left} credited {}", s.credited);
+            assert!(
+                s.credited <= plan.emc,
+                "left={left} credited {}",
+                s.credited
+            );
         }
     }
 

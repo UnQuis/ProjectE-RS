@@ -12,7 +12,7 @@
 //! table's own menu) and are handled by `ui::screen`; nothing in this module
 //! touches them.
 
-use super::layout::{Control, Layout, Part, PAGE_SIZE};
+use super::layout::{Control, Layout, PAGE_SIZE, Part};
 use super::localization::{self, Language};
 
 /// The preview catalogue the screen browses until the knowledge system is
@@ -144,7 +144,11 @@ impl Browser {
     /// `emc` answers an item's value for the EMC order. It is passed in rather
     /// than read here so the browser stays independent of the value table; the
     /// screen passes the mod's own `emc::value`.
-    pub(crate) fn visible(&self, all: &[&'static str], emc: impl Fn(&str) -> i64) -> Vec<&'static str> {
+    pub(crate) fn visible(
+        &self,
+        all: &[&'static str],
+        emc: impl Fn(&str) -> i64,
+    ) -> Vec<&'static str> {
         let needle = self.search.trim().to_lowercase();
         let mut items: Vec<&'static str> = all
             .iter()
@@ -686,7 +690,10 @@ mod tests {
         let at = at_part(&screen, Part::Search);
         let _ = screen.moved(at);
         assert_eq!(screen.cell_under(&items), None);
-        assert_eq!(screen.tooltip(&items), Some(screen.text(localization::KEY_HINT_SEARCH).to_owned()));
+        assert_eq!(
+            screen.tooltip(&items),
+            Some(screen.text(localization::KEY_HINT_SEARCH).to_owned())
+        );
     }
 
     #[test]
@@ -791,11 +798,17 @@ mod tests {
         assert!(!Part::Cell(0).is_slot());
         assert!(!Part::Cell(0).is_control());
         let response = screen.press(at_part(&screen, Part::Cell(0)), &items);
-        assert_eq!(response, Response::Notice(localization::KEY_NO_TRANSMUTATION));
+        assert_eq!(
+            response,
+            Response::Notice(localization::KEY_NO_TRANSMUTATION)
+        );
         // A real slot: the menu's, and a press changes nothing of the screen's.
         assert!(Part::Slot(0).is_slot());
         assert!(!Part::Slot(0).is_control());
-        assert_eq!(screen.press(at_part(&screen, Part::Slot(0)), &items), Response::None);
+        assert_eq!(
+            screen.press(at_part(&screen, Part::Slot(0)), &items),
+            Response::None
+        );
         assert!(screen.press.held == Some(Part::Slot(0)));
         // A control: the screen's, and swallowed.
         assert!(Part::Search.is_control());

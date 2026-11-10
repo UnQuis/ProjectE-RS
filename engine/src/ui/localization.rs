@@ -183,17 +183,32 @@ pub(crate) const EN_US: &[(&str, &str)] = &[
     (KEY_INVENTORY, "Inventory"),
     (KEY_EMPTY, "Nothing learned yet"),
     (KEY_NO_MATCH, "No item matches"),
-    (KEY_HINT_SEARCH, "Type to filter the item list. Backspace deletes."),
+    (
+        KEY_HINT_SEARCH,
+        "Type to filter the item list. Backspace deletes.",
+    ),
     (KEY_HINT_SORT, "Sort the list by EMC or by name."),
-    (KEY_HINT_FILTER, "Show every item, matter only, or tools only."),
+    (
+        KEY_HINT_FILTER,
+        "Show every item, matter only, or tools only.",
+    ),
     (KEY_HINT_PAGE, "Turn the page of items."),
     (KEY_HINT_INPUT, "Put an item here to transmute it later."),
-    (KEY_HINT_EMBLEM, "The alchemical emblem of the Transmutation Table."),
-    (KEY_HINT_PLACEHOLDER, "Not connected yet: the item list is a preview."),
+    (
+        KEY_HINT_EMBLEM,
+        "The alchemical emblem of the Transmutation Table.",
+    ),
+    (
+        KEY_HINT_PLACEHOLDER,
+        "Not connected yet: the item list is a preview.",
+    ),
     (KEY_SORTED_BY, "Sorted by {}"),
     (KEY_FILTERED_BY, "Showing {}"),
     (KEY_NO_TRANSMUTATION, "Transmutation is not connected yet."),
-    (KEY_HINT_STORAGE, "Storage: items left here stay when the screen closes."),
+    (
+        KEY_HINT_STORAGE,
+        "Storage: items left here stay when the screen closes.",
+    ),
     (KEY_NOTICE_PREFIX, "Note: {}"),
 ];
 
@@ -215,13 +230,25 @@ pub(crate) const RU_RU: &[(&str, &str)] = &[
     (KEY_INVENTORY, "Инвентарь"),
     (KEY_EMPTY, "Пока ничего не изучено"),
     (KEY_NO_MATCH, "Нет подходящих предметов"),
-    (KEY_HINT_SEARCH, "Введите текст, чтобы отфильтровать список. Backspace удаляет."),
+    (
+        KEY_HINT_SEARCH,
+        "Введите текст, чтобы отфильтровать список. Backspace удаляет.",
+    ),
     (KEY_HINT_SORT, "Сортировать список по ЭМК или по названию."),
-    (KEY_HINT_FILTER, "Показывать все предметы, только материю или только инструменты."),
+    (
+        KEY_HINT_FILTER,
+        "Показывать все предметы, только материю или только инструменты.",
+    ),
     (KEY_HINT_PAGE, "Перевернуть страницу предметов."),
-    (KEY_HINT_INPUT, "Положите предмет сюда, чтобы трансмутировать его позже."),
+    (
+        KEY_HINT_INPUT,
+        "Положите предмет сюда, чтобы трансмутировать его позже.",
+    ),
     (KEY_HINT_EMBLEM, "Алхимическая эмблема стола трансмутации."),
-    (KEY_HINT_PLACEHOLDER, "Пока не подключено: список предметов — предпросмотр."),
+    (
+        KEY_HINT_PLACEHOLDER,
+        "Пока не подключено: список предметов — предпросмотр.",
+    ),
     (KEY_SORTED_BY, "Сортировка: {}"),
     (KEY_FILTERED_BY, "Показано: {}"),
     (KEY_NO_TRANSMUTATION, "Трансмутация пока не подключена."),
@@ -278,7 +305,10 @@ mod tests {
         assert_eq!(Language::of("en_us"), Language::English);
         assert_eq!(Language::of("de_de"), Language::English);
         assert_eq!(Language::of(""), Language::English);
-        assert_eq!(text(Language::of("de_de"), KEY_TITLE), "Transmutation Table");
+        assert_eq!(
+            text(Language::of("de_de"), KEY_TITLE),
+            "Transmutation Table"
+        );
     }
 
     #[test]
@@ -304,7 +334,10 @@ mod tests {
 
     #[test]
     fn a_key_no_table_has_is_shown_rather_than_dropped() {
-        assert_eq!(localized(Language::English, "container.projecte.missing"), None);
+        assert_eq!(
+            localized(Language::English, "container.projecte.missing"),
+            None
+        );
         assert_eq!(
             text(Language::English, "container.projecte.missing"),
             "container.projecte.missing"
