@@ -10,6 +10,8 @@ use horizon_client::mod_api::*;
 
 mod alchemical;
 mod data;
+mod deposit;
+mod deposit_menu;
 mod emc;
 mod energy;
 mod machines;
@@ -263,7 +265,30 @@ impl Hooks for ProjectE {
         }
     }
 
+    fn menu_closed(&self, _host: &mut dyn Host, event: &mut MenuClosedEvent) {
+        // The window is gone, so its slot 18 must stop being a confirm
+        // control: a later menu that reuses the id is not this mod's.
+        deposit_menu::forget(event.uuid, event.window);
+    }
+
+    fn menu_input_closed(&self, _host: &mut dyn Host, event: &mut MenuInputClosedEvent<'_>) {
+        deposit_menu::forget(event.uuid, event.window);
+        // Nothing is taken out of `event.slots`: every item still in an input
+        // slot was never paid for, so the engine must give it back to the
+        // player. Keeping it here would be the one way this mod could erase an
+        // item without crediting EMC for it.
+        let _ = &event.slots;
+    }
+
     fn menu_clicked(&self, host: &mut dyn Host, event: &mut MenuClickedEvent) {
+        // The deposit menu first: its confirm slot is the only click in the
+        // mod that changes EMC or knowledge.
+        if deposit_menu::confirm_slot(event.uuid, event.window, event.slot).is_some() {
+            let contents = host.menu_contents(event.uuid).unwrap_or_default();
+            let result = deposit_menu::apply(host, event.uuid, contents);
+            deposit_menu::report(host, event.uuid, result);
+            return;
+        }
         if !(0..PROJECTE_MENU_SLOTS as i32).contains(&event.slot) {
             return;
         }
@@ -351,6 +376,9 @@ impl Hooks for ProjectE {
         event
             .commands
             .push(NativeCommand::new("projecte roadmap"));
+        event
+            .commands
+            .push(NativeCommand::new("projecte deposit"));
     }
 
     fn perform_command(
@@ -370,6 +398,22 @@ impl Hooks for ProjectE {
                 host.feedback(Text::literal(
                     "§7Use the Transmutation Table block to open its screen.",
                 ));
+                true
+            }
+            Some("deposit") => {
+                // A deposit needs the engine's own menu: the player fills the
+                // input slots by vanilla's click rules and confirms with a
+                // real click, so nothing here touches an item itself.
+                match deposit_menu::open(host, event.player.uuid) {
+                    Some(_window) => {
+                        host.feedback(Text::literal(
+                            "§aPut items in the top nine slots, then click the green slot to deposit them.",
+                        ));
+                    }
+                    None => host.feedback(Text::literal(
+                        "§cThe deposit menu could not be opened for you.",
+                    )),
+                }
                 true
             }
             Some("value") => {

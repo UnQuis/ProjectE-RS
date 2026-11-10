@@ -28,7 +28,7 @@ deliberate placeholders, not claims.
 
 | Stage | Nodes | State |
 | --- | --- | --- |
-| 0 — Foundation | Philosopher's Stone, Transmutation Table, EMC and knowledge | Stone implemented; table partial |
+| 0 — Foundation | Philosopher's Stone, Transmutation Table, EMC and knowledge | Stone and deposit-and-learn implemented; table partial |
 | 1 — Alchemy | Alchemical Coal → Mobius Fuel → Aeternalis Fuel, fuel blocks, burn time | Fuels and blocks implemented; burn time blocked |
 | 2 — Machines | Collectors, Relays, Klein Stars, Condensers, Power Flower, Alchemical Chest, data-driven EMC | Collectors/Relays/Stars partial; the rest missing |
 | 3 — Matter | Dark Matter, Red Matter, matter blocks, tools, armor, Tablet, Tome | Matter items partial; everything built on them missing |
@@ -123,12 +123,17 @@ selection view; see §7.
   through it.
 - **Implemented today:** the 54-slot menu, bought items charged through
   `transaction::plan_purchase`/`settle_purchase`, EMC balance in a player
-  attachment, learned-item list.
-- **Missing:** *depositing* an item to learn it and gain its EMC (the documented
-  first-EMC step), an unlearn slot, and a client screen with search, categories
-  and paging. The current 54-slot chest menu is the bootstrap UI.
-- **Horizon dependencies:** `blocks`, `open_menu`, `menu_clicked`,
-  `player_stacks`, `give_stack`, attachments with a codec.
+  attachment, learned-item list, and **deposit-and-learn** (`/projecte deposit`):
+  a mod-owned menu whose input slots the engine moves, planned by the pure
+  `deposit::plan`, applied only on a click on the confirm slot, and credited
+  from a read-back of what actually left (`deposit::settle`). EMC and knowledge
+  are written together, so they cannot disagree.
+- **Missing:** an unlearn slot, and a client screen with search, categories and
+  paging. The current 54-slot chest menu is the bootstrap UI. Deposits are whole
+  slots, and the menu is opened by command rather than by the block.
+- **Horizon dependencies:** `blocks`, `open_menu`, `open_menu_with_input`,
+  `set_menu_items`, `menu_contents`, `menu_clicked`, `menu_closed`,
+  `menu_input_closed`, `player_stacks`, `give_stack`, attachments with a codec.
 - **Workarounds:** none for the menu itself. EMC values are static, see §6.
 
 ### 2.5 EMC and knowledge — partial
@@ -140,9 +145,11 @@ selection view; see §7.
   `/projecte learn` (held item, named item, or `all` carried items),
   `/projecte transmute`, `/projecte value`, `/projecte reset`, and learning by
   buying. Zero-EMC items are refused everywhere.
-- **Missing:** learning by depositing items into the table; unlearning;
-  knowledge sharing items (Tome of Knowledge); any client-side view of the
-  learned set outside the table menu.
+- **Implemented for deposits:** an item is learned by *giving it up* — a
+  repeat deposit pays its EMC again and never duplicates knowledge, and a
+  refused or unwritten deposit learns nothing.
+- **Missing:** unlearning; knowledge sharing items (Tome of Knowledge); any
+  client-side view of the learned set outside the table menu.
 - **Horizon dependencies:** attachment `get`/`set` with a codec; command hooks.
 - **Known gap:** `data::get`/`data::set` in `engine/src/data.rs` still collapse
   attachment errors into defaults. That predates this phase and is recorded as
@@ -419,12 +426,19 @@ can be bought for nothing.
 - Machines keep EMC in block-entity NBT; Klein Stars keep charge in a component.
   Both are replaced wholesale when the native energy helpers become callable.
 - No assets: every block and item borrows a vanilla template.
+- The deposit menu is opened with `/projecte deposit`, not by right-clicking a
+  block. Deposits are whole slots only, and the balance/known-item icons cap
+  their shown count at 64 (`/projecte emc` is the exact readout).
+- Learning by deposit is **not** reversible yet: unlearn is still a later item,
+  so a player who deposits an item keeps it known.
 
 ## 11. Next phases, in order
 
-1. **Table deposit and unlearn** — the missing half of stage 0: burn an item to
-   learn it and gain EMC, using the existing transaction planner for bounds.
-   Small, self-contained, and it makes the current table a complete loop.
+1. **Unlearn** — deposit-and-learn is now implemented (§2, API_WORKAROUNDS §10):
+   `/projecte deposit` opens a mod-owned menu whose input slots the engine moves,
+   and the credit is read back after removal. What is still missing is the other
+   direction: giving stored EMC back for knowledge, which ProjectE's table does
+   per item.
 2. **Energy Condenser MK1** — the last machine needed for a Power Flower, plus
    the Alchemical Chest it depends on. EMC plumbing already exists in
    `machines.rs`; this unlocks the "make diamonds while away" experience.

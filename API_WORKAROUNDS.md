@@ -157,3 +157,27 @@ There is no third route and no way to combine them: a mod screen has no slots, a
 **A notice is drawn, not sent.** Every screen hook is `&self` at this revision, so `Host::action_bar` and `Host::chat`, which take `&mut dyn Host`, cannot be called from a screen. A control's notice is therefore drawn on the screen's own bottom line, where the click happened.
 
 **Migration when Horizon exposes a mod's own assets or a locale helper.** Ship `assets/projecte/lang/en_us.json` and `ru_ru.json` from the same tables, and replace the `container.inventory` probe with the locale helper. Nothing else in the screen changes: the keys already match.
+
+## 10. Deposit-and-learn: a mod-owned menu, and why the credit is read back
+
+**The problem.** Depositing is the flow that turns items into EMC and knowledge. It must remove *exactly* the accepted items, credit their value, add them to the learned set, and never mint EMC for an item that did not actually leave the player's hands. In ProjectE it happens on the Transmutation Table, so the obvious first idea is a click on that table's existing screen.
+
+**Why a click on the table's screen cannot do it.** The table's menu is a vanilla menu the engine owns, drawn over by `native_screen` (§8). Its slots hold the player's own items and a shift-click or drag moves them by the engine's rules. Two bad options follow: mutate items inside `menu_clicked` without knowing what the engine will actually do, or make the slots inert so the click can be observed. The first can lose items when the engine's own move differs from the mod's assumption; the second makes every slot decoration and the table unusable. Both were rejected.
+
+**What the pinned API provides.** `native_open_menu_with_input(uuid, rows, title, items, input)` (API `menu_input`) opens a menu whose `input` slots behave **exactly** as a chest's: the player fills them by vanilla's click rules, the engine tracks them, and `native_menu_contents` reads them back. Slots outside `input` are the mod's display slots, and a click on one arrives as `native_menu_clicked` precisely because it "moved nothing". On close, `native_menu_input_closed` hands the mod the input slots and whatever the mod leaves goes back to the player as `clearContainer` would.
+
+**The chosen shape.** A 27-slot menu: slots 0–8 are the engine-owned input range, 9–17 display cells, and 18 is the confirm control. A deposit is *only* a click on slot 18. `apply` then:
+
+1. reads the menu and plans the deposit (**pure**, `deposit::plan`);
+2. refuses the whole thing, before touching a slot, if any stack has no value or the arithmetic would overflow;
+3. clears exactly the planned slots and writes them back;
+4. **re-reads** `native_menu_contents` and credits only what verifiably left (`deposit::settle`);
+5. writes EMC and knowledge in a **single** `data::set`, so the two can never disagree.
+
+Step 4 is the part that makes the flow safe. `native_set_menu_items` deliberately preserves input slots (it copies back every slot the store holds), so a mod write **cannot** eat a deposit — but a write can also fail to take. Crediting only the observed departure means a write that did nothing credits nothing, and `Deposited::NotApplied` tells the player their items are still in the slots.
+
+**Recognising the mod's own menu.** Every native menu in the engine is the same `Slots::Native`, and the API does not say which mod opened one. Slot 18 of *another* mod's menu is not a confirm control, and treating it as one would empty that menu into EMC. The mod therefore records the window id it opened, per player, in `deposit_menu::OPEN`, and `forget`s it in both `menu_closed` and `menu_input_closed`. A click is a deposit only when the player, the window and the slot all match.
+
+**What is not done, and why.** Shift-clicking into the input slots works because the engine owns them; there is no custom drag handling, no per-slot filter, and no "deposit all from inventory" button — each of those would have to move items itself. The menu shows the balance and the known-item count as stack counts on icons, which caps their display at 64; `/projecte emc` remains the exact readout.
+
+**Migration if Horizon exposes per-mod menu ownership.** Drop `OPEN` and read the owner from the menu, which removes the one piece of bookkeeping here. Nothing else changes: the plan/settle split is independent of how the window is recognised.
