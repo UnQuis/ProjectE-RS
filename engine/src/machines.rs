@@ -310,8 +310,28 @@ pub(crate) fn collect(host: &mut dyn Host, pos: [i32; 3], player: u128) {
         if collected > 0 { write_emc(&mut entity.nbt, 0); }
     });
     if collected > 0 {
-        let total = data::add_emc(host, player, collected);
-        host.tell(player, Text::literal(format!("§dCollected §e{collected} EMC§d. Balance: §e{total}§d.")));
+        match data::try_add_emc(host, player, collected) {
+            Ok(total) => host.tell(
+                player,
+                Text::literal(format!(
+                    "§dCollected §e{collected} EMC§d. Balance: §e{total}§d."
+                )),
+            ),
+            Err(_) => {
+                host.change_mod_block_entity(pos, &mut |entity| {
+                    if entity.id == BLOCK_ENTITY {
+                        let restored = read_emc(&entity.nbt)
+                            .saturating_add(collected)
+                            .min(machine.capacity());
+                        write_emc(&mut entity.nbt, restored);
+                    }
+                });
+                host.tell(
+                    player,
+                    Text::literal("§cCould not save your EMC balance; machine buffer was restored."),
+                );
+            }
+        }
     } else {
         host.tell(player, Text::literal("§7This machine has not collected any EMC yet."));
     }

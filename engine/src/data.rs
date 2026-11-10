@@ -95,12 +95,20 @@ pub fn set(host: &mut dyn horizon_client::mod_api::Host, uuid: u128, data: Playe
     let _ = PLAYER.set(host, Holder::Player(uuid), data);
 }
 
-pub fn add_emc(host: &mut dyn horizon_client::mod_api::Host, uuid: u128, amount: i64) -> i64 {
-    let mut data = get(host, uuid);
+pub fn try_add_emc(
+    host: &mut dyn horizon_client::mod_api::Host,
+    uuid: u128,
+    amount: i64,
+) -> Result<i64, AttachmentError> {
+    let mut data = PLAYER.get(host, Holder::Player(uuid))?;
     data.emc = data.emc.saturating_add(amount).max(0);
     let emc = data.emc;
-    set(host, uuid, data);
-    emc
+    PLAYER.set(host, Holder::Player(uuid), data)?;
+    Ok(emc)
+}
+
+pub fn add_emc(host: &mut dyn horizon_client::mod_api::Host, uuid: u128, amount: i64) -> i64 {
+    try_add_emc(host, uuid, amount).unwrap_or_else(|_| get(host, uuid).emc)
 }
 
 pub fn take_emc(host: &mut dyn horizon_client::mod_api::Host, uuid: u128, amount: i64) -> bool {
