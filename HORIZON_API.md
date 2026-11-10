@@ -51,7 +51,7 @@ The generated `Host` methods default to a panic in test doubles. This is useful:
 The current `ProjectE` implementation uses these catalog hooks:
 
 - `blocks`, `items`
-- `block_entity`, `block_entity_ticks`, `block_entity_tick`
+- `block_entity`, `block_entity_ticks`, `block_entity_container`, `block_entity_tick`, `component_types`
 - `right_click_block`, `use_item`
 - `menu_clicked`
 - `register_commands`, `perform_command`
@@ -91,16 +91,9 @@ The pinned API includes `ModEnergyBuffer` and the `block_entity_energy` hook (Na
 
 The hook declares a buffer for a mod block: capacity, maximum insertion and extraction per operation, and permitted faces. Horizon stores the amount in the block entity's saved compound under the integer key `energy`; it therefore survives chunk unloads and restarts.
 
-Host helpers exposed by this API include:
+The engine documents `native_energy`, `native_energy_insert`, `native_energy_extract` and `native_move_energy`. However, these are not present as callable methods on the pinned trait-mod `Host` surface / special Host bridge. The `block_entity_energy` registration hook exists, but a trait mod cannot use those engine operations through `dyn Host` at this revision.
 
-- `energy(dimension, pos, face)`: read energy through a side.
-- `energy_insert(pos, face, amount, simulate)`: insert and return the amount moved.
-- `energy_extract(dimension, pos, face, amount, simulate)`: extract and return the amount moved.
-- `move_energy(dimension, from, from_face, to, to_face, max)`: move energy between two block buffers.
-
-The `simulate` flag makes an insert/extract query without changing the stored amount. Face permissions and per-operation limits are part of the buffer contract.
-
-**ProjectE implication:** Energy Collector and Antimatter Relay should use this native block-energy capability instead of maintaining a second `AttachmentType<i64>` buffer. The current `BUFFER` attachment is legacy implementation state until that migration is implemented.
+**ProjectE implication:** the current implementation stores EMC in a ProjectE-owned `emc` field in the block entity's saved NBT and mutates adjacent mod block entities through `Host::change_mod_block_entity`. This is a documented workaround, not the preferred long-term backend. See [API_WORKAROUNDS.md](API_WORKAROUNDS.md).
 
 ### Native item energy
 
@@ -108,15 +101,9 @@ The pinned API includes `ItemEnergyBuffer` and `item_energy_buffer` (Native Hook
 
 A mod declares an item buffer's capacity and maximum one-operation insert/extract amounts. Horizon stores its charge in the stack's `minecraft:custom_data` as integer `horizon_energy`, which is saved and synchronized with the item stack.
 
-Host helpers:
+The engine documents `native_item_energy`, `native_item_energy_insert` and `native_item_energy_extract`, but these methods are not callable through the pinned trait-mod `Host` surface. The `item_energy_buffer` registration hook exists, but the trait mod cannot currently inspect or update its native item-energy state through Host.
 
-- `item_energy(stack)`: inspect one item, including its charge, capacity and limits.
-- `item_energy_insert(stack, amount)`: return the amount accepted and the resulting single-item stack.
-- `item_energy_extract(stack, amount)`: return the amount extracted and the resulting single-item stack.
-
-These helpers do not mutate the input stack. To apply a result to a multi-count stack, the caller must split/shrink one item and replace it with the returned single-item stack. Leaving the returned value unused is the simulation path. An empty item carries no charge, so it can stack with a fresh uncharged item.
-
-**ProjectE implication:** Klein Stars are a natural use of this API. Their charge should be represented by the native item-energy capability rather than a parallel custom-data convention.
+**ProjectE implication:** Klein Stars use a registered ProjectE component, `projecte:stored_emc`, read and updated through the component Host bridge. Collector and Relay machine slots charge and discharge that component. This is a deliberate workaround. See [API_WORKAROUNDS.md](API_WORKAROUNDS.md).
 
 ## 5. Attachments and persistent state
 
@@ -263,8 +250,8 @@ Run Rust unit tests in the same Horizon-enabled toolchain environment. A success
 | Area | Current implementation | Horizon-aligned direction |
 | --- | --- | --- |
 | Player EMC / knowledge | Player attachment | Keep server-authoritative; handle attachment errors explicitly. |
-| Collector / Relay energy | Custom `BUFFER: AttachmentType<i64>` | Migrate to `ModEnergyBuffer`. |
-| Klein Stars | Ordinary registered items | Add `ItemEnergyBuffer` capability. |
+| Collector / Relay energy | ProjectE-owned block-entity NBT field `emc` | Migrate to `ModEnergyBuffer` when trait-mod Host access is exposed. |
+| Klein Stars | Registered `projecte:stored_emc` component | Migrate to `ItemEnergyBuffer` when trait-mod Host access is exposed. |
 | EMC values | Hardcoded table plus suffix fallback | Add `projecte:emc` Data Map and explicit defaults; remove unsafe assumptions for unknown modded items. |
 | Transmutation UI | 54-slot chest menu | Keep as initial UI; custom screen for advanced browser/search. |
 | Recipes | Small fixed recipe set | Use real world recipe APIs and/or data-driven recipe definitions. |
