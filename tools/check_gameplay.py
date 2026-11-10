@@ -123,7 +123,7 @@ def parse_array(source: str, name: str, strings=False):
     if not match:
         return None
     body = match.group(1)
-    return re.findall(r'"([^"]+)"', body) if strings else [int(v) for v in re.findall(r"\d+", body)]
+    return re.findall(r'"([^"]+)'", body) if strings else [int(v.replace("_", "")) for v in re.findall(r"\d[\d_]*", body)]
 
 
 def validate(root: Path) -> list[str]:
