@@ -79,7 +79,7 @@ impl Hooks for ProjectE {
 
     fn block_entity_container(
         &self,
-        _host: &mut dyn Host,
+        _host: &dyn Host,
         event: &mut BlockEntityContainerEvent<'_>,
     ) -> Option<ModContainer> {
         machines::container(event.block)
