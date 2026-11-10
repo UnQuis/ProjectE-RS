@@ -9,6 +9,13 @@ pub fn value(id: &str) -> u64 {
     if let Some(v) = table_value(id) {
         return v;
     }
+    // The suffix rules below model vanilla item families. Explicit table
+    // entries (including ProjectE's own materials) were handled above, so an
+    // unknown item from any other namespace has no EMC value: a modded
+    // `_ingot` is not automatically worth an iron ingot.
+    if !id.starts_with("minecraft:") {
+        return 0;
+    }
     // ProjectE-style convention: a log is 32 EMC and planks are 8.
     if id.ends_with("_log") || id.ends_with("_wood") || id.ends_with("_stem")
         || id.ends_with("_hyphae")
@@ -207,6 +214,38 @@ mod tests {
         assert_eq!(value("minecraft:cherry_planks"), 8);
         assert_eq!(value("minecraft:iron_ore"), 384);
         assert_eq!(value("minecraft:unknown"), 0);
+    }
+
+    #[test]
+    fn non_minecraft_suffix_fallback_is_zero() {
+        assert_eq!(value("example:iron_ingot"), 0);
+        assert_eq!(value("example:deepslate_ore"), 0);
+        assert_eq!(value("example:oak_log"), 0);
+        assert_eq!(value("example:white_wool"), 0);
+        assert_eq!(value("example:crimson_planks"), 0);
+        assert_eq!(value("example:iron_nugget"), 0);
+        assert_eq!(value("projecte:oak_log"), 0);
+    }
+
+    #[test]
+    fn vanilla_suffix_fallback_still_works() {
+        // Deliberately absent from the table: only the suffix rules apply.
+        assert_eq!(value("minecraft:crimson_log"), 32);
+        assert_eq!(value("minecraft:crimson_stem"), 32);
+        assert_eq!(value("minecraft:crimson_planks"), 8);
+        assert_eq!(value("minecraft:oak_leaves"), 1);
+        assert_eq!(value("minecraft:coal_ore"), 256);
+        assert_eq!(value("minecraft:iron_nugget"), 28);
+        assert_eq!(value("minecraft:white_carpet"), 32);
+    }
+
+    #[test]
+    fn explicit_entries_take_precedence_over_fallback() {
+        assert_eq!(value("minecraft:iron_ore"), 384);
+        assert_eq!(value("minecraft:copper_ingot"), 128);
+        assert_eq!(value("minecraft:netherite_ingot"), 139264);
+        assert_eq!(value("projecte:dark_matter"), 16384);
+        assert_eq!(value("projecte:red_matter"), 131072);
     }
 
     #[test]
