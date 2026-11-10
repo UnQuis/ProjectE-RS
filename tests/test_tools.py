@@ -46,6 +46,10 @@ class GameplayChecks(unittest.TestCase):
                     _ => return None,
                 })
             }
+            fn checked_cost(value: u64, count: u32) -> Option<i64> {
+                let total = value.checked_mul(u64::from(count))?;
+                i64::try_from(total).ok()
+            }
         """)
         self.assertEqual(errors, [])
         self.assertEqual(values, {
