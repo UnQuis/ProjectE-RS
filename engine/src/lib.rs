@@ -10,6 +10,7 @@ use horizon_client::mod_api::*;
 
 mod data;
 mod emc;
+mod transaction;
 
 const MOD_ID: &str = "projecte";
 const TABLE: &str = "projecte:transmutation_table";
@@ -170,49 +171,39 @@ impl Hooks for ProjectE {
         } else {
             1
         };
-        let Some(cost) = emc::checked_cost(value, count) else {
-            host.tell(
-                event.uuid,
-                Text::literal("§cThat transaction is too expensive."),
-            );
-            return;
+        let plan = match transaction::plan_purchase(
+            value,
+            count,
+            data.emc,
+            inventory_room(host, event.uuid, item),
+        ) {
+            Ok(plan) => plan,
+            Err(error) => {
+                host.tell(event.uuid, Text::literal(format!("§c{}", error.message())));
+                return;
+            }
         };
-        if data.emc < cost {
-            host.tell(
-                event.uuid,
-                Text::literal(format!(
-                    "§cNot enough EMC: need §e{}§c, have §e{}§c.",
-                    cost, data.emc
-                )),
-            );
-            return;
-        }
-        if inventory_room(host, event.uuid, item) < count {
-            host.tell(event.uuid, Text::literal("§cNot enough inventory space."));
-            return;
-        }
-        let mut data = data;
         let leftover = host.give_stack(event.uuid, stack(item, count));
         let leftover_count = leftover.as_ref().map_or(0, |s| s.count);
-        let given = count - leftover_count;
-        if given == 0 {
-            host.tell(event.uuid, Text::literal("§cCould not give the item."));
-            return;
-        }
-        let Some(spent) = emc::checked_cost(value, given) else {
+        let Some(given) = count.checked_sub(leftover_count) else {
             host.tell(
                 event.uuid,
-                Text::literal("§cThat transaction is too expensive."),
+                Text::literal("§cThe inventory returned an invalid item count."),
             );
             return;
         };
-        // `spent <= cost <= data.emc` (given <= count and the cost was
-        // checked above), so this subtraction cannot underflow. The
-        // unrepresentable-spent branch above is defensive: it is
-        // unreachable for a well-behaved host, and no wrapping cost is
-        // ever deducted.
-        data.emc -= spent;
+        let settlement = match transaction::settle_purchase(plan, given, data.emc) {
+            Ok(settlement) => settlement,
+            Err(error) => {
+                host.tell(event.uuid, Text::literal(format!("§c{}", error.message())));
+                return;
+            }
+        };
+        let mut data = data;
+        data.emc = settlement.remaining_emc;
         data::set(host, event.uuid, data.clone());
+        let spent = settlement.spent;
+        let given = settlement.granted;
         host.tell(
             event.uuid,
             Text::literal(format!(
@@ -525,38 +516,36 @@ fn command_transmute(host: &mut dyn Host, event: &PerformCommandEvent<'_>, args:
         )));
         return true;
     }
-    let Some(cost) = emc::checked_cost(value, count) else {
-        host.feedback(Text::literal("§cThat transaction is too expensive."));
+    let plan = match transaction::plan_purchase(
+        value,
+        count,
+        data.emc,
+        inventory_room(host, event.player.uuid, &id),
+    ) {
+        Ok(plan) => plan,
+        Err(error) => {
+            host.feedback(Text::literal(format!("§c{}", error.message())));
+            return true;
+        }
+    };
+    let leftover = host.give_stack(event.player.uuid, stack(&id, count));
+    let leftover_count = leftover.as_ref().map_or(0, |s| s.count);
+    let Some(given) = count.checked_sub(leftover_count) else {
+        host.feedback(Text::literal("§cThe inventory returned an invalid item count."));
         return true;
     };
-    if data.emc < cost {
-        host.feedback(Text::literal(format!(
-            "§cNeed §e{}§c EMC, have §e{}§c.",
-            cost, data.emc
-        )));
-        return true;
-    }
-    if inventory_room(host, event.player.uuid, &id) < count {
-        host.feedback(Text::literal("§cNot enough inventory space."));
-        return true;
-    }
-    let leftover = host.give_stack(event.player.uuid, stack(&id, count));
-    let given = count - leftover.as_ref().map_or(0, |s| s.count);
-    if given == 0 {
-        host.feedback(Text::literal("§cCould not give the item."));
-        return true;
-    }
-    let Some(spent) = emc::checked_cost(value, given) else {
-        host.feedback(Text::literal("§cThat transaction is too expensive."));
-        return true;
+    let settlement = match transaction::settle_purchase(plan, given, data.emc) {
+        Ok(settlement) => settlement,
+        Err(error) => {
+            host.feedback(Text::literal(format!("§c{}", error.message())));
+            return true;
+        }
     };
     let mut data = data;
-    // `spent <= cost <= data.emc` (given <= count and the cost was checked
-    // above), so this subtraction cannot underflow. The
-    // unrepresentable-spent branch above is defensive: it is unreachable
-    // for a well-behaved host, and no wrapping cost is ever deducted.
-    data.emc -= spent;
+    data.emc = settlement.remaining_emc;
     data::set(host, event.player.uuid, data.clone());
+    let spent = settlement.spent;
+    let given = settlement.granted;
     host.feedback(Text::literal(format!(
         "§aTransmuted §e{}x {}§a for §e{} EMC§a. Balance: §e{}§a.",
         given,
