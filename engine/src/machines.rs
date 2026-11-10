@@ -214,10 +214,10 @@ pub(crate) fn tick(
     }
     let block = host.block(event.pos);
     if event.entity.nbt.get(&EMC_KEY.into()).is_none() {
-        let legacy = data::BUFFER
-            .get(host, Holder::BlockEntity(event.pos))
-            .unwrap_or(0)
-            .clamp(0, capacity(&block).unwrap_or(0));
+        let legacy = match data::BUFFER.get(host, Holder::BlockEntity(event.pos)) {
+            Ok(value) => value.clamp(0, capacity(&block).unwrap_or(0)),
+            Err(_) => return,
+        };
         write_emc(&mut event.entity.nbt, legacy);
         let _ = data::BUFFER.set(host, Holder::BlockEntity(event.pos), 0);
     }
