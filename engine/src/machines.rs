@@ -219,16 +219,21 @@ fn collector_tick(
     let (generated, next_micro) = collector_generation(COLLECTOR_RATE_PER_SECOND[tier], sun, micro);
     stored = stored.saturating_add(generated).min(capacity);
 
-    if let Some(mut star) = event.entity.items[0].clone() {
-        if energy::capacity(&star.item).is_some() {
-            stored -= energy::charge(host, &mut star, stored.min(machine.transfer()));
-            let full = energy::stored_emc(host, &star).unwrap_or(0) >= energy::capacity(&star.item).unwrap_or(i64::MAX);
-            if full && event.entity.items[2].is_none() {
-                event.entity.items[2] = Some(star);
-                event.entity.items[0] = None;
-            } else {
-                event.entity.items[0] = Some(star);
-            }
+    for slot in 0..2 {
+        let Some(mut star) = event.entity.items[slot].clone() else {
+            continue;
+        };
+        if energy::capacity(&star.item).is_none() {
+            continue;
+        }
+        stored -= energy::charge(host, &mut star, stored.min(machine.transfer()));
+        let full = energy::stored_emc(host, &star).unwrap_or(0)
+            >= energy::capacity(&star.item).unwrap_or(i64::MAX);
+        if full && event.entity.items[2].is_none() {
+            event.entity.items[2] = Some(star);
+            event.entity.items[slot] = None;
+        } else {
+            event.entity.items[slot] = Some(star);
         }
     }
 

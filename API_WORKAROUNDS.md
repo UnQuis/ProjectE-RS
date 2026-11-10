@@ -38,7 +38,7 @@ We therefore cannot safely use Horizon's energy handler as the source of truth f
 
 - All six Klein Star tiers declare a ProjectE-owned `projecte:stored_emc` component.
 - The component is read and updated through `Host::component`, `Host::set_component` and `Host::remove_component`; values are clamped to the tier's capacity.
-- Collector slot 0 charges a Klein Star from its buffer. Relay slot 0 empties a star into its buffer; slot 1 charges a star. A full star moves to output slot 2.
+- Collector slots 0 and 1 charge Klein Stars from its buffer. Relay slot 0 empties a star into its buffer; slot 1 charges a star. A full star moves to output slot 2.
 - The tooltip displays stored EMC and capacity.
 
 **Why this is a workaround**
