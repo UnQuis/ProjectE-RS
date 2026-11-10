@@ -8,8 +8,8 @@ use std::sync::Arc;
 
 use horizon_client::mod_api::*;
 
-pub mod condenser;
 mod alchemical;
+pub mod condenser;
 mod data;
 mod emc;
 mod energy;
@@ -65,11 +65,20 @@ impl Hooks for ProjectE {
         item(event, "projecte:red_matter", "minecraft:redstone", 64);
         item(event, "projecte:alchemical_coal", "minecraft:coal", 64);
         item(event, "projecte:mobius_fuel", "minecraft:blaze_powder", 64);
-        item(event, "projecte:aeternalis_fuel", "minecraft:glowstone_dust", 64);
+        item(
+            event,
+            "projecte:aeternalis_fuel",
+            "minecraft:glowstone_dust",
+            64,
+        );
     }
 
     fn component_types(&self, event: &mut ComponentTypesEvent<'_>) {
-        if !event.types.iter().any(|id| id == energy::STORED_EMC_COMPONENT) {
+        if !event
+            .types
+            .iter()
+            .any(|id| id == energy::STORED_EMC_COMPONENT)
+        {
             event.types.push(energy::STORED_EMC_COMPONENT.to_string());
         }
     }
@@ -316,9 +325,10 @@ impl Hooks for ProjectE {
         event
             .commands
             .push(NativeCommand::new("projecte emc [player:player]"));
-        event.commands.push(
-            NativeCommand::op("projecte emc set <player:player> <amount:integer>", 2),
-        );
+        event.commands.push(NativeCommand::op(
+            "projecte emc set <player:player> <amount:integer>",
+            2,
+        ));
         event
             .commands
             .push(NativeCommand::new("projecte learn [item:word]"));
@@ -329,19 +339,11 @@ impl Hooks for ProjectE {
         event
             .commands
             .push(NativeCommand::new("projecte value <item:word>"));
-        event
-            .commands
-            .push(NativeCommand::new("projecte reset"));
-        event
-            .commands
-            .push(NativeCommand::new("projecte roadmap"));
+        event.commands.push(NativeCommand::new("projecte reset"));
+        event.commands.push(NativeCommand::new("projecte roadmap"));
     }
 
-    fn perform_command(
-        &self,
-        host: &mut dyn Host,
-        event: &mut PerformCommandEvent<'_>,
-    ) -> Flow {
+    fn perform_command(&self, host: &mut dyn Host, event: &mut PerformCommandEvent<'_>) -> Flow {
         let parts: Vec<&str> = event.command.split_whitespace().collect();
         if parts.first().copied() != Some("projecte") {
             return Flow::Continue;
@@ -406,10 +408,9 @@ impl Hooks for ProjectE {
         }
         let value = emc::value(&event.stack.item);
         if value > 0 {
-            event.lines.push((
-                Text::literal(format!("§7EMC: §e{}", value)),
-                u32::MAX,
-            ));
+            event
+                .lines
+                .push((Text::literal(format!("§7EMC: §e{}", value)), u32::MAX));
         }
     }
 
@@ -442,11 +443,7 @@ fn learned_items(data: &data::PlayerData) -> Vec<String> {
         .filter(|id| emc::value(id) > 0)
         .cloned()
         .collect();
-    items.sort_by(|a, b| {
-        emc::value(b)
-            .cmp(&emc::value(a))
-            .then_with(|| a.cmp(b))
-    });
+    items.sort_by(|a, b| emc::value(b).cmp(&emc::value(a)).then_with(|| a.cmp(b)));
     items
 }
 
@@ -479,7 +476,8 @@ fn inventory_room(host: &dyn Host, uuid: u128, item: &str) -> u32 {
             room = room.saturating_add(max.saturating_sub(slot.count));
         }
     }
-    room = room.saturating_add(max.saturating_mul(stacks.iter().filter(|s| s.is_none()).count() as u32));
+    room = room
+        .saturating_add(max.saturating_mul(stacks.iter().filter(|s| s.is_none()).count() as u32));
     room
 }
 
@@ -561,15 +559,17 @@ fn command_emc(host: &mut dyn Host, event: &PerformCommandEvent<'_>, args: &[&st
 fn command_learn(host: &mut dyn Host, event: &PerformCommandEvent<'_>, args: &[&str]) -> bool {
     let mut learn = Vec::new();
     if args.first().copied() == Some("all") {
-        learn.extend(host.carried_items().into_iter().map(|(id, _)| normalize_item(&id)));
+        learn.extend(
+            host.carried_items()
+                .into_iter()
+                .map(|(id, _)| normalize_item(&id)),
+        );
     } else if let Some(raw) = args.first() {
         learn.push(normalize_item(raw));
     } else if let Some((id, _, _)) = host.held() {
         learn.push(id);
     } else {
-        host.feedback(Text::literal(
-            "§cHold an item, or use /projecte learn all.",
-        ));
+        host.feedback(Text::literal("§cHold an item, or use /projecte learn all."));
         return true;
     }
 
@@ -602,9 +602,7 @@ fn command_learn(host: &mut dyn Host, event: &PerformCommandEvent<'_>, args: &[&
 
 fn command_transmute(host: &mut dyn Host, event: &PerformCommandEvent<'_>, args: &[&str]) -> bool {
     let Some(raw) = args.first() else {
-        host.feedback(Text::literal(
-            "§cUsage: /projecte transmute <item> [count]",
-        ));
+        host.feedback(Text::literal("§cUsage: /projecte transmute <item> [count]"));
         return true;
     };
     let id = normalize_item(raw);
@@ -644,7 +642,9 @@ fn command_transmute(host: &mut dyn Host, event: &PerformCommandEvent<'_>, args:
     let leftover = host.give_stack(event.player.uuid, stack(&id, count));
     let leftover_count = leftover.as_ref().map_or(0, |s| s.count);
     let Some(given) = count.checked_sub(leftover_count) else {
-        host.feedback(Text::literal("§cThe inventory returned an invalid item count."));
+        host.feedback(Text::literal(
+            "§cThe inventory returned an invalid item count.",
+        ));
         return true;
     };
     let settlement = match transaction::settle_purchase(plan, given, data.emc) {
