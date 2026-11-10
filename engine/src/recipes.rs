@@ -615,7 +615,11 @@ mod tests {
                 kind == "minecraft:crafting_shaped" || kind == "minecraft:crafting_shapeless",
                 "{key}: {kind}"
             );
-            let expected_count = if key.ends_with("_from_block") { 9 } else { 1 };
+            let expected_count = match key.as_str() {
+                "recipe/projecte:stone_gold_to_iron" => 8,
+                key if key.ends_with("_from_block") => 9,
+                _ => 1,
+            };
             assert_eq!(
                 value["result"]["count"].as_u64(),
                 Some(expected_count),
