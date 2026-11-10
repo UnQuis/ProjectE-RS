@@ -109,8 +109,8 @@ pub(crate) fn container(block: &str) -> Option<ModContainer> {
                 all_slots.clone(), all_slots.clone(), all_slots.clone(),
                 all_slots.clone(), all_slots.clone(), all_slots.clone(),
             ],
-            inputs: all_slots,
-            outputs: Vec::new(),
+            inputs: all_slots.clone(),
+            outputs: all_slots,
             menu: Some("minecraft:generic_9x3".to_string()),
         });
     }

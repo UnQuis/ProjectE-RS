@@ -177,6 +177,8 @@ fn table_value(id: &str) -> Option<u64> {
         "projecte:klein_star_drei" => 131072,
         "projecte:klein_star_vier" => 524288,
         "projecte:transmutation_table" => 32768,
+        "projecte:alchemical_chest" => 544,
+        "projecte:energy_condenser" => 33568,
         "projecte:alchemical_coal_block" => 1152,
         "projecte:mobius_fuel_block" => 4608,
         "projecte:aeternalis_fuel_block" => 18432,
@@ -254,6 +256,8 @@ mod tests {
         assert_eq!(value("minecraft:netherite_ingot"), 139264);
         assert_eq!(value("projecte:dark_matter"), 16384);
         assert_eq!(value("projecte:red_matter"), 131072);
+        assert_eq!(value("projecte:alchemical_chest"), 544);
+        assert_eq!(value("projecte:energy_condenser"), 33568);
     }
 
     #[test]

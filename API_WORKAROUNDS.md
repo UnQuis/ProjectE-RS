@@ -61,12 +61,28 @@ Do not replace this with a read-copy-write sequence: two machines could otherwis
 
 ## 4. Scope and known limitations
 
-- Collector and Relay now have three tiers each. This remains a partial machine port, not the complete ProjectE device lineup.
+- Collector and Relay now have three tiers each. Energy Condenser MK1 is integrated as a terminal sink; MK2 remains unimplemented. This remains a partial machine port, not the complete ProjectE device lineup.
 - Collector tiers generate 4/12/40 EMC per second in full sunlight, with capacities 10,000/30,000/60,000 and fractional EMC accumulation. Relay tiers have capacities 100,000/1,000,000/10,000,000, transfer limits 64/192/640 EMC per tick, and transfer bonuses of 0.05/0.15/0.5 EMC per successful transfer tick.
-- Collectors feed adjacent Relays. Relays feed adjacent Relays only when the target has a lower fill ratio, reducing back-and-forth transfers. Machine slots are implemented; Collector fuel upgrades and Condensers are not implemented yet.
+- Collectors feed adjacent Relays and Condensers. Relays feed adjacent Relays only when the target has a lower fill ratio, and feed adjacent Condensers as terminal sinks. Condensers never forward EMC. Machine slots are implemented; Collector fuel upgrades and Condenser MK2 remain outstanding.
 - Klein Stars have persistent component storage and can be charged/discharged through Collector and Relay machine slots. Direct player-inventory transfer is not implemented yet.
 - Attachment read/write errors in the existing player-data layer are a separate cleanup item; do not silently copy those patterns into the energy backend.
 - Machine upgrade recipes (Collector MK2/MK3, Relay MK2/MK3) now exist in `engine/src/recipes.rs`, but a Collector still cannot upgrade fuel inside its own slots; that machine behavior is a later phase.
+
+## 5. Condenser inventory and Power Flower routing
+
+**Current implementation**
+
+- Energy Condenser MK1 uses the existing `projecte:machine` block entity and a nine-slot generic menu: slot 1 is the non-consumed target template, slot 2 is output, and slots 0 and 3–8 accept EMC-valued input.
+- The target must have positive EMC. An absent or invalid target pauses item processing; input stacks remain untouched.
+- Input conversion and output production use the pure plans in `engine/src/condenser.rs`. The complete target `ItemStack` is cloned, preserving damage and custom components; output merging requires an exact item/damage/component match and respects `Host::max_stack_size`.
+- Collectors may feed adjacent Condensers directly. Relays may feed adjacent Relays only when the destination has a strictly lower fill ratio, or feed adjacent Condensers. Condensers are terminal sinks and cannot forward EMC.
+- Neighbour transfers use `Host::change_mod_block_entity` and debit the source only for the amount confirmed as written to the destination.
+- The Alchemical Chest is a separate 27-slot block entity with a generic 9x3 menu. Its recipe is provisional pending confirmation against the intended ProjectE version.
+
+**Known limitations**
+
+- Only Condenser MK1 is implemented. Its 10,000 EMC capacity and one-item-per-tick input/output budget are explicit initial balance values. MK2 batching and its separate inventory layout are not implemented.
+- The Alchemical Chest recipe is an explicitly marked placeholder and must be checked before release.
 
 ## 5. Philosopher's Stone as a crafting catalyst
 
