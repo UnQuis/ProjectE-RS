@@ -616,7 +616,11 @@ mod tests {
                 "{key}: {kind}"
             );
             let expected_count = if key.ends_with("_from_block") { 9 } else { 1 };
-            assert_eq!(value["result"]["count"].as_u64(), Some(expected_count), "{key}");
+            assert_eq!(
+                value["result"]["count"].as_u64(),
+                Some(expected_count),
+                "{key}"
+            );
             if kind == "minecraft:crafting_shaped" {
                 assert_eq!(value["pattern"].as_array().map(|rows| rows.len()), Some(3));
             } else {
