@@ -470,7 +470,7 @@ mod tests {
     use super::*;
     use crate::ui::layout::Control;
 
-    fn new_new_screen() -> TableScreen {
+    fn new_new_new_screen() -> TableScreen {
         TableScreen::new(Language::English, [640.0, 360.0])
     }
 
@@ -495,7 +495,7 @@ mod tests {
 
     #[test]
     fn the_preview_list_draws_and_is_not_empty() {
-        let screen = screen();
+        let screen = new_screen();
         assert!(!visible(&screen).is_empty());
         assert_eq!(Browser::pages(&visible(&screen)), 1);
         assert_eq!(screen.page_label(&visible(&screen)), "Page 1 / 1");
@@ -503,7 +503,7 @@ mod tests {
 
     #[test]
     fn typing_filters_the_list_and_is_visible() {
-        let mut screen = screen();
+        let mut screen = new_screen();
         let items = visible(&screen);
         let before = screen.browser.page_items(&items).len();
         screen.press(at_part(&screen, Part::Search), &items);
@@ -519,7 +519,7 @@ mod tests {
 
     #[test]
     fn backspace_edits_the_field_and_enter_stops_typing() {
-        let mut screen = screen();
+        let mut screen = new_screen();
         let items = visible(&screen);
         screen.press(at_part(&screen, Part::Search), &items);
         for c in "coal".chars() {
@@ -537,15 +537,15 @@ mod tests {
 
     #[test]
     fn typing_outside_the_field_does_nothing() {
-        let mut screen = screen();
+        let mut screen = new_screen();
         assert_eq!(screen.typed('x'), Response::None);
         assert_eq!(screen.browser.search, "");
         assert!(!screen.key("key.keyboard.backspace"));
     }
 
     #[test]
-    fn escape_clears_the_search_before_it_closes_the_screen() {
-        let mut screen = screen();
+    fn escape_clears_the_search_before_it_closes_the_new_screen() {
+        let mut screen = new_screen();
         screen.typing = true;
         screen.browser.search = "gold".to_owned();
         assert!(screen.key("key.keyboard.escape"));
@@ -556,14 +556,14 @@ mod tests {
 
     #[test]
     fn the_search_field_has_a_length_limit() {
-        let mut screen = screen();
+        let mut screen = new_screen();
         screen.typing = true;
         for _ in 0..(MAX_SEARCH + 20) {
             let _ = screen.typed('a');
         }
         assert_eq!(screen.browser.search.chars().count(), MAX_SEARCH);
         // Control characters are not text.
-        let mut screen = screen();
+        let mut screen = new_screen();
         screen.typing = true;
         let _ = screen.typed('\u{7}');
         assert_eq!(screen.browser.search, "");
@@ -571,7 +571,7 @@ mod tests {
 
     #[test]
     fn every_button_answers_a_click() {
-        let mut screen = screen();
+        let mut screen = new_screen();
         let items = visible(&screen);
 
         // Sort: EMC, then name, each press changing what the button says.
@@ -637,7 +637,7 @@ mod tests {
         let many: Vec<&'static str> = (0..100).map(|_| "minecraft:cobblestone").collect();
         // `page_items` needs a slice of the list's own lifetime; borrow it.
         let many: &[&'static str] = &many;
-        let mut screen = screen();
+        let mut screen = new_screen();
         assert_eq!(Browser::pages(many), 3);
         assert_eq!(screen.browser.page_of(many), 0);
         assert_eq!(screen.browser.page_items(many).len(), PAGE_SIZE);
@@ -654,7 +654,7 @@ mod tests {
 
     #[test]
     fn a_filter_that_empties_the_list_still_shows_one_page() {
-        let mut screen = screen();
+        let mut screen = new_screen();
         screen.browser.filter = Filter::Tools;
         let items = visible(&screen);
         assert!(items.is_empty());
@@ -666,7 +666,7 @@ mod tests {
 
     #[test]
     fn the_page_resets_when_the_list_shrinks_under_it() {
-        let mut screen = screen();
+        let mut screen = new_screen();
         screen.browser.search = "zzz".to_owned();
         let items = visible(&screen);
         screen.browser.page = 7;
@@ -676,7 +676,7 @@ mod tests {
 
     #[test]
     fn a_cell_reports_the_item_under_the_pointer() {
-        let mut screen = screen();
+        let mut screen = new_screen();
         let items = visible(&screen);
         for index in 0..items.len() {
             let at = at_part(&screen, Part::Cell(index));
@@ -699,7 +699,7 @@ mod tests {
 
     #[test]
     fn every_control_has_a_tooltip() {
-        let mut screen = screen();
+        let mut screen = new_screen();
         let items = visible(&screen);
         for part in [
             Part::Search,
@@ -718,7 +718,7 @@ mod tests {
 
     #[test]
     fn a_press_outside_every_part_releases_what_was_held() {
-        let mut screen = screen();
+        let mut screen = new_screen();
         let items = visible(&screen);
         let sort = at_part(&screen, Part::Sort);
         let _ = screen.press(sort, &items);
@@ -745,7 +745,7 @@ mod tests {
 
     #[test]
     fn a_resize_keeps_the_hit_test_on_what_is_drawn() {
-        let mut screen = screen();
+        let mut screen = new_screen();
         let sort = at_part(&screen, Part::Sort);
         let _ = screen.moved(sort);
         assert_eq!(screen.hit().map(|hit| hit.part), Some(Part::Sort));
@@ -759,7 +759,7 @@ mod tests {
 
     #[test]
     fn losing_focus_does_not_leave_a_button_held() {
-        let mut screen = screen();
+        let mut screen = new_screen();
         let items = visible(&screen);
         let _ = screen.press(at_part(&screen, Part::Sort), &items);
         assert!(screen.is_held(Part::Sort));
@@ -769,7 +769,7 @@ mod tests {
 
     #[test]
     fn sorting_by_name_and_by_emc_are_different_orders() {
-        let mut screen = screen();
+        let mut screen = new_screen();
         let values = |item: &str| match item {
             "minecraft:coal" => 128,
             "minecraft:diamond" => 8192,
@@ -793,7 +793,7 @@ mod tests {
         // This is the rule the click handler turns on: a control or a cell
         // swallows the click (a cell answers with the placeholder notice), a
         // real slot never does, so the engine can move its item.
-        let mut screen = screen();
+        let mut screen = new_screen();
         let items = visible(&screen);
         // A cell: not a slot, and a press leaves the placeholder notice.
         assert!(!Part::Cell(0).is_slot());
@@ -825,10 +825,10 @@ mod tests {
 
     #[test]
     fn every_real_slot_has_a_tooltip() {
-        let screen = screen();
+        let screen = new_screen();
         let items = visible(&screen);
         let mut screen = screen;
-        for index in 0..super::layout::SLOT_COUNT {
+        for index in 0..crate::ui::layout::SLOT_COUNT {
             screen.mouse = at_part(&screen, Part::Slot(index));
             assert!(
                 screen.tooltip(&items).is_some(),
@@ -839,7 +839,7 @@ mod tests {
 
     #[test]
     fn the_search_matches_a_path_word_and_ignores_case() {
-        let mut screen = screen();
+        let mut screen = new_screen();
         screen.browser.search = "GOLD".to_owned();
         assert_eq!(
             screen.browser.visible(&PREVIEW_ITEMS, |_| 0),
