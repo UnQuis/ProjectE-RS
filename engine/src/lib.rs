@@ -10,6 +10,7 @@ use horizon_client::mod_api::*;
 
 mod data;
 mod emc;
+mod energy;
 mod machines;
 mod transaction;
 
@@ -33,40 +34,20 @@ impl Hooks for ProjectE {
         table.template = "minecraft:crafting_table".to_string();
         table.item = true;
 
-        event.blocks.push(Default::default());
-        let collector = event.blocks.last_mut().unwrap();
-        collector.id = machines::COLLECTOR.to_string();
-        collector.template = "minecraft:stone".to_string();
-        collector.item = true;
-
-        event.blocks.push(Default::default());
-        let relay = event.blocks.last_mut().unwrap();
-        relay.id = machines::RELAY.to_string();
-        relay.template = "minecraft:stone".to_string();
-        relay.item = true;
+        for id in machines::COLLECTORS.into_iter().chain(machines::RELAYS) {
+            event.blocks.push(Default::default());
+            let machine = event.blocks.last_mut().unwrap();
+            machine.id = id.to_string();
+            machine.template = "minecraft:furnace".to_string();
+            machine.item = true;
+        }
     }
 
     fn items(&self, event: &mut ItemsEvent<'_>) {
         item(event, PHILOSOPHERS_STONE, "minecraft:diamond", 1);
-        item(event, "projecte:klein_star_ein", "minecraft:nether_star", 1);
-        item(
-            event,
-            "projecte:klein_star_zwei",
-            "minecraft:nether_star",
-            1,
-        );
-        item(
-            event,
-            "projecte:klein_star_drei",
-            "minecraft:nether_star",
-            1,
-        );
-        item(
-            event,
-            "projecte:klein_star_vier",
-            "minecraft:nether_star",
-            1,
-        );
+        for id in energy::KLEIN_STARS {
+            item(event, id, "minecraft:nether_star", 1);
+        }
         item(event, "projecte:dark_matter", "minecraft:coal", 64);
         item(event, "projecte:red_matter", "minecraft:redstone", 64);
         item(event, "projecte:alchemical_coal", "minecraft:coal", 64);
@@ -79,6 +60,16 @@ impl Hooks for ProjectE {
         );
     }
 
+    fn component_types(&self, event: &mut ComponentTypesEvent<'_>) {
+        if !event
+            .types
+            .iter()
+            .any(|id| id == energy::STORED_EMC_COMPONENT)
+        {
+            event.types.push(energy::STORED_EMC_COMPONENT.to_string());
+        }
+    }
+
     fn block_entity(
         &self,
         _host: &mut dyn Host,
@@ -89,6 +80,14 @@ impl Hooks for ProjectE {
 
     fn block_entity_ticks(&self, _host: &dyn Host, event: &mut BlockEntityTicksEvent<'_>) {
         event.ticks = machines::has_tick(event.block);
+    }
+
+    fn block_entity_container(
+        &self,
+        _host: &dyn Host,
+        event: &mut BlockEntityContainerEvent<'_>,
+    ) -> Option<ModContainer> {
+        machines::container(event.block)
     }
 
     fn block_entity_tick(&self, host: &mut dyn Host, event: &mut BlockEntityTickEvent<'_>) {
@@ -105,6 +104,9 @@ impl Hooks for ProjectE {
             return Flow::Continue;
         }
         if machines::is_machine(&block) {
+            if !host.sneaking() {
+                return Flow::Continue;
+            }
             let Some(player) = host.acting_player() else {
                 return Flow::Continue;
             };
@@ -262,7 +264,14 @@ impl Hooks for ProjectE {
         }
     }
 
-    fn tooltip(&self, _host: &dyn Host, event: &mut TooltipEvent<'_>) {
+    fn tooltip(&self, host: &dyn Host, event: &mut TooltipEvent<'_>) {
+        if let Some(capacity) = energy::capacity(&event.stack.item) {
+            let stored = energy::stored_emc(host, event.stack).unwrap_or(0);
+            event.lines.push((
+                Text::literal(format!("§bStored EMC: §f{stored} / {capacity}")),
+                u32::MAX,
+            ));
+        }
         let value = emc::value(&event.stack.item);
         if value > 0 {
             event
@@ -585,6 +594,70 @@ const RECIPES: &[(&str, &[&str], &str, u32)] = &[
         1,
     ),
     (
+        "energy_collector_mk2",
+        &[
+            machines::COLLECTORS[0],
+            machines::COLLECTORS[0],
+            machines::COLLECTORS[0],
+            machines::COLLECTORS[0],
+            machines::COLLECTORS[0],
+            machines::COLLECTORS[0],
+            machines::COLLECTORS[0],
+            machines::COLLECTORS[0],
+            "minecraft:diamond",
+        ],
+        machines::COLLECTORS[1],
+        1,
+    ),
+    (
+        "energy_collector_mk3",
+        &[
+            machines::COLLECTORS[1],
+            machines::COLLECTORS[1],
+            machines::COLLECTORS[1],
+            machines::COLLECTORS[1],
+            machines::COLLECTORS[1],
+            machines::COLLECTORS[1],
+            machines::COLLECTORS[1],
+            machines::COLLECTORS[1],
+            "minecraft:nether_star",
+        ],
+        machines::COLLECTORS[2],
+        1,
+    ),
+    (
+        "antimatter_relay_mk2",
+        &[
+            machines::RELAYS[0],
+            machines::RELAYS[0],
+            machines::RELAYS[0],
+            machines::RELAYS[0],
+            machines::RELAYS[0],
+            machines::RELAYS[0],
+            machines::RELAYS[0],
+            machines::RELAYS[0],
+            "minecraft:diamond",
+        ],
+        machines::RELAYS[1],
+        1,
+    ),
+    (
+        "antimatter_relay_mk3",
+        &[
+            machines::RELAYS[1],
+            machines::RELAYS[1],
+            machines::RELAYS[1],
+            machines::RELAYS[1],
+            machines::RELAYS[1],
+            machines::RELAYS[1],
+            machines::RELAYS[1],
+            machines::RELAYS[1],
+            "minecraft:nether_star",
+        ],
+        machines::RELAYS[2],
+        1,
+    ),
+    (
         "alchemical_coal",
         &[
             "minecraft:coal",
@@ -702,6 +775,30 @@ const RECIPES: &[(&str, &[&str], &str, u32)] = &[
             "minecraft:nether_star",
         ],
         "projecte:klein_star_vier",
+        1,
+    ),
+    (
+        "klein_star_sphere",
+        &[
+            "projecte:klein_star_vier",
+            "projecte:klein_star_vier",
+            "projecte:klein_star_vier",
+            "projecte:klein_star_vier",
+            "minecraft:nether_star",
+        ],
+        "projecte:klein_star_sphere",
+        1,
+    ),
+    (
+        "klein_star_omega",
+        &[
+            "projecte:klein_star_sphere",
+            "projecte:klein_star_sphere",
+            "projecte:klein_star_sphere",
+            "projecte:klein_star_sphere",
+            "minecraft:nether_star",
+        ],
+        "projecte:klein_star_omega",
         1,
     ),
 ];

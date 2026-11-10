@@ -1,4 +1,4 @@
-//! Per-player ProjectE data and block-machine buffers.
+//! Per-player ProjectE data.
 
 use std::collections::BTreeSet;
 
@@ -71,8 +71,8 @@ fn decode_i64(data: &Compound) -> Result<i64, AttachmentError> {
     }
 }
 
-/// EMC accumulated by a collector or relay. Kept on the block entity holder so
-/// it survives unloads and restarts.
+/// Legacy storage used by PR #3. Kept only to migrate existing machine buffers
+/// into the block entity's NBT field when the machine first ticks after upgrade.
 pub static BUFFER: AttachmentType<i64> = AttachmentType {
     namespace: "projecte",
     name: "buffer",
@@ -93,12 +93,24 @@ pub fn set(host: &mut dyn horizon_client::mod_api::Host, uuid: u128, data: Playe
     let _ = PLAYER.set(host, Holder::Player(uuid), data);
 }
 
-pub fn add_emc(host: &mut dyn horizon_client::mod_api::Host, uuid: u128, amount: i64) -> i64 {
-    let mut data = get(host, uuid);
+pub fn try_add_emc(
+    host: &mut dyn horizon_client::mod_api::Host,
+    uuid: u128,
+    amount: i64,
+) -> Result<i64, AttachmentError> {
+    let mut data = PLAYER.get(host, Holder::Player(uuid))?;
     data.emc = data.emc.saturating_add(amount).max(0);
     let emc = data.emc;
-    set(host, uuid, data);
-    emc
+    PLAYER.set(host, Holder::Player(uuid), data)?;
+    Ok(emc)
+}
+
+#[expect(
+    dead_code,
+    reason = "legacy wrapper retained for callers outside the machine path"
+)]
+pub fn add_emc(host: &mut dyn horizon_client::mod_api::Host, uuid: u128, amount: i64) -> i64 {
+    try_add_emc(host, uuid, amount).unwrap_or_else(|_| get(host, uuid).emc)
 }
 
 #[expect(
