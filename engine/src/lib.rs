@@ -552,10 +552,10 @@ impl Hooks for ProjectE {
     // `ui::screen`, which keeps the one screen state and checks that the open
     // menu is the table's, so these are one line each.
 
-    /// `native_screen` (API 19): lay out the table's 54-slot menu — where its
+    /// `native_screen` (API 19): lay out the table's nine-slot menu — where its
     /// slots are and where the player's inventory starts. Asked on the client
     /// and on the server, so the slots the client draws and the slots the
-    /// server has are the same 38.
+    /// server has are the same 45.
     fn screen(&self, _host: &dyn Host, event: &mut ScreenEvent<'_>) -> Option<NativeScreen> {
         // `native_screen`'s output is `&mut Option<NativeScreen>` with the
         // `replace` contract, so the trait returns the output's inner type and
