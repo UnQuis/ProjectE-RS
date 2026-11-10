@@ -165,7 +165,7 @@ impl Browser {
             .collect();
         match self.sort {
             Sort::Emc => items.sort_by(|a, b| emc(b).cmp(&emc(a)).then_with(|| a.cmp(b))),
-            Sort::Name => items.sort_by(|a, b| a.cmp(b)),
+            Sort::Name => items.sort(),
         }
         items
     }
