@@ -583,12 +583,14 @@ pub(crate) fn collect(host: &mut dyn Host, pos: [i32; 3], player: u128) {
     });
     if collected > 0 {
         match data::try_add_emc(host, player, collected) {
-            Ok(total) => host.tell(
-                player,
-                Text::literal(format!(
-                    "§dCollected §e{collected} EMC§d. Balance: §e{total}§d."
-                )),
-            ),
+            Ok(total) => {
+                host.tell(
+                    player,
+                    Text::literal(format!(
+                        "§dCollected §e{collected} EMC§d. Balance: §e{total}§d."
+                    )),
+                );
+            }
             Err(_) => {
                 host.change_mod_block_entity(pos, &mut |entity| {
                     if entity.id == BLOCK_ENTITY {
@@ -603,7 +605,7 @@ pub(crate) fn collect(host: &mut dyn Host, pos: [i32; 3], player: u128) {
                     Text::literal(
                         "§cCould not save your EMC balance; machine buffer was restored.",
                     ),
-                )
+                );
             }
         }
     } else {
