@@ -85,6 +85,10 @@ jobs:
           PY
           grep -F 'path = "../../horizon/crates/horizon-client"' engine/Cargo.toml
 
+      - name: Validate mod metadata, resources and gameplay tables
+        working-directory: projecte-rs
+        run: python3 tools/gate.py --python-only
+
       - name: Check formatting
         working-directory: projecte-rs
         run: cargo fmt --all -- --check
