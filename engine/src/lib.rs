@@ -466,10 +466,7 @@ impl Hooks for ProjectE {
                 .map(|conversion| {
                     format!(
                         "{}x{} -> {}x{}",
-                        conversion.from_count,
-                        conversion.from,
-                        conversion.to_count,
-                        conversion.to
+                        conversion.from_count, conversion.from, conversion.to_count, conversion.to
                     )
                 })
                 .unwrap_or_else(|| "none".to_string());
