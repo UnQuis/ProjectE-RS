@@ -61,6 +61,6 @@ Do not replace this with a read-copy-write sequence: two machines could otherwis
 
 - The current Collector/Relay pair is the first energy slice, not the complete ProjectE machine lineup.
 - Current gameplay constants are preserved from ProjectE-RS PR #3: Collector generation 1 EMC/tick and 100,000 capacity; Relay capacity 1,000,000 and a 4 EMC/tick transfer limit.
-- Relays currently act as buffers and can receive from adjacent Collectors; Relay-to-Relay routing and machine input/output slots are not implemented yet.
+- Relays act as buffers and receive EMC from adjacent Collectors. Collector/Relay machine slots are implemented; Relay-to-Relay routing and Collector fuel upgrades are not implemented yet.
 - Klein Stars have persistent component storage and can be charged/discharged through Collector and Relay machine slots. Direct player-inventory transfer is not implemented yet.
 - Attachment read/write errors in the existing player-data layer are a separate cleanup item; do not silently copy those patterns into the energy backend.
