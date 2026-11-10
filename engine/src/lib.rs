@@ -8,6 +8,7 @@ use std::sync::Arc;
 
 use horizon_client::mod_api::*;
 
+pub mod condenser;
 mod alchemical;
 mod data;
 mod emc;
