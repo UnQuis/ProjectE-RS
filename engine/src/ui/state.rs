@@ -12,7 +12,7 @@
 //! table's own menu) and are handled by `ui::screen`; nothing in this module
 //! touches them.
 
-use super::layout::{Control, Layout, PAGE_SIZE, Part};
+use super::layout::{Layout, PAGE_SIZE, Part};
 use super::localization::{self, Language};
 
 /// The preview catalogue the screen browses until the knowledge system is
@@ -468,8 +468,9 @@ fn item_tooltip(item: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ui::layout::Control;
 
-    fn screen() -> TableScreen {
+    fn new_new_screen() -> TableScreen {
         TableScreen::new(Language::English, [640.0, 360.0])
     }
 
@@ -817,7 +818,7 @@ mod tests {
         for index in 0..36 {
             assert!(!Part::Cell(index).is_slot());
         }
-        for index in 0..super::layout::SLOT_COUNT {
+        for index in 0..crate::ui::layout::SLOT_COUNT {
             assert!(!Part::Slot(index).is_control());
         }
     }
