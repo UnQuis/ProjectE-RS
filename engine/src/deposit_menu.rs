@@ -40,7 +40,7 @@ use std::sync::{Mutex, MutexGuard};
 
 use horizon_client::mod_api::{Host, ItemStack, Text};
 
-use crate::data;
+use crate::{data, deposit};
 
 /// The module's menu shape, so the layout and the click handler cannot drift.
 pub(crate) mod layout {
@@ -306,8 +306,6 @@ pub(crate) fn report(host: &mut dyn Host, uuid: u128, result: Deposited) {
     }
 }
 
-/// The item ids a deposit of these stacks would teach, for the tooltip.
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -347,12 +345,14 @@ mod tests {
 
     #[test]
     fn only_the_confirm_slot_is_a_confirm_click() {
-        assert_eq!(confirm_slot(CONFIRM as i32, 1), Some(CONFIRM));
+        let uuid = 0xface_u128;
+        lock().insert(uuid, 1);
+        assert_eq!(confirm_slot(uuid, 1, CONFIRM as i32), Some(CONFIRM));
         for other in [0i32, 9, 17, 19, 20, 26, 27, -999] {
-            assert_eq!(confirm_slot(other, 1), None, "slot {other}");
+            assert_eq!(confirm_slot(uuid, 1, other), None, "slot {other}");
         }
-        // A negative window slot is not a confirm either.
-        assert_eq!(confirm_slot(-1, 1), None);
+        forget(uuid, 1);
+        assert_eq!(confirm_slot(uuid, 1, CONFIRM as i32), None);
     }
 
     #[test]
