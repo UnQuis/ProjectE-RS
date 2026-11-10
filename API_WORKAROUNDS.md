@@ -55,7 +55,7 @@ Horizon has the `item_energy_buffer` capability hook (API 307), but the pinned t
 
 ## 3. Neighbour transfer through block-entity mutation
 
-`Host::mod_block_entity` returns a copy for reading. `Host::change_mod_block_entity` applies a mutation to the live neighbouring block entity. ProjectE uses the latter for the actual write, and only runs it on the authoritative server tick.
+`Host::mod_block_entity` returns a copy for reading. `Host::change_mod_block_entity` applies a mutation to the live block entity. ProjectE uses the latter for writes and only calls it from server-authoritative machine ticks or player interactions.
 
 Do not replace this with a read-copy-write sequence: two machines could otherwise act on stale snapshots and duplicate or lose EMC.
 
