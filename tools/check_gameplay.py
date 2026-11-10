@@ -54,7 +54,7 @@ def parse_emc(source: str) -> tuple[dict[str, int], list[str]]:
     if not values:
         errors.append("emc.rs: no literal EMC entries were parsed")
     checked = block_after(source, "pub fn checked_cost") or block_after(source, "fn checked_cost")
-    if checked is None or "checked_mul" not in checked or "i64::try_from" not in checked:
+    if checked is not None and ("checked_mul" not in checked or "i64::try_from" not in checked):
         errors.append("emc.rs: checked_cost must use checked_mul and checked i64 conversion")
     return values, errors
 
