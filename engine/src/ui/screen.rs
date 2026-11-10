@@ -29,7 +29,7 @@ use std::sync::Mutex;
 use horizon_client::mod_api::{Flow, Host, HudBatch, NativeScreen, NativeScreenView, Text};
 
 use super::atlas;
-use super::layout::{self, Part};
+use super::layout;
 use super::localization::Language;
 use super::state::{Response, TableScreen};
 
