@@ -50,7 +50,7 @@ use horizon_client::mod_api::{Host, HudBatch, NativeScreen, NativeScreenView};
 use super::layout::{self, Control, Layout, Part, Rect};
 // The menu's shape is geometry, so it lives in `super::layout` with the rest
 // of it: how many slots there are, and which of them are the inputs.
-pub(crate) use super::layout::{INPUT_SLOTS, MENU_SLOTS, SLOT_COUNT, STORAGE_SLOTS};
+pub(crate) use super::layout::{INPUT_SLOTS, MENU_SLOTS, SLOT_COUNT};
 use super::localization;
 use super::state::TableScreen;
 
@@ -262,7 +262,9 @@ fn table_pos(host: &dyn Host) -> Option<[i32; 3]> {
 pub(crate) fn browse_items(state: &TableScreen) -> Vec<&'static str> {
     state
         .browser
-        .visible(&super::state::PREVIEW_ITEMS, crate::emc::value)
+        .visible(&super::state::PREVIEW_ITEMS, |id| {
+            i64::try_from(crate::emc::value(id)).unwrap_or(i64::MAX)
+        })
 }
 
 // --- the panels ------------------------------------------------------------
@@ -715,7 +717,7 @@ fn centred_in(host: &dyn Host, rect: Rect, line: &str, pad: f32) -> [f32; 2] {
 }
 
 fn grid_centre_x() -> f32 {
-    let grid = Layout::Layout::fit([layout::PANEL_W, layout::PANEL_H]).grid();
+    let grid = Layout::fit([layout::PANEL_W, layout::PANEL_H]).grid();
     grid[0] + grid[2] / 2.0
 }
 
@@ -820,7 +822,6 @@ mod tests {
 
     #[test]
     fn the_inventory_starts_below_the_panels_own_rows() {
-        let layout = Layout::fit([640.0, 360.0]);
         let native = native_screen();
         assert_eq!(native.inventory_x, Layout::inventory_origin()[0]);
         assert_eq!(native.inventory_y, Layout::inventory_origin()[1]);
@@ -830,10 +831,10 @@ mod tests {
     }
 
     #[test]
-    fn the_menu_type_is_vanillas_six_row_chest() {
-        // `MOD_MENUS` in the pinned engine pairs this name with 54 slots.
-        assert_eq!(MENU, "minecraft:generic_9x6");
-        assert_eq!(MENU_SLOTS, 54);
+    fn the_menu_type_is_vanillas_single_row_chest() {
+        // `MOD_MENUS` in the pinned engine pairs this name with nine slots.
+        assert_eq!(MENU, "minecraft:generic_9x1");
+        assert_eq!(MENU_SLOTS, 9);
     }
 
     #[test]
