@@ -57,6 +57,34 @@ pub static PLAYER: AttachmentType<PlayerData> = AttachmentType {
     sync: false,
 };
 
+fn encode_i64(value: &i64) -> Result<Compound, AttachmentError> {
+    let mut out = Compound::new();
+    out.insert("value".into(), Tag::Long(*value));
+    Ok(out)
+}
+
+fn decode_i64(data: &Compound) -> Result<i64, AttachmentError> {
+    match data.get(&"value".into()) {
+        Some(Tag::Long(v)) => Ok(*v),
+        Some(Tag::Int(v)) => Ok(i64::from(*v)),
+        _ => Ok(0),
+    }
+}
+
+/// Legacy storage used by PR #3. Kept only to migrate existing machine buffers
+/// into the block entity's NBT field when the machine first ticks after upgrade.
+pub static BUFFER: AttachmentType<i64> = AttachmentType {
+    namespace: "projecte",
+    name: "buffer",
+    default: || 0,
+    codec: Some(AttachmentCodec {
+        encode: encode_i64,
+        decode: decode_i64,
+    }),
+    copy_on_death: false,
+    sync: false,
+};
+
 pub fn get(host: &mut dyn horizon_client::mod_api::Host, uuid: u128) -> PlayerData {
     PLAYER
         .get(host, Holder::Player(uuid))

@@ -4,7 +4,7 @@
 //! deliberate compatibility workaround, documented in API_WORKAROUNDS.md.
 
 use horizon_client::items::ItemStack;
-use horizon_client::mod_api::{Compound, Host, ModBlockEntity, ModContainer, Tag, Text};
+use horizon_client::mod_api::{Compound, Holder, Host, ModBlockEntity, ModContainer, Tag, Text};
 
 use crate::{data, emc, energy};
 
@@ -212,10 +212,17 @@ pub(crate) fn tick(
     if event.entity.id != BLOCK_ENTITY {
         return;
     }
+    let block = host.block(event.pos);
+    if event.entity.nbt.get(&EMC_KEY.into()).is_none() {
+        let holder = Holder::BlockEntity(event.pos);
+        let legacy = data::BUFFER.get(host, holder).unwrap_or(0).clamp(0, capacity(&block).unwrap_or(0));
+        write_emc(&mut event.entity.nbt, legacy);
+        let _ = data::BUFFER.set(host, holder, 0);
+    }
     if event.entity.items.len() < 3 {
         event.entity.items.resize(3, None);
     }
-    match host.block(event.pos).as_str() {
+    match block.as_str() {
         COLLECTOR => collector_tick(host, event),
         RELAY => relay_tick(host, event),
         _ => {}

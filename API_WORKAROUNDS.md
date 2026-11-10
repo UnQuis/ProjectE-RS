@@ -12,6 +12,7 @@ Pinned Horizon revision: `fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca`.
 
 - Collector and Relay store EMC in their own block entity's saved NBT compound, under `emc`.
 - The Collector's current buffer is updated directly in `BlockEntityTickEvent.entity`.
+- A one-time compatibility migration reads the legacy `projecte:buffer` attachment from PR #3 and moves it into the `emc` NBT field on the machine's first tick.
 - Adjacent Relay block entities are modified through `Host::change_mod_block_entity`.
 - Machine collection clears the NBT value and credits the player's ProjectE attachment.
 - The storage is server-authoritative and persists with the block entity.
@@ -24,11 +25,12 @@ We therefore cannot safely use Horizon's energy handler as the source of truth f
 
 **Migration when Host access is added**
 
-1. Register `ModEnergyBuffer` for each machine through `block_entity_energy`.
-2. Replace reads/writes of `emc` with the official energy accessors.
-3. Route collector-to-relay transfer through the official transfer helper.
-4. Migrate old `emc` values to the native buffer exactly once; never initialize both stores independently.
-5. Remove the NBT workaround and its migration code only after old worlds are covered.
+1. Preserve the one-time PR #3 attachment migration before replacing the NBT backend.
+2. Register `ModEnergyBuffer` for each machine through `block_entity_energy`.
+3. Replace reads/writes of `emc` with the official energy accessors.
+4. Route collector-to-relay transfer through the official transfer helper.
+5. Migrate old `emc` values to the native buffer exactly once; never initialize both stores independently.
+6. Remove the NBT workaround and its migration code only after old worlds are covered.
 
 ## 2. Klein Star charge: ProjectE custom component instead of native item energy
 
