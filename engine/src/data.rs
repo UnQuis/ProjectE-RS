@@ -105,23 +105,6 @@ pub fn try_add_emc(
     Ok(emc)
 }
 
-pub fn add_emc(host: &mut dyn horizon_client::mod_api::Host, uuid: u128, amount: i64) -> i64 {
-    try_add_emc(host, uuid, amount).unwrap_or_else(|_| get(host, uuid).emc)
-}
-
-pub fn take_emc(host: &mut dyn horizon_client::mod_api::Host, uuid: u128, amount: i64) -> bool {
-    if amount < 0 {
-        return false;
-    }
-    let mut data = get(host, uuid);
-    if data.emc < amount {
-        return false;
-    }
-    data.emc -= amount;
-    set(host, uuid, data);
-    true
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

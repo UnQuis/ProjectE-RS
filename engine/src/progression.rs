@@ -39,16 +39,20 @@ impl Status {
 /// One step of the progression.
 pub(crate) struct Node {
     /// Stable identifier, used by `PROGRESSION.md` and by the tests.
+    #[cfg_attr(not(test), allow(dead_code))]
     pub id: &'static str,
     pub name: &'static str,
     /// Coarse stage: 0 is the Philosopher's Stone, 4 is endgame.
+    #[cfg_attr(not(test), allow(dead_code))]
     pub stage: u8,
     pub status: Status,
     /// Ids of earlier nodes this one needs.
+    #[cfg_attr(not(test), allow(dead_code))]
     pub prerequisites: &'static [&'static str],
     /// The gameplay the node unlocks.
     pub unlocks: &'static str,
     /// The Horizon capabilities the node relies on, or needs and lacks.
+    #[cfg_attr(not(test), allow(dead_code))]
     pub horizon: &'static str,
 }
 

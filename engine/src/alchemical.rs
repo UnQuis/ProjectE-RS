@@ -68,6 +68,7 @@ pub(crate) fn fuel_block(id: &str) -> Option<&'static str> {
 }
 
 /// The fuel a block unpacks into, if it is a fuel block.
+#[cfg(test)]
 pub(crate) fn fuel_of_block(block: &str) -> Option<&'static str> {
     FUEL_BLOCKS
         .iter()
@@ -279,6 +280,7 @@ fn render(family: &str, suffix: &str) -> &'static str {
 /// A conversion the Philosopher's Stone performs in a crafting grid, as the
 /// data-pack recipes in [`crate::recipes`] express it. The amounts are chosen
 /// so both directions carry the same EMC.
+#[cfg(test)]
 pub(crate) struct StoneConversion {
     pub from: &'static str,
     pub from_count: u32,
@@ -286,6 +288,7 @@ pub(crate) struct StoneConversion {
     pub to_count: u32,
 }
 
+#[cfg(test)]
 pub(crate) const STONE_CONVERSIONS: &[StoneConversion] = &[
     StoneConversion {
         from: "minecraft:iron_ingot",
@@ -339,6 +342,7 @@ pub(crate) const STONE_CONVERSIONS: &[StoneConversion] = &[
 
 /// Total EMC of `count` items of `id`, or `None` when the total cannot be
 /// represented.
+#[cfg(test)]
 pub(crate) fn total_value(id: &str, count: u32) -> Option<u64> {
     let each = emc::value(id);
     if each == 0 {
