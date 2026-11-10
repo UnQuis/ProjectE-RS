@@ -51,7 +51,7 @@ The generated `Host` methods default to a panic in test doubles. This is useful:
 The current `ProjectE` implementation uses these catalog hooks:
 
 - `blocks`, `items`
-- `block_entity`, `block_entity_ticks`, `block_entity_tick`
+- `block_entity`, `block_entity_ticks`, `block_entity_container`, `block_entity_tick`, `component_types`
 - `right_click_block`, `use_item`
 - `menu_clicked`
 - `register_commands`, `perform_command`
@@ -101,15 +101,9 @@ The pinned API includes `ItemEnergyBuffer` and `item_energy_buffer` (Native Hook
 
 A mod declares an item buffer's capacity and maximum one-operation insert/extract amounts. Horizon stores its charge in the stack's `minecraft:custom_data` as integer `horizon_energy`, which is saved and synchronized with the item stack.
 
-Host helpers:
+The engine documents `native_item_energy`, `native_item_energy_insert` and `native_item_energy_extract`, but these methods are not callable through the pinned trait-mod `Host` surface. The `item_energy_buffer` registration hook exists, but the trait mod cannot currently inspect or update its native item-energy state through Host.
 
-- `item_energy(stack)`: inspect one item, including its charge, capacity and limits.
-- `item_energy_insert(stack, amount)`: return the amount accepted and the resulting single-item stack.
-- `item_energy_extract(stack, amount)`: return the amount extracted and the resulting single-item stack.
-
-These helpers do not mutate the input stack. To apply a result to a multi-count stack, the caller must split/shrink one item and replace it with the returned single-item stack. Leaving the returned value unused is the simulation path. An empty item carries no charge, so it can stack with a fresh uncharged item.
-
-**ProjectE implication:** Klein Stars are a natural use of this API. Their charge should be represented by the native item-energy capability rather than a parallel custom-data convention.
+**ProjectE implication:** Klein Stars use a registered ProjectE component, `projecte:stored_emc`, read and updated through the component Host bridge. Collector and Relay machine slots charge and discharge that component. This is a deliberate workaround. See [API_WORKAROUNDS.md](API_WORKAROUNDS.md).
 
 ## 5. Attachments and persistent state
 
