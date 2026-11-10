@@ -722,7 +722,7 @@ fn grid_centre_x() -> f32 {
 }
 
 fn grid_centre_y() -> f32 {
-    let grid = Layout::Layout::fit([layout::PANEL_W, layout::PANEL_H]).grid();
+    let grid = Layout::fit([layout::PANEL_W, layout::PANEL_H]).grid();
     grid[1] + grid[3] / 2.0
 }
 
