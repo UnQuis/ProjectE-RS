@@ -266,7 +266,7 @@ impl Hooks for ProjectE {
 
     fn tooltip(&self, host: &dyn Host, event: &mut TooltipEvent<'_>) {
         if let Some(capacity) = energy::capacity(&event.stack.item) {
-            let stored = energy::stored_emc(host, &event.stack);
+            let stored = energy::stored_emc(host, &event.stack).unwrap_or(0);
             event.lines.push((
                 Text::literal(format!("§bStored EMC: §f{stored} / {capacity}")),
                 u32::MAX,

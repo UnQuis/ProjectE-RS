@@ -4,7 +4,7 @@
 //! trait-mod API exposes the native item-energy accessors. See API_WORKAROUNDS.md.
 
 use horizon_client::items::ItemStack;
-use horizon_client::mod_api::{Host, Tag};
+use horizon_client::mod_api::{Host, NativeComponentError, Tag};
 
 pub(crate) const STORED_EMC_COMPONENT: &str = "projecte:stored_emc";
 
@@ -29,15 +29,18 @@ pub(crate) fn capacity(item: &str) -> Option<i64> {
     })
 }
 
-pub(crate) fn stored_emc(host: &dyn Host, stack: &ItemStack) -> i64 {
+pub(crate) fn stored_emc(
+    host: &dyn Host,
+    stack: &ItemStack,
+) -> Result<i64, NativeComponentError> {
     let Some(capacity) = capacity(&stack.item) else {
-        return 0;
+        return Ok(0);
     };
-    match host.component(stack, STORED_EMC_COMPONENT) {
-        Ok(Some(Tag::Long(value))) => (*value).clamp(0, capacity),
-        Ok(Some(Tag::Int(value))) => i64::from(*value).clamp(0, capacity),
+    Ok(match host.component(stack, STORED_EMC_COMPONENT)? {
+        Some(Tag::Long(value)) => value.clamp(0, capacity),
+        Some(Tag::Int(value)) => i64::from(value).clamp(0, capacity),
         _ => 0,
-    }
+    })
 }
 
 /// Adds EMC to a Klein Star and returns the amount accepted.
@@ -45,7 +48,7 @@ pub(crate) fn charge(host: &dyn Host, stack: &mut ItemStack, available: i64) -> 
     let Some(capacity) = capacity(&stack.item) else {
         return 0;
     };
-    let current = stored_emc(host, stack);
+    let Ok(current) = stored_emc(host, stack) else { return 0 };
     let moved = available.max(0).min(capacity - current);
     if moved == 0 {
         return 0;
@@ -62,7 +65,7 @@ pub(crate) fn charge(host: &dyn Host, stack: &mut ItemStack, available: i64) -> 
 
 /// Removes EMC from a Klein Star and returns the amount extracted.
 pub(crate) fn discharge(host: &dyn Host, stack: &mut ItemStack, room: i64) -> i64 {
-    let current = stored_emc(host, stack);
+    let Ok(current) = stored_emc(host, stack) else { return 0 };
     let moved = current.min(room.max(0));
     if moved == 0 {
         return 0;
