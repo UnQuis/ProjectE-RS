@@ -446,7 +446,7 @@ impl Hooks for ProjectE {
             let block = alchemical::fuel_block(&event.stack.item).unwrap_or("none");
             event.lines.push((
                 Text::literal(format!(
-                    "§6Alchemical fuel tier {} · {} burn ticks · prev: {} · next: {} · block: {}",
+                    "§6Alchemical fuel tier {} · {} reference burn ticks · prev: {} · next: {} · block: {}",
                     tier + 1,
                     burn,
                     previous,

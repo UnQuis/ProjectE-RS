@@ -143,7 +143,7 @@ pub(crate) fn container(block: &str) -> Option<ModContainer> {
                 vec![0, 3, 4, 5, 6, 7, 8],
                 vec![0, 3, 4, 5, 6, 7, 8],
             ],
-            inputs: vec![0, 3, 4, 5, 6, 7, 8],
+            inputs: vec![0, 1, 3, 4, 5, 6, 7, 8],
             outputs: vec![2],
             menu: Some("minecraft:generic_9x1".to_string()),
         });

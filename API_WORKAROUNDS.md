@@ -72,7 +72,7 @@ Do not replace this with a read-copy-write sequence: two machines could otherwis
 
 **Current implementation**
 
-- Energy Condenser MK1 uses the existing `projecte:machine` block entity and a nine-slot generic menu: slot 1 is the non-consumed target template, slot 2 is output, and slots 0 and 3–8 accept EMC-valued input.
+- Energy Condenser MK1 uses the existing `projecte:machine` block entity and a nine-slot generic menu: slot 1 is the player-set, non-consumed target template, slot 2 is output, and slots 0 and 3–8 accept EMC-valued input. The target slot is excluded from every automation face.
 - The target must have positive EMC. An absent or invalid target pauses item processing; input stacks remain untouched.
 - Input conversion and output production use the pure plans in `engine/src/condenser.rs`. The complete target `ItemStack` is cloned, preserving damage and custom components; output merging requires an exact item/damage/component match and respects `Host::max_stack_size`.
 - Collectors may feed adjacent Condensers directly. Relays may feed adjacent Relays only when the destination has a strictly lower fill ratio, or feed adjacent Condensers. Condensers are terminal sinks and cannot forward EMC.
