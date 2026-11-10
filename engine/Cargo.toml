@@ -1,0 +1,11 @@
+[package]
+name = "mod-projecte"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+horizon-client = { path = "/home/alexquasar/.local/share/horizon-launcher/native/source/fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca/crates/horizon-client" }
