@@ -9,7 +9,7 @@
 //!
 //! | hook | API | what it does here |
 //! |---|---|---|
-//! | `screen` | 19 | lays the table's 54-slot menu out |
+//! | `screen` | 19 | lays the table's nine-slot menu out |
 //! | `screen_draw` | 19 | draws the panel, its parts and the browser |
 //! | `screen_tooltip` | 20 | names the item or control under the pointer |
 //! | `screen_mouse_button_pressed_pre` | 80 | presses a control, focuses the search field |
@@ -79,7 +79,7 @@ fn client_locale() -> String {
 /// The engine asks on the client *and* on the server, because a slot left out
 /// is not in the menu on either side. The answer depends only on the block id
 /// and never on the client's window size, so both sides agree: the server
-/// places the same 38 slots the client draws.
+/// places the same 45 slots the client draws.
 pub(crate) fn screen(block: &str) -> Option<NativeScreen> {
     if block != crate::recipes::TABLE {
         return None;
