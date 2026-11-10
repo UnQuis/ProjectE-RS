@@ -21,6 +21,7 @@ pub(crate) struct Localized {
 }
 
 impl Localized {
+    #[allow(dead_code)]
     pub(crate) fn text(&self) -> &'static str {
         self.text
     }
@@ -129,6 +130,7 @@ pub(crate) const KEY_HINT_STORAGE: &str = "container.projecte.hint.storage";
 pub(crate) const KEY_NOTICE_PREFIX: &str = "container.projecte.notice";
 
 /// Every key this screen draws, so a test can prove each language covers them.
+#[allow(dead_code)]
 pub(crate) const KEYS: [&str; 27] = [
     KEY_TITLE,
     KEY_EMC,
@@ -325,9 +327,18 @@ mod tests {
 
     #[test]
     fn placeholders_are_filled_in_order_and_survive_a_short_list() {
-        assert_eq!(format(KEY_PAGE, &["2", "5"]), "Page 2 / 5");
-        assert_eq!(format(KEY_PAGE, &["2"]), "Page 2 / {}");
-        assert_eq!(format(KEY_PAGE, &[]), "Page {} / {}");
+        assert_eq!(
+            format(text(Language::English, KEY_PAGE), &["2", "5"]),
+            "Page 2 / 5"
+        );
+        assert_eq!(
+            format(text(Language::English, KEY_PAGE), &["2"]),
+            "Page 2 / {}"
+        );
+        assert_eq!(
+            format(text(Language::English, KEY_PAGE), &[]),
+            "Page {} / {}"
+        );
         // A translation that moves the numbers still gets them in its order.
         assert_eq!(format("{} / {} страниц", &["1", "3"]), "1 / 3 страниц");
     }

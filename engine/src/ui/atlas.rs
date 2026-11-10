@@ -55,6 +55,7 @@ use super::localization;
 use super::state::TableScreen;
 
 /// This mod's id, for the helpers that name it (settings).
+#[allow(dead_code)]
 pub(crate) const MOD_ID: &str = "projecte";
 
 /// The menu type the table opens. Vanilla's, so a stock client shows the same
@@ -260,9 +261,9 @@ fn table_pos(host: &dyn Host) -> Option<[i32; 3]> {
 /// catalogue, filtered and sorted. One function so the drawing code, the
 /// tooltips and the click handler never disagree about what is shown.
 pub(crate) fn browse_items(state: &TableScreen) -> Vec<&'static str> {
-    state.browser.visible(&super::state::PREVIEW_ITEMS, |id| {
-        i64::try_from(crate::emc::value(id)).unwrap_or(i64::MAX)
-    })
+    state
+        .browser
+        .visible(&super::state::PREVIEW_ITEMS, crate::emc::value)
 }
 
 // --- the panels ------------------------------------------------------------
@@ -821,6 +822,7 @@ mod tests {
 
     #[test]
     fn the_inventory_starts_below_the_panels_own_rows() {
+        let _layout = Layout::fit([640.0, 360.0]);
         let native = native_screen();
         assert_eq!(native.inventory_x, Layout::inventory_origin()[0]);
         assert_eq!(native.inventory_y, Layout::inventory_origin()[1]);
@@ -831,7 +833,7 @@ mod tests {
 
     #[test]
     fn the_menu_type_is_vanillas_single_row_chest() {
-        // `MOD_MENUS` in the pinned engine pairs this name with nine slots.
+        // `MOD_MENUS` in the pinned engine pairs this name with 9 slots.
         assert_eq!(MENU, "minecraft:generic_9x1");
         assert_eq!(MENU_SLOTS, 9);
     }
@@ -856,9 +858,7 @@ mod tests {
             items,
             state
                 .browser
-                .visible(&crate::ui::state::PREVIEW_ITEMS, |id| {
-                    i64::try_from(crate::emc::value(id)).unwrap_or(i64::MAX)
-                })
+                .visible(&crate::ui::state::PREVIEW_ITEMS, crate::emc::value)
         );
         state.browser.filter = crate::ui::state::Filter::Tools;
         assert!(browse_items(&state).is_empty());

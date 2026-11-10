@@ -353,6 +353,9 @@ mod tests {
         for other in [0i32, 9, 17, 19, 20, 26, 27, -999] {
             assert_eq!(confirm_slot(uuid, 1, other), None, "slot {other}");
         }
+        // A negative window slot is not a confirm either.
+        assert_eq!(confirm_slot(uuid, -1, CONFIRM as i32), None);
+        assert_eq!(confirm_slot(uuid, 1, -1), None);
         forget(uuid, 1);
         assert_eq!(confirm_slot(uuid, 1, CONFIRM as i32), None);
     }

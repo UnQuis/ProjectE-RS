@@ -271,6 +271,7 @@ pub(crate) fn key_pressed(
 }
 
 /// Whether the table's screen is open.
+#[allow(dead_code)]
 pub(crate) fn is_open() -> bool {
     let guard = match STATE.lock() {
         Ok(guard) => guard,
@@ -306,7 +307,10 @@ fn take_notice() -> Option<&'static str> {
 /// to the module so the only way in production is a screen actually opening.
 #[cfg(test)]
 fn install(state: TableScreen) {
-    let mut guard = STATE.lock().unwrap();
+    let mut guard = match STATE.lock() {
+        Ok(guard) => guard,
+        Err(poisoned) => poisoned.into_inner(),
+    };
     *guard = Some(state);
 }
 

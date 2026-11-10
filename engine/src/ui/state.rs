@@ -147,7 +147,7 @@ impl Browser {
     pub(crate) fn visible(
         &self,
         all: &[&'static str],
-        emc: impl Fn(&str) -> i64,
+        emc: impl Fn(&str) -> u64,
     ) -> Vec<&'static str> {
         let needle = self.search.trim().to_lowercase();
         let mut items: Vec<&'static str> = all
@@ -301,6 +301,7 @@ impl TableScreen {
     }
 
     /// The item under the pointer, if it is over a cell of the page.
+    #[allow(dead_code)]
     pub(crate) fn cell_under(&self, items: &[&'static str]) -> Option<&'static str> {
         match self.hit().map(|hit| hit.part) {
             Some(Part::Cell(index)) => self.browser.page_items(items).get(index).copied(),
@@ -383,6 +384,7 @@ impl TableScreen {
 
     /// The pointer left the window or the screen: nothing stays held, or a
     /// button would draw pressed forever.
+    #[allow(dead_code)]
     pub(crate) fn focus_lost(&mut self) -> Response {
         self.press.held = None;
         Response::None
@@ -563,7 +565,7 @@ mod tests {
         }
         assert_eq!(screen.browser.search.chars().count(), MAX_SEARCH);
         // Control characters are not text.
-        let mut screen = new_screen();
+        screen = TableScreen::new(Language::English, [640.0, 360.0]);
         screen.typing = true;
         let _ = screen.typed('\u{7}');
         assert_eq!(screen.browser.search, "");

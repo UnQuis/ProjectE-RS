@@ -33,8 +33,10 @@ pub(crate) mod screen;
 pub(crate) mod state;
 
 /// This mod's namespace, as the screen's block and translation keys use it.
+#[allow(dead_code)]
 pub(crate) const MOD_ID: &str = "projecte";
 
 /// The translation key of the screen's title: the table block's own name, so
 /// the screen, the item and the server's menu title cannot disagree.
+#[allow(dead_code)]
 pub(crate) const TITLE_KEY: &str = "block.projecte.transmutation_table";

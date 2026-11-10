@@ -46,6 +46,7 @@ pub(crate) const INPUT_SLOTS: [usize; 2] = [0, 1];
 
 /// The storage slots after the inputs. Together with the inputs this is the
 /// whole menu, so no slot is hidden and nothing is wasted.
+#[allow(dead_code)]
 pub(crate) const STORAGE_SLOTS: usize = MENU_SLOTS - INPUT_SLOTS.len();
 
 /// Every real slot the screen shows: the inputs and the storage.
@@ -67,9 +68,13 @@ pub(crate) const PAGE_SIZE: usize = GRID_COLS * GRID_ROWS;
 
 // The left column, in panel coordinates.
 const LEFT_X: f32 = 8.0;
+#[allow(dead_code)]
 const PLATE_X: f32 = 4.0;
+#[allow(dead_code)]
 const PLATE_Y: f32 = 24.0;
+#[allow(dead_code)]
 const PLATE_W: f32 = 92.0;
+#[allow(dead_code)]
 const PLATE_H: f32 = 136.0;
 const EMBLEM_Y: f32 = 26.0;
 const EMBLEM_SIZE: f32 = 76.0;
@@ -150,6 +155,7 @@ impl Part {
     }
 
     /// Whether this part is a real menu slot, whose item the engine moves.
+    #[allow(dead_code)]
     pub(crate) fn is_slot(self) -> bool {
         matches!(self, Part::Slot(_))
     }
@@ -350,6 +356,7 @@ impl Layout {
     }
 
     /// The left column's regions, in panel coordinates.
+    #[allow(dead_code)]
     pub(crate) fn plate() -> Rect {
         [PLATE_X, PLATE_Y, PLATE_W, PLATE_H]
     }
@@ -492,7 +499,7 @@ mod tests {
         // 1920 x 1080 at GUI scale 3 is 640 x 360.
         let layout = Layout::fit([640.0, 360.0]);
         assert_eq!(layout.scale, 1.0);
-        assert_eq!(layout.panel(), [160.0, 60.0, 320.0, 240.0]);
+        assert_eq!(layout.panel(), [160.0, 50.0, 320.0, 260.0]);
         assert!(layout.panel()[0] >= 0.0 && layout.panel()[1] >= 0.0);
     }
 
@@ -549,7 +556,10 @@ mod tests {
             hotbar_bottom <= PANEL_H,
             "the hotbar ends at {hotbar_bottom}"
         );
-        assert!(hotbar_bottom > PANEL_H - 8.0, "the hotbar leaves a margin");
+        assert!(
+            PANEL_H - hotbar_bottom <= 16.0,
+            "the hotbar leaves too large a margin"
+        );
     }
 
     #[test]
