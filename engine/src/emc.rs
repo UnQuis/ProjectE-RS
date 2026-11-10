@@ -29,7 +29,9 @@ pub fn value(id: &str) -> u64 {
         return 0;
     }
     // ProjectE-style convention: a log is 32 EMC and planks are 8.
-    if id.ends_with("_log") || id.ends_with("_wood") || id.ends_with("_stem")
+    if id.ends_with("_log")
+        || id.ends_with("_wood")
+        || id.ends_with("_stem")
         || id.ends_with("_hyphae")
     {
         return 32;
@@ -72,8 +74,12 @@ pub fn checked_cost(value: u64, count: u32) -> Option<i64> {
 fn table_value(id: &str) -> Option<u64> {
     Some(match id {
         // Raw resources and building blocks.
-        "minecraft:cobblestone" | "minecraft:stone" | "minecraft:dirt"
-        | "minecraft:netherrack" | "minecraft:end_stone" | "minecraft:tuff" => 1,
+        "minecraft:cobblestone"
+        | "minecraft:stone"
+        | "minecraft:dirt"
+        | "minecraft:netherrack"
+        | "minecraft:end_stone"
+        | "minecraft:tuff" => 1,
         "minecraft:sand" | "minecraft:gravel" => 4,
         "minecraft:flint" => 4,
         "minecraft:clay" => 64,
@@ -140,12 +146,21 @@ fn table_value(id: &str) -> Option<u64> {
         "minecraft:baked_potato" => 128,
         "minecraft:wheat" => 24,
         "minecraft:wheat_seeds" => 16,
-        "minecraft:oak_log" | "minecraft:birch_log" | "minecraft:spruce_log"
-        | "minecraft:jungle_log" | "minecraft:acacia_log" | "minecraft:dark_oak_log"
-        | "minecraft:mangrove_log" | "minecraft:cherry_log" => 32,
-        "minecraft:oak_planks" | "minecraft:birch_planks" | "minecraft:spruce_planks"
-        | "minecraft:jungle_planks" | "minecraft:acacia_planks"
-        | "minecraft:dark_oak_planks" | "minecraft:mangrove_planks"
+        "minecraft:oak_log"
+        | "minecraft:birch_log"
+        | "minecraft:spruce_log"
+        | "minecraft:jungle_log"
+        | "minecraft:acacia_log"
+        | "minecraft:dark_oak_log"
+        | "minecraft:mangrove_log"
+        | "minecraft:cherry_log" => 32,
+        "minecraft:oak_planks"
+        | "minecraft:birch_planks"
+        | "minecraft:spruce_planks"
+        | "minecraft:jungle_planks"
+        | "minecraft:acacia_planks"
+        | "minecraft:dark_oak_planks"
+        | "minecraft:mangrove_planks"
         | "minecraft:cherry_planks" => 8,
         "minecraft:torch" => 9,
         "minecraft:chest" => 32,
@@ -278,10 +293,7 @@ mod tests {
         // The largest cost that still fits in an i64.
         assert_eq!(checked_cost(i64::MAX as u64, 1), Some(i64::MAX));
         // Largest even product below i64::MAX: (MAX / 2) * 2 == MAX - 1.
-        assert_eq!(
-            checked_cost((i64::MAX as u64) / 2, 2),
-            Some(i64::MAX - 1)
-        );
+        assert_eq!(checked_cost((i64::MAX as u64) / 2, 2), Some(i64::MAX - 1));
         assert_eq!(checked_cost(1, u32::MAX), Some(i64::from(u32::MAX)));
     }
 
