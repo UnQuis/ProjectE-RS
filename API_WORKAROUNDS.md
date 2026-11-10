@@ -122,3 +122,38 @@ Trade-offs: the write bypasses neighbour updates and block-entity drops (documen
 1. Register `projecte:emc` through `data_map_types` and ship the default values as a data-pack file.
 2. Replace `emc::table_value` lookups with a read of the merged map, keeping the vanilla family rules as a documented fallback for entries the map does not cover.
 3. Keep the static table as the shipped default data, not as a second runtime source of truth.
+
+## 8. The Transmutation Table screen: a vanilla menu screen, not a container screen
+
+**The problem.** The screen needs two things that the pinned API does not give at once: a screen this mod draws itself, and **real** inventory slots — items picked up, placed, split, swapped, shift-clicked, and returned to the player when the screen closes, all server-authoritative.
+
+**What the pinned revision offers.**
+
+- `native_mod_screen_open` (API 111) opens a client-only window with **no menu**. Nothing in it is a slot; a click there cannot move an item, and the server never hears of it.
+- `native_screen` (API 19) lays out a mod block's **menu**: it says where each of the container's `Slot`s is and where the player's inventory begins. The menu itself is the server's, driven by vanilla's menu engine, so a click on one of its slots is a real click that the server applies.
+
+There is no third route and no way to combine them: a mod screen has no slots, and a menu screen is the only place real slots exist.
+
+**What this mod does.** The table's block entity declares a `ModContainer` with `menu: Some("minecraft:generic_9x1")` and nine slots, and the screen is drawn with `native_screen`/`native_screen_draw`. `minecraft:generic_9x6` would give 54 slots, but 54 real slots plus a 9 x 4 browser plus the player's inventory do not fit in one 256-wide screen at 1:1, so the smaller vanilla menu is used and every one of its slots is shown.
+
+**The trade-offs, stated plainly.**
+
+1. **The browser is not a set of slots.** The engine draws a menu slot's own stack over whatever a screen paints, so a catalogue cell that were also a slot would show an item the player never put there, and the player could pick a catalogue item up out of thin air. The browser's cells are drawn by this mod alone and a click on one is a placeholder notice. This is the honest shape of the API, not a shortcut: the alternative would be fake clickable slots, which this project does not ship.
+2. **The menu type is vanilla's.** A player on a client without Horizon sees a plain nine-slot chest screen: the slots work, the custom drawing does not. The alternative (a mod menu type) disconnects such clients.
+3. **The menu's title is the server's.** It comes from `block.projecte.transmutation_table`; the mod draws its own localized title over the panel with `own_labels`, so the visible title is the screen's own text.
+
+**Migration when Horizon exposes slots for a mod screen.** Have `native_mod_screen_open` take a `NativeScreen` with slots (the same `Vec<Option<[f32; 2]>>` `native_screen` already uses), have the server own a `ModContainer` for that screen, and let a cancelled or uncancelled click reach the menu. Then the browser's cells could become real slots directly, and the vanilla menu could go.
+
+## 9. Screen localization: a table in code, because a native mod has no `assets/`
+
+**The problem.** The screen's words must be localized (English at minimum, structured for Russian) and keyed, with no scattered hard-coded strings — the usual answer being `assets/<mod id>/lang/en_us.json`.
+
+**Why that file cannot be shipped here.** In the pinned revision only a **content mod** has assets: "only `horizon-mod.toml` with `assets/` and `data/` is a content mod" (`docs/native-mods.md`). This project is a **native trait mod** — `horizon-mixin.toml`, `engine/` and Rust code compiled into the game — so it has no `assets/` folder for the game to read a `lang/en_us.json` from, and `native_data_pack_files` (API 106) accepts only `recipe/`, `tags/`, `loot_table/`, `advancement/`, `trade_set/`, `villager_trade/` and `dialog/` paths, never `lang/`.
+
+**What this mod does.** `engine/src/ui/localization.rs` holds the tables: `EN_US` and `RU_RU`, keyed by the same `container.projecte.*` keys a resource pack would use, with a test that walks every key and proves both languages cover them. The keys are constants, so a typo is a compile error rather than a missing translation.
+
+**Reading the player's language.** There is no client-locale helper in the pinned API. The screen asks the game to translate `container.inventory` — a phrase every resource pack that supports a language has, and which the engine's own screen drawing reads immediately above the inventory — and matches the result against the languages it ships (`"Инвентарь"` for `ru_ru`, everything else English). This follows the player's language for any locale, and a locale with no table of this mod's falls back to English rather than showing nothing.
+
+**A notice is drawn, not sent.** Every screen hook is `&self` at this revision, so `Host::action_bar` and `Host::chat`, which take `&mut dyn Host`, cannot be called from a screen. A control's notice is therefore drawn on the screen's own bottom line, where the click happened.
+
+**Migration when Horizon exposes a mod's own assets or a locale helper.** Ship `assets/projecte/lang/en_us.json` and `ru_ru.json` from the same tables, and replace the `container.inventory` probe with the locale helper. Nothing else in the screen changes: the keys already match.
