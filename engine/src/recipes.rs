@@ -617,6 +617,9 @@ mod tests {
             );
             let expected_count = match key.as_str() {
                 "recipe/projecte:stone_gold_to_iron" => 8,
+                "recipe/projecte:stone_diamond_to_gold" => 4,
+                "recipe/projecte:stone_emerald_to_diamond" => 2,
+                "recipe/projecte:stone_pearl_to_iron" => 4,
                 key if key.ends_with("_from_block") => 9,
                 _ => 1,
             };
