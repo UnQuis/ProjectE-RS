@@ -201,7 +201,6 @@ impl Hooks for ProjectE {
             host.tell(event.uuid, Text::literal("§cNot enough inventory space."));
             return;
         }
-        let mut data = data;
         let leftover = host.give_stack(event.uuid, stack(item, count as u32));
         let leftover_count = leftover.as_ref().map_or(0, |s| s.count);
         let given = count as u32 - leftover_count;
@@ -210,8 +209,11 @@ impl Hooks for ProjectE {
             return;
         }
         let spent = value.saturating_mul(u64::from(given)) as i64;
-        data.emc = data.emc.saturating_sub(spent);
-        data::set(host, event.uuid, data.clone());
+        if !data::take_emc(host, event.uuid, spent) {
+            host.tell(event.uuid, Text::literal("§cEMC balance changed; purchase cancelled."));
+            return;
+        }
+        let balance = data::get(host, event.uuid).emc;
         host.tell(
             event.uuid,
             Text::literal(format!(
@@ -219,7 +221,7 @@ impl Hooks for ProjectE {
                 given,
                 emc::display_name(item),
                 spent,
-                data.emc
+                balance
             )),
         );
     }
@@ -302,6 +304,12 @@ impl Hooks for ProjectE {
             event
                 .lines
                 .push((Text::literal(format!("§7EMC: §e{}", value)), u32::MAX));
+        }
+        if let Some(fuel) = emc::fuel_value(&event.stack.item) {
+            event.lines.push((
+                Text::literal(format!("§7Fuel value: §e{}", fuel)),
+                u32::MAX,
+            ));
         }
     }
 
@@ -533,15 +541,17 @@ fn command_transmute(host: &mut dyn Host, event: &PerformCommandEvent<'_>, args:
         return true;
     }
     let spent = value.saturating_mul(u64::from(given)) as i64;
-    let mut data = data;
-    data.emc = data.emc.saturating_sub(spent);
-    data::set(host, event.player.uuid, data.clone());
+    if !data::take_emc(host, event.player.uuid, spent) {
+        host.feedback(Text::literal("§cEMC balance changed; transmutation cancelled."));
+        return true;
+    }
+    let balance = data::get(host, event.player.uuid).emc;
     host.feedback(Text::literal(format!(
         "§aTransmuted §e{}x {}§a for §e{} EMC§a. Balance: §e{}§a.",
         given,
         emc::display_name(&id),
         spent,
-        data.emc
+        balance
     )));
     true
 }
