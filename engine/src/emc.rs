@@ -10,7 +10,9 @@ pub fn value(id: &str) -> u64 {
         return v;
     }
     // ProjectE-style convention: a log is 32 EMC and planks are 8.
-    if id.ends_with("_log") || id.ends_with("_wood") || id.ends_with("_stem")
+    if id.ends_with("_log")
+        || id.ends_with("_wood")
+        || id.ends_with("_stem")
         || id.ends_with("_hyphae")
     {
         return 32;
@@ -36,8 +38,12 @@ pub fn value(id: &str) -> u64 {
 fn table_value(id: &str) -> Option<u64> {
     Some(match id {
         // Raw resources and building blocks.
-        "minecraft:cobblestone" | "minecraft:stone" | "minecraft:dirt"
-        | "minecraft:netherrack" | "minecraft:end_stone" | "minecraft:tuff" => 1,
+        "minecraft:cobblestone"
+        | "minecraft:stone"
+        | "minecraft:dirt"
+        | "minecraft:netherrack"
+        | "minecraft:end_stone"
+        | "minecraft:tuff" => 1,
         "minecraft:sand" | "minecraft:gravel" => 4,
         "minecraft:flint" => 4,
         "minecraft:clay" => 64,
@@ -104,12 +110,21 @@ fn table_value(id: &str) -> Option<u64> {
         "minecraft:baked_potato" => 128,
         "minecraft:wheat" => 24,
         "minecraft:wheat_seeds" => 16,
-        "minecraft:oak_log" | "minecraft:birch_log" | "minecraft:spruce_log"
-        | "minecraft:jungle_log" | "minecraft:acacia_log" | "minecraft:dark_oak_log"
-        | "minecraft:mangrove_log" | "minecraft:cherry_log" => 32,
-        "minecraft:oak_planks" | "minecraft:birch_planks" | "minecraft:spruce_planks"
-        | "minecraft:jungle_planks" | "minecraft:acacia_planks"
-        | "minecraft:dark_oak_planks" | "minecraft:mangrove_planks"
+        "minecraft:oak_log"
+        | "minecraft:birch_log"
+        | "minecraft:spruce_log"
+        | "minecraft:jungle_log"
+        | "minecraft:acacia_log"
+        | "minecraft:dark_oak_log"
+        | "minecraft:mangrove_log"
+        | "minecraft:cherry_log" => 32,
+        "minecraft:oak_planks"
+        | "minecraft:birch_planks"
+        | "minecraft:spruce_planks"
+        | "minecraft:jungle_planks"
+        | "minecraft:acacia_planks"
+        | "minecraft:dark_oak_planks"
+        | "minecraft:mangrove_planks"
         | "minecraft:cherry_planks" => 8,
         "minecraft:torch" => 9,
         "minecraft:chest" => 32,

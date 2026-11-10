@@ -52,14 +52,34 @@ impl Hooks for ProjectE {
     fn items(&self, event: &mut ItemsEvent<'_>) {
         item(event, PHILOSOPHERS_STONE, "minecraft:diamond", 1);
         item(event, "projecte:klein_star_ein", "minecraft:nether_star", 1);
-        item(event, "projecte:klein_star_zwei", "minecraft:nether_star", 1);
-        item(event, "projecte:klein_star_drei", "minecraft:nether_star", 1);
-        item(event, "projecte:klein_star_vier", "minecraft:nether_star", 1);
+        item(
+            event,
+            "projecte:klein_star_zwei",
+            "minecraft:nether_star",
+            1,
+        );
+        item(
+            event,
+            "projecte:klein_star_drei",
+            "minecraft:nether_star",
+            1,
+        );
+        item(
+            event,
+            "projecte:klein_star_vier",
+            "minecraft:nether_star",
+            1,
+        );
         item(event, "projecte:dark_matter", "minecraft:coal", 64);
         item(event, "projecte:red_matter", "minecraft:redstone", 64);
         item(event, "projecte:alchemical_coal", "minecraft:coal", 64);
         item(event, "projecte:mobius_fuel", "minecraft:blaze_powder", 64);
-        item(event, "projecte:aeternalis_fuel", "minecraft:glowstone_dust", 64);
+        item(
+            event,
+            "projecte:aeternalis_fuel",
+            "minecraft:glowstone_dust",
+            64,
+        );
     }
 
     fn block_entity(
@@ -99,11 +119,7 @@ impl Hooks for ProjectE {
         }
     }
 
-    fn right_click_block(
-        &self,
-        host: &mut dyn Host,
-        event: &mut RightClickBlockEvent,
-    ) -> Flow {
+    fn right_click_block(&self, host: &mut dyn Host, event: &mut RightClickBlockEvent) -> Flow {
         let block = host.block(event.pos);
         if block == TABLE {
             if let Some(player) = host.acting_player() {
@@ -212,9 +228,10 @@ impl Hooks for ProjectE {
         event
             .commands
             .push(NativeCommand::new("projecte emc [player:player]"));
-        event.commands.push(
-            NativeCommand::op("projecte emc set <player:player> <amount:integer>", 2),
-        );
+        event.commands.push(NativeCommand::op(
+            "projecte emc set <player:player> <amount:integer>",
+            2,
+        ));
         event
             .commands
             .push(NativeCommand::new("projecte learn [item:word]"));
@@ -225,16 +242,10 @@ impl Hooks for ProjectE {
         event
             .commands
             .push(NativeCommand::new("projecte value <item:word>"));
-        event
-            .commands
-            .push(NativeCommand::new("projecte reset"));
+        event.commands.push(NativeCommand::new("projecte reset"));
     }
 
-    fn perform_command(
-        &self,
-        host: &mut dyn Host,
-        event: &mut PerformCommandEvent<'_>,
-    ) -> Flow {
+    fn perform_command(&self, host: &mut dyn Host, event: &mut PerformCommandEvent<'_>) -> Flow {
         let parts: Vec<&str> = event.command.split_whitespace().collect();
         if parts.first().copied() != Some("projecte") {
             return Flow::Continue;
@@ -288,10 +299,9 @@ impl Hooks for ProjectE {
     fn tooltip(&self, _host: &dyn Host, event: &mut TooltipEvent<'_>) {
         let value = emc::value(&event.stack.item);
         if value > 0 {
-            event.lines.push((
-                Text::literal(format!("§7EMC: §e{}", value)),
-                u32::MAX,
-            ));
+            event
+                .lines
+                .push((Text::literal(format!("§7EMC: §e{}", value)), u32::MAX));
         }
     }
 
@@ -305,10 +315,9 @@ impl Hooks for ProjectE {
             let json = format!(
                 "{{\"type\":\"minecraft:crafting_shapeless\",\"category\":\"misc\",\"ingredients\":[{list}],\"result\":{{\"id\":\"{result}\",\"count\":{count}}}}}"
             );
-            event.files.push((
-                format!("recipe/{MOD_ID}:{name}"),
-                json.into_bytes(),
-            ));
+            event
+                .files
+                .push((format!("recipe/{MOD_ID}:{name}"), json.into_bytes()));
         }
     }
 }
@@ -337,11 +346,7 @@ fn learned_items(data: &data::PlayerData) -> Vec<String> {
         .filter(|id| emc::value(id) > 0)
         .cloned()
         .collect();
-    items.sort_by(|a, b| {
-        emc::value(b)
-            .cmp(&emc::value(a))
-            .then_with(|| a.cmp(b))
-    });
+    items.sort_by(|a, b| emc::value(b).cmp(&emc::value(a)).then_with(|| a.cmp(b)));
     items
 }
 
@@ -374,7 +379,8 @@ fn inventory_room(host: &dyn Host, uuid: u128, item: &str) -> u32 {
             room = room.saturating_add(max.saturating_sub(slot.count));
         }
     }
-    room = room.saturating_add(max.saturating_mul(stacks.iter().filter(|s| s.is_none()).count() as u32));
+    room = room
+        .saturating_add(max.saturating_mul(stacks.iter().filter(|s| s.is_none()).count() as u32));
     room
 }
 
@@ -440,15 +446,17 @@ fn command_emc(host: &mut dyn Host, event: &PerformCommandEvent<'_>, args: &[&st
 fn command_learn(host: &mut dyn Host, event: &PerformCommandEvent<'_>, args: &[&str]) -> bool {
     let mut learn = Vec::new();
     if args.first().copied() == Some("all") {
-        learn.extend(host.carried_items().into_iter().map(|(id, _)| normalize_item(&id)));
+        learn.extend(
+            host.carried_items()
+                .into_iter()
+                .map(|(id, _)| normalize_item(&id)),
+        );
     } else if let Some(raw) = args.first() {
         learn.push(normalize_item(raw));
     } else if let Some((id, _, _)) = host.held() {
         learn.push(id);
     } else {
-        host.feedback(Text::literal(
-            "§cHold an item, or use /projecte learn all.",
-        ));
+        host.feedback(Text::literal("§cHold an item, or use /projecte learn all."));
         return true;
     }
 
@@ -481,9 +489,7 @@ fn command_learn(host: &mut dyn Host, event: &PerformCommandEvent<'_>, args: &[&
 
 fn command_transmute(host: &mut dyn Host, event: &PerformCommandEvent<'_>, args: &[&str]) -> bool {
     let Some(raw) = args.first() else {
-        host.feedback(Text::literal(
-            "§cUsage: /projecte transmute <item> [count]",
-        ));
+        host.feedback(Text::literal("§cUsage: /projecte transmute <item> [count]"));
         return true;
     };
     let id = normalize_item(raw);
