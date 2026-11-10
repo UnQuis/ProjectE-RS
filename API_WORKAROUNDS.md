@@ -61,8 +61,8 @@ Do not replace this with a read-copy-write sequence: two machines could otherwis
 
 ## 4. Scope and known limitations
 
-- The current Collector/Relay pair is the first energy slice, not the complete ProjectE machine lineup.
-- Current gameplay constants are preserved from ProjectE-RS PR #3: Collector generation 1 EMC/tick and 100,000 capacity; Relay capacity 1,000,000 and a 4 EMC/tick transfer limit.
-- Relays act as buffers and receive EMC from adjacent Collectors. Collector/Relay machine slots are implemented; Relay-to-Relay routing and Collector fuel upgrades are not implemented yet.
+- Collector and Relay now have three tiers each. This remains a partial machine port, not the complete ProjectE device lineup.
+- Collector tiers generate 4/12/40 EMC per second in full sunlight, with capacities 10,000/30,000/60,000 and fractional EMC accumulation. Relay tiers have capacities 100,000/1,000,000/10,000,000, transfer limits 64/192/640 EMC per tick, and transfer bonuses of 0.05/0.15/0.5 EMC per successful transfer tick.
+- Collectors feed adjacent Relays. Relays feed adjacent Relays only when the target has a lower fill ratio, preventing energy ping-pong. Machine slots are implemented; Collector fuel upgrades and Condensers are not implemented yet.
 - Klein Stars have persistent component storage and can be charged/discharged through Collector and Relay machine slots. Direct player-inventory transfer is not implemented yet.
 - Attachment read/write errors in the existing player-data layer are a separate cleanup item; do not silently copy those patterns into the energy backend.

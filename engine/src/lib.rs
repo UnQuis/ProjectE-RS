@@ -34,17 +34,13 @@ impl Hooks for ProjectE {
         table.template = "minecraft:crafting_table".to_string();
         table.item = true;
 
-        event.blocks.push(Default::default());
-        let collector = event.blocks.last_mut().unwrap();
-        collector.id = machines::COLLECTOR.to_string();
-        collector.template = "minecraft:stone".to_string();
-        collector.item = true;
-
-        event.blocks.push(Default::default());
-        let relay = event.blocks.last_mut().unwrap();
-        relay.id = machines::RELAY.to_string();
-        relay.template = "minecraft:stone".to_string();
-        relay.item = true;
+        for id in machines::COLLECTORS.into_iter().chain(machines::RELAYS) {
+            event.blocks.push(Default::default());
+            let machine = event.blocks.last_mut().unwrap();
+            machine.id = id.to_string();
+            machine.template = "minecraft:furnace".to_string();
+            machine.item = true;
+        }
     }
 
     fn items(&self, event: &mut ItemsEvent<'_>) {
@@ -598,6 +594,46 @@ const RECIPES: &[(&str, &[&str], &str, u32)] = &[
             machines::COLLECTOR,
         ],
         machines::RELAY,
+        1,
+    ),
+    (
+        "energy_collector_mk2",
+        &[
+            machines::COLLECTORS[0], machines::COLLECTORS[0], machines::COLLECTORS[0],
+            machines::COLLECTORS[0], machines::COLLECTORS[0], machines::COLLECTORS[0],
+            machines::COLLECTORS[0], machines::COLLECTORS[0], "minecraft:diamond",
+        ],
+        machines::COLLECTORS[1],
+        1,
+    ),
+    (
+        "energy_collector_mk3",
+        &[
+            machines::COLLECTORS[1], machines::COLLECTORS[1], machines::COLLECTORS[1],
+            machines::COLLECTORS[1], machines::COLLECTORS[1], machines::COLLECTORS[1],
+            machines::COLLECTORS[1], machines::COLLECTORS[1], "minecraft:nether_star",
+        ],
+        machines::COLLECTORS[2],
+        1,
+    ),
+    (
+        "antimatter_relay_mk2",
+        &[
+            machines::RELAYS[0], machines::RELAYS[0], machines::RELAYS[0],
+            machines::RELAYS[0], machines::RELAYS[0], machines::RELAYS[0],
+            machines::RELAYS[0], machines::RELAYS[0], "minecraft:diamond",
+        ],
+        machines::RELAYS[1],
+        1,
+    ),
+    (
+        "antimatter_relay_mk3",
+        &[
+            machines::RELAYS[1], machines::RELAYS[1], machines::RELAYS[1],
+            machines::RELAYS[1], machines::RELAYS[1], machines::RELAYS[1],
+            machines::RELAYS[1], machines::RELAYS[1], "minecraft:nether_star",
+        ],
+        machines::RELAYS[2],
         1,
     ),
     (
