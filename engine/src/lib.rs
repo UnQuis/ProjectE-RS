@@ -445,7 +445,7 @@ impl Hooks for ProjectE {
             let block = alchemical::fuel_block(&event.stack.item).unwrap_or("none");
             event.lines.push((
                 Text::literal(format!(
-                    "§6Alchemical fuel tier {} · {} reference burn ticks · prev: {} · next: {} · block: {}",
+                    "§6Fuel tier {} · {} reference burn ticks · prev: {} · next: {} · block: {}",
                     tier + 1,
                     burn,
                     previous,
@@ -461,9 +461,21 @@ impl Hooks for ProjectE {
                 .push((Text::literal(format!("§6Packed fuel: {fuel}")), u32::MAX));
         }
         if &*event.stack.item == PHILOSOPHERS_STONE {
+            let example = alchemical::STONE_CONVERSIONS
+                .first()
+                .map(|conversion| {
+                    format!(
+                        "{}x{} -> {}x{}",
+                        conversion.from_count,
+                        conversion.from,
+                        conversion.to_count,
+                        conversion.to
+                    )
+                })
+                .unwrap_or_else(|| "none".to_string());
             event.lines.push((
                 Text::literal(format!(
-                    "§7World swaps and {} reversible crafting conversions",
+                    "§7World swaps and {} reversible crafting conversions (e.g. {example})",
                     alchemical::STONE_CONVERSIONS.len()
                 )),
                 u32::MAX,
