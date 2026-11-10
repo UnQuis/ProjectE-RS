@@ -29,10 +29,7 @@ pub(crate) fn capacity(item: &str) -> Option<i64> {
     })
 }
 
-pub(crate) fn stored_emc(
-    host: &dyn Host,
-    stack: &ItemStack,
-) -> Result<i64, NativeComponentError> {
+pub(crate) fn stored_emc(host: &dyn Host, stack: &ItemStack) -> Result<i64, NativeComponentError> {
     let Some(capacity) = capacity(&stack.item) else {
         return Ok(0);
     };
@@ -48,7 +45,9 @@ pub(crate) fn charge(host: &dyn Host, stack: &mut ItemStack, available: i64) -> 
     let Some(capacity) = capacity(&stack.item) else {
         return 0;
     };
-    let Ok(current) = stored_emc(host, stack) else { return 0 };
+    let Ok(current) = stored_emc(host, stack) else {
+        return 0;
+    };
     let moved = available.max(0).min(capacity - current);
     if moved == 0 {
         return 0;
@@ -65,7 +64,9 @@ pub(crate) fn charge(host: &dyn Host, stack: &mut ItemStack, available: i64) -> 
 
 /// Removes EMC from a Klein Star and returns the amount extracted.
 pub(crate) fn discharge(host: &dyn Host, stack: &mut ItemStack, room: i64) -> i64 {
-    let Ok(current) = stored_emc(host, stack) else { return 0 };
+    let Ok(current) = stored_emc(host, stack) else {
+        return 0;
+    };
     let moved = current.min(room.max(0));
     if moved == 0 {
         return 0;
