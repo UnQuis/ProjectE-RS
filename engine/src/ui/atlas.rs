@@ -424,6 +424,7 @@ fn draw_controls(host: &dyn Host, batch: &mut HudBatch, layout: &Layout, state: 
     text(host, batch, &label, at, TEXT_DIM, false);
 }
 
+#[allow(clippy::too_many_arguments)]
 fn button(
     host: &dyn Host,
     batch: &mut HudBatch,
