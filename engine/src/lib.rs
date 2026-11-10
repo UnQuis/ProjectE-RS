@@ -107,11 +107,7 @@ impl Hooks for ProjectE {
         machines::tick(host, event);
     }
 
-    fn right_click_block(
-        &self,
-        host: &mut dyn Host,
-        event: &mut RightClickBlockEvent,
-    ) -> Flow {
+    fn right_click_block(&self, host: &mut dyn Host, event: &mut RightClickBlockEvent) -> Flow {
         let block = host.block(event.pos);
         if block == TABLE {
             if let Some(player) = host.acting_player() {
