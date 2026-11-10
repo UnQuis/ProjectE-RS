@@ -138,3 +138,62 @@ Trade-offs: the write bypasses neighbour updates and block-entity drops (documen
 1. Register `projecte:emc` through `data_map_types` and ship the default values as a data-pack file.
 2. Replace `emc::table_value` lookups with a read of the merged map, keeping the vanilla family rules as a documented fallback for entries the map does not cover.
 3. Keep the static table as the shipped default data, not as a second runtime source of truth.
+
+## 8. The Transmutation Table screen: a vanilla menu screen, not a container screen
+
+**The problem.** The screen needs two things that the pinned API does not give at once: a screen this mod draws itself, and **real** inventory slots — items picked up, placed, split, swapped, shift-clicked, and returned to the player when the screen closes, all server-authoritative.
+
+**What the pinned revision offers.**
+
+- `native_mod_screen_open` (API 111) opens a client-only window with **no menu**. Nothing in it is a slot; a click there cannot move an item, and the server never hears of it.
+- `native_screen` (API 19) lays out a mod block's **menu**: it says where each of the container's `Slot`s is and where the player's inventory begins. The menu itself is the server's, driven by vanilla's menu engine, so a click on one of its slots is a real click that the server applies.
+
+There is no third route and no way to combine them: a mod screen has no slots, and a menu screen is the only place real slots exist.
+
+**What this mod does.** The table's block entity declares a `ModContainer` with `menu: Some("minecraft:generic_9x1")` and nine slots, and the screen is drawn with `native_screen`/`native_screen_draw`. `minecraft:generic_9x6` would give 54 slots, but 54 real slots plus a 9 x 4 browser plus the player's inventory do not fit in one 256-wide screen at 1:1, so the smaller vanilla menu is used and every one of its slots is shown.
+
+**The trade-offs, stated plainly.**
+
+1. **The browser is not a set of slots.** The engine draws a menu slot's own stack over whatever a screen paints, so a catalogue cell that were also a slot would show an item the player never put there, and the player could pick a catalogue item up out of thin air. The browser's cells are drawn by this mod alone and a click on one is a placeholder notice. This is the honest shape of the API, not a shortcut: the alternative would be fake clickable slots, which this project does not ship.
+2. **The menu type is vanilla's.** A player on a client without Horizon sees a plain nine-slot chest screen: the slots work, the custom drawing does not. The alternative (a mod menu type) disconnects such clients.
+3. **The menu's title is the server's.** It comes from `block.projecte.transmutation_table`; the mod draws its own localized title over the panel with `own_labels`, so the visible title is the screen's own text.
+
+**Migration when Horizon exposes slots for a mod screen.** Have `native_mod_screen_open` take a `NativeScreen` with slots (the same `Vec<Option<[f32; 2]>>` `native_screen` already uses), have the server own a `ModContainer` for that screen, and let a cancelled or uncancelled click reach the menu. Then the browser's cells could become real slots directly, and the vanilla menu could go.
+
+## 9. Screen localization: a table in code, because a native mod has no `assets/`
+
+**The problem.** The screen's words must be localized (English at minimum, structured for Russian) and keyed, with no scattered hard-coded strings — the usual answer being `assets/<mod id>/lang/en_us.json`.
+
+**Why that file cannot be shipped here.** In the pinned revision only a **content mod** has assets: "only `horizon-mod.toml` with `assets/` and `data/` is a content mod" (`docs/native-mods.md`). This project is a **native trait mod** — `horizon-mixin.toml`, `engine/` and Rust code compiled into the game — so it has no `assets/` folder for the game to read a `lang/en_us.json` from, and `native_data_pack_files` (API 106) accepts only `recipe/`, `tags/`, `loot_table/`, `advancement/`, `trade_set/`, `villager_trade/` and `dialog/` paths, never `lang/`.
+
+**What this mod does.** `engine/src/ui/localization.rs` holds the tables: `EN_US` and `RU_RU`, keyed by the same `container.projecte.*` keys a resource pack would use, with a test that walks every key and proves both languages cover them. The keys are constants, so a typo is a compile error rather than a missing translation.
+
+**Reading the player's language.** There is no client-locale helper in the pinned API. The screen asks the game to translate `container.inventory` — a phrase every resource pack that supports a language has, and which the engine's own screen drawing reads immediately above the inventory — and matches the result against the languages it ships (`"Инвентарь"` for `ru_ru`, everything else English). This follows the player's language for any locale, and a locale with no table of this mod's falls back to English rather than showing nothing.
+
+**A notice is drawn, not sent.** Every screen hook is `&self` at this revision, so `Host::action_bar` and `Host::chat`, which take `&mut dyn Host`, cannot be called from a screen. A control's notice is therefore drawn on the screen's own bottom line, where the click happened.
+
+**Migration when Horizon exposes a mod's own assets or a locale helper.** Ship `assets/projecte/lang/en_us.json` and `ru_ru.json` from the same tables, and replace the `container.inventory` probe with the locale helper. Nothing else in the screen changes: the keys already match.
+
+## 10. Deposit-and-learn: a mod-owned menu, and why the credit is read back
+
+**The problem.** Depositing is the flow that turns items into EMC and knowledge. It must remove *exactly* the accepted items, credit their value, add them to the learned set, and never mint EMC for an item that did not actually leave the player's hands. In ProjectE it happens on the Transmutation Table, so the obvious first idea is a click on that table's existing screen.
+
+**Why a click on the table's screen cannot do it.** The table's menu is a vanilla menu the engine owns, drawn over by `native_screen` (§8). Its slots hold the player's own items and a shift-click or drag moves them by the engine's rules. Two bad options follow: mutate items inside `menu_clicked` without knowing what the engine will actually do, or make the slots inert so the click can be observed. The first can lose items when the engine's own move differs from the mod's assumption; the second makes every slot decoration and the table unusable. Both were rejected.
+
+**What the pinned API provides.** `native_open_menu_with_input(uuid, rows, title, items, input)` (API `menu_input`) opens a menu whose `input` slots behave **exactly** as a chest's: the player fills them by vanilla's click rules, the engine tracks them, and `native_menu_contents` reads them back. Slots outside `input` are the mod's display slots, and a click on one arrives as `native_menu_clicked` precisely because it "moved nothing". On close, `native_menu_input_closed` hands the mod the input slots and whatever the mod leaves goes back to the player as `clearContainer` would.
+
+**The chosen shape.** A 27-slot menu: slots 0–8 are the engine-owned input range, 9–17 display cells, and 18 is the confirm control. A deposit is *only* a click on slot 18. `apply` then:
+
+1. reads the menu and plans the deposit (**pure**, `deposit::plan`);
+2. refuses the whole thing, before touching a slot, if any stack has no value or the arithmetic would overflow;
+3. clears exactly the planned slots and writes them back;
+4. **re-reads** `native_menu_contents` and credits only what verifiably left (`deposit::settle`);
+5. writes EMC and knowledge in a **single** `data::set`, so the two can never disagree.
+
+Step 4 is the part that makes the flow safe. `native_set_menu_items` deliberately preserves input slots (it copies back every slot the store holds), so a mod write **cannot** eat a deposit — but a write can also fail to take. Crediting only the observed departure means a write that did nothing credits nothing, and `Deposited::NotApplied` tells the player their items are still in the slots.
+
+**Recognising the mod's own menu.** Every native menu in the engine is the same `Slots::Native`, and the API does not say which mod opened one. Slot 18 of *another* mod's menu is not a confirm control, and treating it as one would empty that menu into EMC. The mod therefore records the window id it opened, per player, in `deposit_menu::OPEN`, and `forget`s it in both `menu_closed` and `menu_input_closed`. A click is a deposit only when the player, the window and the slot all match.
+
+**What is not done, and why.** Shift-clicking into the input slots works because the engine owns them; there is no custom drag handling, no per-slot filter, and no "deposit all from inventory" button — each of those would have to move items itself. The menu shows the balance and the known-item count as stack counts on icons, which caps their display at 64; `/projecte emc` remains the exact readout.
+
+**Migration if Horizon exposes per-mod menu ownership.** Drop `OPEN` and read the owner from the menu, which removes the one piece of bookkeeping here. Nothing else changes: the plan/settle split is independent of how the window is recognised.

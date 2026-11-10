@@ -11,17 +11,27 @@ use horizon_client::mod_api::*;
 mod alchemical;
 pub mod condenser;
 mod data;
+mod deposit;
+mod deposit_menu;
 mod emc;
 mod energy;
 mod machines;
 mod progression;
 mod recipes;
 mod transaction;
+mod ui;
 
 const TABLE: &str = recipes::TABLE;
 const PHILOSOPHERS_STONE: &str = alchemical::PHILOSOPHERS_STONE;
 
-const MENU_SLOTS: usize = 54;
+/// The `/projecte` browsing page's slots, which this mod draws as a menu of its
+/// own. Not the Transmutation Table's menu: that one is
+/// `ui::atlas::MENU_SLOTS` (nine), and the two never share a screen.
+const PROJECTE_MENU_SLOTS: usize = 54;
+
+/// The table block entity's saved-data id. Its id is the table's, so a later
+/// revision can store the table's own state without touching another block's.
+const TABLE_BLOCK_ENTITY: &str = "projecte:transmutation_table";
 
 pub fn hooks() -> Box<dyn Hooks> {
     Box::new(ProjectE)
@@ -98,6 +108,12 @@ impl Hooks for ProjectE {
         _host: &mut dyn Host,
         event: &mut BlockEntityEvent<'_>,
     ) -> Option<(String, Compound)> {
+        if event.block == TABLE {
+            // The table keeps the screen's slots, which are its menu's. Its
+            // block entity is its own id, so its saved data is its own; the
+            // screen stores nothing in it today.
+            return Some((TABLE_BLOCK_ENTITY.to_owned(), Compound::new()));
+        }
         machines::block_entity(event.block)
     }
 
@@ -110,6 +126,9 @@ impl Hooks for ProjectE {
         _host: &dyn Host,
         event: &mut BlockEntityContainerEvent<'_>,
     ) -> Option<ModContainer> {
+        if event.block == TABLE {
+            return Some(table_container());
+        }
         machines::container(event.block)
     }
 
@@ -120,10 +139,10 @@ impl Hooks for ProjectE {
     fn right_click_block(&self, host: &mut dyn Host, event: &mut RightClickBlockEvent) -> Flow {
         let block = host.block(event.pos);
         if block == TABLE {
-            if let Some(player) = host.acting_player() {
-                open_table(host, player.uuid);
-                return Flow::Cancel;
-            }
+            // The table's menu is its block entity's container (below), which
+            // the engine opens on a right-click by itself; the hook leaves the
+            // click alone so that path runs. Nothing here opens a menu, so the
+            // screen and the container cannot disagree about what is open.
             return Flow::Continue;
         }
         if machines::is_collectable(&block) {
@@ -143,11 +162,11 @@ impl Hooks for ProjectE {
         if &*event.stack.item != PHILOSOPHERS_STONE {
             return Flow::Continue;
         }
-        let Some(player) = host.acting_player() else {
-            return Flow::Continue;
-        };
-        open_table(host, player.uuid);
-        Flow::Cancel
+        // The stone is used on blocks (world transmutation) and in the
+        // crafting grid; it does not open the table. The table's screen is its
+        // block's own menu, which the engine opens when the block is used.
+        let _ = host.acting_player();
+        Flow::Continue
     }
 
     /// World transmutation: the stone turns the block it is used on into a
@@ -262,8 +281,31 @@ impl Hooks for ProjectE {
         }
     }
 
+    fn menu_closed(&self, _host: &mut dyn Host, event: &mut MenuClosedEvent) {
+        // The window is gone, so its slot 18 must stop being a confirm
+        // control: a later menu that reuses the id is not this mod's.
+        deposit_menu::forget(event.uuid, event.window);
+    }
+
+    fn menu_input_closed(&self, _host: &mut dyn Host, event: &mut MenuInputClosedEvent<'_>) {
+        deposit_menu::forget(event.uuid, event.window);
+        // Nothing is taken out of `event.slots`: every item still in an input
+        // slot was never paid for, so the engine must give it back to the
+        // player. Keeping it here would be the one way this mod could erase an
+        // item without crediting EMC for it.
+        let _ = &event.slots;
+    }
+
     fn menu_clicked(&self, host: &mut dyn Host, event: &mut MenuClickedEvent) {
-        if !(0..MENU_SLOTS as i32).contains(&event.slot) {
+        // The deposit menu first: its confirm slot is the only click in the
+        // mod that changes EMC or knowledge.
+        if deposit_menu::confirm_slot(event.uuid, event.window, event.slot).is_some() {
+            let contents = host.menu_contents(event.uuid).unwrap_or_default();
+            let result = deposit_menu::apply(host, event.uuid, contents);
+            deposit_menu::report(host, event.uuid, result);
+            return;
+        }
+        if !(0..PROJECTE_MENU_SLOTS as i32).contains(&event.slot) {
             return;
         }
         let data = data::get(host, event.uuid);
@@ -360,6 +402,9 @@ impl Hooks for ProjectE {
             .push(NativeCommand::new("projecte value <item:word>"));
         event.commands.push(NativeCommand::new("projecte reset"));
         event.commands.push(NativeCommand::new("projecte roadmap"));
+        event
+            .commands
+            .push(NativeCommand::new("projecte deposit"));
     }
 
     fn perform_command(&self, host: &mut dyn Host, event: &mut PerformCommandEvent<'_>) -> Flow {
@@ -372,7 +417,25 @@ impl Hooks for ProjectE {
             Some("learn") => command_learn(host, event, &parts[2..]),
             Some("transmute") => command_transmute(host, event, &parts[2..]),
             Some("table") => {
-                open_table(host, event.player.uuid);
+                host.feedback(Text::literal(
+                    "§7Use the Transmutation Table block to open its screen.",
+                ));
+                true
+            }
+            Some("deposit") => {
+                // A deposit needs the engine's own menu: the player fills the
+                // input slots by vanilla's click rules and confirms with a
+                // real click, so nothing here touches an item itself.
+                match deposit_menu::open(host, event.player.uuid) {
+                    Some(_window) => {
+                        host.feedback(Text::literal(
+                            "§aPut items in the top nine slots, then click the green slot to deposit them.",
+                        ));
+                    }
+                    None => host.feedback(Text::literal(
+                        "§cThe deposit menu could not be opened for you.",
+                    )),
+                }
                 true
             }
             Some("value") => {
@@ -483,6 +546,85 @@ impl Hooks for ProjectE {
     fn data_pack_files(&self, _host: &dyn Host, event: &mut DataPackFilesEvent<'_>) {
         event.files.extend(recipes::files());
     }
+
+    // --- the Transmutation Table screen -----------------------------------
+    //
+    // The table's menu screen, drawn by this mod. Every hook delegates to
+    // `ui::screen`, which keeps the one screen state and checks that the open
+    // menu is the table's, so these are one line each.
+
+    /// `native_screen` (API 19): lay out the table's 54-slot menu — where its
+    /// slots are and where the player's inventory starts. Asked on the client
+    /// and on the server, so the slots the client draws and the slots the
+    /// server has are the same 38.
+    fn screen(&self, _host: &dyn Host, event: &mut ScreenEvent<'_>) -> Option<NativeScreen> {
+        // `native_screen`'s output is `&mut Option<NativeScreen>` with the
+        // `replace` contract, so the trait returns the output's inner type and
+        // the out argument is not an event field. The block names the screen;
+        // the menu's title stays the server's.
+        ui::screen::screen(event.block)
+    }
+
+    /// `native_screen_draw` (API 19): draw the table's screen over its menu.
+    fn screen_draw(&self, host: &dyn Host, event: &mut ScreenDrawEvent<'_>) {
+        ui::screen::screen_draw(host, event.batch, event.block, event.data, event.origin);
+    }
+
+    /// `native_screen_tooltip` (API 20): a line for what is under the pointer.
+    fn screen_tooltip(&self, host: &dyn Host, event: &mut ScreenTooltipEvent<'_>) {
+        ui::screen::screen_tooltip(host, event.block, event.data, event.at, event.lines);
+    }
+
+    /// `native_screen_opening` (API 367): the table's menu opened.
+    fn screen_opening(&self, host: &dyn Host, event: &mut ScreenOpeningEvent<'_>) {
+        ui::screen::screen_opening(host, event.screen);
+    }
+
+    /// `native_screen_closing` (API 365): the table's menu closed.
+    fn screen_closing(&self, host: &dyn Host, event: &mut ScreenClosingEvent<'_>) {
+        ui::screen::screen_closing(host, event.screen);
+    }
+
+    /// `native_screen_mouse_button_pressed_pre` (API 80): a click on the
+    /// screen. A press on one of the screen's own parts is cancelled, so the
+    /// same click does not also reach the menu slot under it.
+    fn screen_mouse_button_pressed_pre(
+        &self,
+        host: &dyn Host,
+        event: &mut ScreenMouseButtonPressedPreEvent<'_>,
+    ) -> Flow {
+        ui::screen::mouse_pressed(host, event.screen, event.button, event.modifiers)
+    }
+
+    /// `native_screen_mouse_button_released_pre` (API 80): the button came up.
+    fn screen_mouse_button_released_pre(
+        &self,
+        host: &dyn Host,
+        event: &mut ScreenMouseButtonReleasedPreEvent<'_>,
+    ) -> Flow {
+        ui::screen::mouse_released(host, event.screen, event.button, event.modifiers)
+    }
+
+    /// `native_screen_char_typed_pre` (API 104): a character typed at the
+    /// screen, taken by the search field while it has the focus.
+    fn screen_char_typed_pre(
+        &self,
+        host: &dyn Host,
+        event: &mut ScreenCharTypedPreEvent<'_>,
+    ) -> Flow {
+        ui::screen::char_typed(host, event.screen, event.c, event.modifiers)
+    }
+
+    /// `native_screen_key_pressed_pre` (API 104): Backspace, Enter and Escape
+    /// belong to the search field while it has the focus.
+    fn screen_key_pressed_pre(
+        &self,
+        host: &dyn Host,
+        event: &mut ScreenKeyPressedPreEvent<'_>,
+    ) -> Flow {
+        ui::screen::key_pressed(host, event.screen, event.key, event.repeat, event.modifiers)
+    }
+
 }
 
 fn item(event: &mut ItemsEvent<'_>, id: &str, template: &str, max: u8) {
@@ -513,22 +655,28 @@ fn learned_items(data: &data::PlayerData) -> Vec<String> {
     items
 }
 
-fn open_table(host: &mut dyn Host, uuid: u128) {
-    let data = data::get(host, uuid);
-    let learned = learned_items(&data);
-    if learned.is_empty() {
-        host.tell(
-            uuid,
-            Text::literal("§7No learned items yet. Use §e/projecte learn§7 while holding one."),
-        );
-        return;
+/// The table's container: the slots its screen lays out.
+///
+/// Its menu is vanilla's six-row chest (`minecraft:generic_9x6`), so a stock
+/// client shows the same menu, and Horizon's clients draw the mod's own screen
+/// over it (`ui::atlas::native_screen`). The menu opens when the block is used,
+/// because the block's template opens a menu, as a chest's does.
+///
+/// Only the slots the screen draws are listed as inputs: the browser's cells
+/// are display-only to hoppers, and the two real input slots are what a hopper
+/// may fill. Nothing here runs crafting, learning or transmutation yet.
+fn table_container() -> ModContainer {
+    ModContainer {
+        slots: ui::atlas::MENU_SLOTS,
+        // No face reaches any slot: a hopper cannot pull an item out of the
+        // table's storage behind the player's back. The two inputs are named
+        // as the faces' fill targets for the API's sake; with every face list
+        // empty nothing is ever pushed in.
+        faces: [Vec::new(), Vec::new(), Vec::new(), Vec::new(), Vec::new(), Vec::new()],
+        inputs: ui::atlas::INPUT_SLOTS.to_vec(),
+        outputs: Vec::new(),
+        menu: Some(ui::atlas::MENU.to_owned()),
     }
-    let mut items = vec![None; MENU_SLOTS];
-    for (slot, id) in learned.iter().take(MENU_SLOTS).enumerate() {
-        items[slot] = Some(stack(id, 1));
-    }
-    let title = format!("Transmutation Table  -  {} EMC", data.emc);
-    host.open_menu(uuid, 6, Text::literal(title), items);
 }
 
 fn inventory_room(host: &dyn Host, uuid: u128, item: &str) -> u32 {
