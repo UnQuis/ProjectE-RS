@@ -845,10 +845,8 @@ mod tests {
         let native = native_screen();
         let shown = native.slots.iter().filter(|slot| slot.is_some()).count();
         assert_eq!(shown, SHOWN_SLOTS);
-        assert_eq!(
-            SHOWN_SLOTS + PLAYER_SLOTS,
-            layout::PAGE_SIZE + INPUT_SLOTS.len() + 36
-        );
+        assert_eq!(SHOWN_SLOTS, MENU_SLOTS);
+        assert_eq!(SHOWN_SLOTS + PLAYER_SLOTS, MENU_SLOTS + 36);
     }
 
     #[test]
