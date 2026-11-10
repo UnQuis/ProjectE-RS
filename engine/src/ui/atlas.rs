@@ -715,12 +715,12 @@ fn centred_in(host: &dyn Host, rect: Rect, line: &str, pad: f32) -> [f32; 2] {
 }
 
 fn grid_centre_x() -> f32 {
-    let grid = Layout::fit([layout::PANEL_W, layout::PANEL_H]).grid();
+    let grid = Layout::grid();
     grid[0] + grid[2] / 2.0
 }
 
 fn grid_centre_y() -> f32 {
-    let grid = Layout::fit([layout::PANEL_W, layout::PANEL_H]).grid();
+    let grid = Layout::grid();
     grid[1] + grid[3] / 2.0
 }
 
@@ -855,7 +855,9 @@ mod tests {
             items,
             state
                 .browser
-                .visible(&crate::ui::state::PREVIEW_ITEMS, crate::emc::value)
+                .visible(&crate::ui::state::PREVIEW_ITEMS, |id| {
+                    i64::try_from(crate::emc::value(id)).unwrap_or(i64::MAX)
+                })
         );
         state.browser.filter = crate::ui::state::Filter::Tools;
         assert!(browse_items(&state).is_empty());
