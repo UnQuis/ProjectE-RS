@@ -10,6 +10,7 @@ use horizon_client::mod_api::*;
 
 mod data;
 mod emc;
+mod energy;
 mod machines;
 mod transaction;
 
@@ -48,15 +49,20 @@ impl Hooks for ProjectE {
 
     fn items(&self, event: &mut ItemsEvent<'_>) {
         item(event, PHILOSOPHERS_STONE, "minecraft:diamond", 1);
-        item(event, "projecte:klein_star_ein", "minecraft:nether_star", 1);
-        item(event, "projecte:klein_star_zwei", "minecraft:nether_star", 1);
-        item(event, "projecte:klein_star_drei", "minecraft:nether_star", 1);
-        item(event, "projecte:klein_star_vier", "minecraft:nether_star", 1);
+        for id in energy::KLEIN_STARS {
+            item(event, id, "minecraft:nether_star", 1);
+        }
         item(event, "projecte:dark_matter", "minecraft:coal", 64);
         item(event, "projecte:red_matter", "minecraft:redstone", 64);
         item(event, "projecte:alchemical_coal", "minecraft:coal", 64);
         item(event, "projecte:mobius_fuel", "minecraft:blaze_powder", 64);
         item(event, "projecte:aeternalis_fuel", "minecraft:glowstone_dust", 64);
+    }
+
+    fn component_types(&self, event: &mut ComponentTypesEvent<'_>) {
+        if !event.types.iter().any(|id| id == energy::STORED_EMC_COMPONENT) {
+            event.types.push(energy::STORED_EMC_COMPONENT.to_string());
+        }
     }
 
     fn block_entity(
@@ -251,7 +257,14 @@ impl Hooks for ProjectE {
         }
     }
 
-    fn tooltip(&self, _host: &dyn Host, event: &mut TooltipEvent<'_>) {
+    fn tooltip(&self, host: &dyn Host, event: &mut TooltipEvent<'_>) {
+        if let Some(capacity) = energy::capacity(&event.stack.item) {
+            let stored = energy::stored_emc(host, &event.stack);
+            event.lines.push((
+                Text::literal(format!("§bStored EMC: §f{stored} / {capacity}")),
+                u32::MAX,
+            ));
+        }
         let value = emc::value(&event.stack.item);
         if value > 0 {
             event.lines.push((

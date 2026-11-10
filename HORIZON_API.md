@@ -91,16 +91,9 @@ The pinned API includes `ModEnergyBuffer` and the `block_entity_energy` hook (Na
 
 The hook declares a buffer for a mod block: capacity, maximum insertion and extraction per operation, and permitted faces. Horizon stores the amount in the block entity's saved compound under the integer key `energy`; it therefore survives chunk unloads and restarts.
 
-Host helpers exposed by this API include:
+The engine documents `native_energy`, `native_energy_insert`, `native_energy_extract` and `native_move_energy`. However, these are not present as callable methods on the pinned trait-mod `Host` surface / special Host bridge. The `block_entity_energy` registration hook exists, but a trait mod cannot use those engine operations through `dyn Host` at this revision.
 
-- `energy(dimension, pos, face)`: read energy through a side.
-- `energy_insert(pos, face, amount, simulate)`: insert and return the amount moved.
-- `energy_extract(dimension, pos, face, amount, simulate)`: extract and return the amount moved.
-- `move_energy(dimension, from, from_face, to, to_face, max)`: move energy between two block buffers.
-
-The `simulate` flag makes an insert/extract query without changing the stored amount. Face permissions and per-operation limits are part of the buffer contract.
-
-**ProjectE implication:** Energy Collector and Antimatter Relay should use this native block-energy capability instead of maintaining a second `AttachmentType<i64>` buffer. The current `BUFFER` attachment is legacy implementation state until that migration is implemented.
+**ProjectE implication:** the current implementation stores EMC in a ProjectE-owned `emc` field in the block entity's saved NBT and mutates adjacent mod block entities through `Host::change_mod_block_entity`. This is a documented workaround, not the preferred long-term backend. See [API_WORKAROUNDS.md](API_WORKAROUNDS.md).
 
 ### Native item energy
 
@@ -263,8 +256,8 @@ Run Rust unit tests in the same Horizon-enabled toolchain environment. A success
 | Area | Current implementation | Horizon-aligned direction |
 | --- | --- | --- |
 | Player EMC / knowledge | Player attachment | Keep server-authoritative; handle attachment errors explicitly. |
-| Collector / Relay energy | Custom `BUFFER: AttachmentType<i64>` | Migrate to `ModEnergyBuffer`. |
-| Klein Stars | Ordinary registered items | Add `ItemEnergyBuffer` capability. |
+| Collector / Relay energy | ProjectE-owned block-entity NBT field `emc` | Migrate to `ModEnergyBuffer` when trait-mod Host access is exposed. |
+| Klein Stars | Registered `projecte:stored_emc` component | Migrate to `ItemEnergyBuffer` when trait-mod Host access is exposed. |
 | EMC values | Hardcoded table plus suffix fallback | Add `projecte:emc` Data Map and explicit defaults; remove unsafe assumptions for unknown modded items. |
 | Transmutation UI | 54-slot chest menu | Keep as initial UI; custom screen for advanced browser/search. |
 | Recipes | Small fixed recipe set | Use real world recipe APIs and/or data-driven recipe definitions. |

@@ -1,4 +1,4 @@
-//! Per-player ProjectE data and block-machine buffers.
+//! Per-player ProjectE data.
 
 use std::collections::BTreeSet;
 
@@ -54,34 +54,6 @@ pub static PLAYER: AttachmentType<PlayerData> = AttachmentType {
         decode: decode_player,
     }),
     copy_on_death: true,
-    sync: false,
-};
-
-fn encode_i64(value: &i64) -> Result<Compound, AttachmentError> {
-    let mut out = Compound::new();
-    out.insert("value".into(), Tag::Long(*value));
-    Ok(out)
-}
-
-fn decode_i64(data: &Compound) -> Result<i64, AttachmentError> {
-    match data.get(&"value".into()) {
-        Some(Tag::Long(v)) => Ok(*v),
-        Some(Tag::Int(v)) => Ok(i64::from(*v)),
-        _ => Ok(0),
-    }
-}
-
-/// EMC accumulated by a collector or relay. Kept on the block entity holder so
-/// it survives unloads and restarts.
-pub static BUFFER: AttachmentType<i64> = AttachmentType {
-    namespace: "projecte",
-    name: "buffer",
-    default: || 0,
-    codec: Some(AttachmentCodec {
-        encode: encode_i64,
-        decode: decode_i64,
-    }),
-    copy_on_death: false,
     sync: false,
 };
 
