@@ -434,10 +434,9 @@ impl Hooks for ProjectE {
         if event.stack.count > 1
             && let Some(total) = alchemical::total_value(&event.stack.item, event.stack.count)
         {
-            event.lines.push((
-                Text::literal(format!("§7Stack EMC: §e{total}")),
-                u32::MAX,
-            ));
+            event
+                .lines
+                .push((Text::literal(format!("§7Stack EMC: §e{total}")), u32::MAX));
         }
         if let Some(tier) = alchemical::tier(&event.stack.item) {
             let burn = alchemical::burn_ticks(&event.stack.item).unwrap_or(0);
@@ -457,10 +456,9 @@ impl Hooks for ProjectE {
             ));
         }
         if let Some(fuel) = alchemical::fuel_of_block(&event.stack.item) {
-            event.lines.push((
-                Text::literal(format!("§6Packed fuel: {fuel}")),
-                u32::MAX,
-            ));
+            event
+                .lines
+                .push((Text::literal(format!("§6Packed fuel: {fuel}")), u32::MAX));
         }
         if &*event.stack.item == PHILOSOPHERS_STONE {
             event.lines.push((
@@ -709,7 +707,9 @@ fn command_transmute(host: &mut dyn Host, event: &PerformCommandEvent<'_>, args:
     };
     let reserved = plan.maximum_cost();
     if !data::take_emc(host, event.player.uuid, reserved) {
-        host.feedback(Text::literal("§cYour EMC balance changed; the transmutation was cancelled."));
+        host.feedback(Text::literal(
+            "§cYour EMC balance changed; the transmutation was cancelled.",
+        ));
         return true;
     }
     let leftover = host.give_stack(event.player.uuid, stack(&id, count));
