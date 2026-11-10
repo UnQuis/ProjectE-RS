@@ -327,7 +327,10 @@ mod tests {
         let state = CondenserState {
             stored_emc: 8192 * 10,
         };
-        let spec = CondenserSpec { capacity: 100_000, ..MK1 };
+        let spec = CondenserSpec {
+            capacity: 100_000,
+            ..MK1
+        };
         let plan = plan_output_production(state, spec, 8192, 64).unwrap();
         assert_eq!(plan.produced_items, 1);
         assert_eq!(plan.charged_emc, 8192);
