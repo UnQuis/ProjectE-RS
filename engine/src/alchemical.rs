@@ -49,9 +49,7 @@ pub(crate) fn next_tier(id: &str) -> Option<&'static str> {
 /// The fuel one step below `id`, e.g. Mobius Fuel to Alchemical Coal.
 pub(crate) fn previous_tier(id: &str) -> Option<&'static str> {
     let index = tier(id)?;
-    index
-        .checked_sub(1)
-        .and_then(|lower| FUEL_TIERS.get(lower).copied())
+    index.checked_sub(1).and_then(|lower| FUEL_TIERS.get(lower).copied())
 }
 
 /// Furnace burn time in ticks, if `id` is a fuel.
@@ -175,11 +173,7 @@ const WOOL_COLORS: [&str; 16] = [
 /// that the sneaking form of a single-option swap has no second result.
 pub(crate) fn world_swap(from: &str, sneaking: bool) -> Option<&'static str> {
     if let Some(swap) = BLOCK_SWAPS.iter().find(|swap| swap.from == from) {
-        return if sneaking {
-            swap.sneaking
-        } else {
-            Some(swap.to)
-        };
+        return if sneaking { swap.sneaking } else { Some(swap.to) };
     }
     for (suffix, families) in [
         ("_log", &LOG_FAMILIES[..]),
@@ -407,37 +401,22 @@ mod tests {
 
     #[test]
     fn documented_world_swaps_resolve_both_ways() {
-        assert_eq!(
-            world_swap("minecraft:stone", false),
-            Some("minecraft:cobblestone")
-        );
-        assert_eq!(
-            world_swap("minecraft:stone", true),
-            Some("minecraft:grass_block")
-        );
+        assert_eq!(world_swap("minecraft:stone", false), Some("minecraft:cobblestone"));
+        assert_eq!(world_swap("minecraft:stone", true), Some("minecraft:grass_block"));
         assert_eq!(
             world_swap("minecraft:grass_block", false),
             Some("minecraft:sand")
         );
         assert_eq!(world_swap("minecraft:water", false), Some("minecraft:ice"));
-        assert_eq!(
-            world_swap("minecraft:lava", false),
-            Some("minecraft:obsidian")
-        );
+        assert_eq!(world_swap("minecraft:lava", false), Some("minecraft:obsidian"));
         // A swap without a sneaking variant stays put while sneaking.
         assert_eq!(world_swap("minecraft:lava", true), None);
     }
 
     #[test]
     fn wood_and_wool_families_cycle() {
-        assert_eq!(
-            world_swap("minecraft:oak_log", false),
-            Some("minecraft:spruce_log")
-        );
-        assert_eq!(
-            world_swap("minecraft:spruce_log", true),
-            Some("minecraft:oak_log")
-        );
+        assert_eq!(world_swap("minecraft:oak_log", false), Some("minecraft:spruce_log"));
+        assert_eq!(world_swap("minecraft:spruce_log", true), Some("minecraft:oak_log"));
         assert_eq!(
             world_swap("minecraft:cherry_log", false),
             Some("minecraft:oak_log")
@@ -485,9 +464,10 @@ mod tests {
     #[test]
     fn stone_conversions_are_emc_neutral() {
         for conversion in STONE_CONVERSIONS {
-            let spent =
-                total_value(conversion.from, conversion.from_count).expect("a valued ingredient");
-            let made = total_value(conversion.to, conversion.to_count).expect("a valued result");
+            let spent = total_value(conversion.from, conversion.from_count)
+                .expect("a valued ingredient");
+            let made =
+                total_value(conversion.to, conversion.to_count).expect("a valued result");
             assert_eq!(
                 spent, made,
                 "{} x{} -> {} x{} is not neutral",
