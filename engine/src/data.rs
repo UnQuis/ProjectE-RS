@@ -105,10 +105,12 @@ pub fn try_add_emc(
     Ok(emc)
 }
 
+#[expect(dead_code, reason = "legacy wrapper retained for callers outside the machine path")]
 pub fn add_emc(host: &mut dyn horizon_client::mod_api::Host, uuid: u128, amount: i64) -> i64 {
     try_add_emc(host, uuid, amount).unwrap_or_else(|_| get(host, uuid).emc)
 }
 
+#[expect(dead_code, reason = "reserved for the Transmutation Table purchase path")]
 pub fn take_emc(host: &mut dyn horizon_client::mod_api::Host, uuid: u128, amount: i64) -> bool {
     if amount < 0 {
         return false;
