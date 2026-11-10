@@ -8,15 +8,17 @@ use std::sync::Arc;
 
 use horizon_client::mod_api::*;
 
+mod alchemical;
 mod data;
 mod emc;
 mod energy;
 mod machines;
+mod progression;
+mod recipes;
 mod transaction;
 
-const MOD_ID: &str = "projecte";
-const TABLE: &str = "projecte:transmutation_table";
-const PHILOSOPHERS_STONE: &str = "projecte:philosophers_stone";
+const TABLE: &str = recipes::TABLE;
+const PHILOSOPHERS_STONE: &str = alchemical::PHILOSOPHERS_STONE;
 
 const MENU_SLOTS: usize = 54;
 
@@ -40,6 +42,16 @@ impl Hooks for ProjectE {
             machine.id = id.to_string();
             machine.template = "minecraft:furnace".to_string();
             machine.item = true;
+        }
+
+        // Fuel storage blocks. They borrow a vanilla template look until the
+        // project's own models and textures exist.
+        for (_, block) in alchemical::FUEL_BLOCKS {
+            event.blocks.push(Default::default());
+            let fuel = event.blocks.last_mut().unwrap();
+            fuel.id = block.to_string();
+            fuel.template = "minecraft:coal_block".to_string();
+            fuel.item = true;
         }
     }
 
@@ -120,6 +132,118 @@ impl Hooks for ProjectE {
         };
         open_table(host, player.uuid);
         Flow::Cancel
+    }
+
+    /// World transmutation: the stone turns the block it is used on into a
+    /// deterministic partner block, free of charge and without being used up.
+    ///
+    /// `edit_blocks` writes block states by name on the level being ticked,
+    /// and its filter makes the write conditional: a block that changed since
+    /// the click is left alone instead of overwritten. The block is free, as
+    /// public ProjectE behavior describes; the cost of the stone is its recipe.
+    fn use_item_on(&self, host: &mut dyn Host, event: &mut UseItemOnEvent<'_>) -> Flow {
+        if &*event.stack.item != PHILOSOPHERS_STONE {
+            return Flow::Continue;
+        }
+        // Client-side copies of the world have no acting player, and the world
+        // edit helper refuses a level that is not the server's ticking one.
+        let Some(player) = host.acting_player() else {
+            return Flow::Continue;
+        };
+        let from = host.block(event.pos);
+        if !alchemical::is_transformable(&from) {
+            // Leave the click alone: the stone has nothing to say about this
+            // block, so it must not claim the use either.
+            return Flow::Continue;
+        }
+        let Some(to) = alchemical::world_swap(&from, player.sneaking) else {
+            // Transformable, but this block has a single form and the player
+            // asked for the second one.
+            host.action_bar(
+                player.uuid,
+                Text::literal(format!(
+                    "§7The stone has no second form for {}.",
+                    emc::display_name(&from)
+                )),
+            );
+            return Flow::Cancel;
+        };
+        let edit = NativeBlockEdit {
+            palette: vec![to.to_string()],
+            filters: vec![from.clone()],
+            runs: vec![NativeBlockRun {
+                x: event.pos[0],
+                z: event.pos[2],
+                y: event.pos[1],
+                height: 1,
+                surface: None,
+                block: 0,
+                only: Some(0),
+            }],
+        };
+        match host.edit_blocks(&player.dimension, &edit) {
+            Ok(1) => {
+                host.action_bar(
+                    player.uuid,
+                    Text::literal(format!(
+                        "§dTransmuted {} into §e{}§d.",
+                        emc::display_name(&from),
+                        emc::display_name(to)
+                    )),
+                );
+            }
+            Ok(0) => {
+                // The chunk was not loaded, or the block stopped being what
+                // was clicked. Nothing was changed, and the player is told so
+                // rather than left to think the click worked.
+                host.action_bar(
+                    player.uuid,
+                    Text::literal(format!(
+                        "§7Nothing changed: the block is no longer {}.",
+                        emc::display_name(&from)
+                    )),
+                );
+            }
+            Ok(changed) => {
+                // The single-run edit can only report one block; more than
+                // that means the Host applied something else, which is worth
+                // surfacing instead of hiding.
+                host.tell(
+                    player.uuid,
+                    Text::literal(format!(
+                        "§cThe stone applied {changed} block changes instead of one."
+                    )),
+                );
+            }
+            Err(reason) => {
+                // A refused edit is reported, never swallowed: the player (or
+                // the log reader, through the chat line) must know why.
+                host.tell(
+                    player.uuid,
+                    Text::literal(format!("§cThe stone could not change the block: {reason}")),
+                );
+            }
+        }
+        Flow::Cancel
+    }
+
+    /// Data-pack recipes cannot keep an ingredient, so every recipe that needs
+    /// the Philosopher's Stone lists it as an ordinary one; this hook gives one
+    /// stone back for each such craft. See `API_WORKAROUNDS.md`.
+    fn item_crafted(&self, host: &mut dyn Host, event: &mut ItemCraftedEvent<'_>) {
+        if !recipes::is_catalyst_recipe(event.recipe) {
+            return;
+        }
+        let leftover = host.give_stack(event.player, stack(PHILOSOPHERS_STONE, 1));
+        if let Some(leftover) = leftover {
+            host.tell(
+                event.player,
+                Text::literal(format!(
+                    "§cYour Philosopher's Stone could not be returned: {} did not fit in your inventory.",
+                    leftover.count
+                )),
+            );
+        }
     }
 
     fn menu_clicked(&self, host: &mut dyn Host, event: &mut MenuClickedEvent) {
@@ -207,6 +331,9 @@ impl Hooks for ProjectE {
         event
             .commands
             .push(NativeCommand::new("projecte reset"));
+        event
+            .commands
+            .push(NativeCommand::new("projecte roadmap"));
     }
 
     fn perform_command(
@@ -247,6 +374,10 @@ impl Hooks for ProjectE {
                 }
                 true
             }
+            Some("roadmap") => {
+                command_roadmap(host);
+                true
+            }
             Some("reset") => {
                 data::set(host, event.player.uuid, data::PlayerData::default());
                 host.feedback(Text::literal("§aProjectE data reset."));
@@ -258,7 +389,7 @@ impl Hooks for ProjectE {
             Flow::Cancel
         } else {
             host.feedback(Text::literal(
-                "§cUsage: /projecte <emc|learn|transmute|table|value|reset>",
+                "§cUsage: /projecte <emc|learn|transmute|table|value|reset|roadmap>",
             ));
             Flow::Cancel
         }
@@ -282,20 +413,7 @@ impl Hooks for ProjectE {
     }
 
     fn data_pack_files(&self, _host: &dyn Host, event: &mut DataPackFilesEvent<'_>) {
-        for (name, ingredients, result, count) in RECIPES {
-            let list = ingredients
-                .iter()
-                .map(|id| format!("\"{id}\""))
-                .collect::<Vec<_>>()
-                .join(",");
-            let json = format!(
-                "{{\"type\":\"minecraft:crafting_shapeless\",\"category\":\"misc\",\"ingredients\":[{list}],\"result\":{{\"id\":\"{result}\",\"count\":{count}}}}}"
-            );
-            event.files.push((
-                format!("recipe/{MOD_ID}:{name}"),
-                json.into_bytes(),
-            ));
-        }
+        event.files.extend(recipes::files());
     }
 }
 
@@ -376,6 +494,22 @@ fn find_player(host: &dyn Host, name: &str) -> Option<NativeServerPlayer> {
     host.server_players()
         .into_iter()
         .find(|p| p.name.eq_ignore_ascii_case(name))
+}
+
+/// Prints the documented progression and what of it exists today. The data
+/// lives in `progression.rs`, so this cannot drift from the tests.
+fn command_roadmap(host: &mut dyn Host) {
+    host.feedback(Text::literal(
+        "§dProjectE-RS progression (status - node - what it unlocks):",
+    ));
+    for node in progression::NODES {
+        host.feedback(Text::literal(format!(
+            "§7[{}] §e{}§7 - {}",
+            node.status.label(),
+            node.name,
+            node.unlocks
+        )));
+    }
 }
 
 fn command_emc(host: &mut dyn Host, event: &PerformCommandEvent<'_>, args: &[&str]) -> bool {
@@ -533,251 +667,3 @@ fn command_transmute(host: &mut dyn Host, event: &PerformCommandEvent<'_>, args:
     )));
     true
 }
-
-const RECIPES: &[(&str, &[&str], &str, u32)] = &[
-    (
-        "philosophers_stone",
-        &[
-            "minecraft:glowstone_dust",
-            "minecraft:glowstone_dust",
-            "minecraft:glowstone_dust",
-            "minecraft:glowstone_dust",
-            "minecraft:diamond",
-            "minecraft:redstone",
-        ],
-        PHILOSOPHERS_STONE,
-        1,
-    ),
-    (
-        "transmutation_table",
-        &[
-            "minecraft:obsidian",
-            "minecraft:obsidian",
-            "minecraft:obsidian",
-            "minecraft:obsidian",
-            "minecraft:obsidian",
-            "minecraft:obsidian",
-            "minecraft:obsidian",
-            "minecraft:obsidian",
-            PHILOSOPHERS_STONE,
-        ],
-        TABLE,
-        1,
-    ),
-    (
-        "energy_collector",
-        &[
-            "minecraft:glowstone",
-            "minecraft:glowstone",
-            "minecraft:glowstone",
-            "minecraft:glowstone",
-            "minecraft:glowstone",
-            "minecraft:glowstone",
-            "minecraft:glowstone",
-            "minecraft:glowstone",
-            "minecraft:diamond",
-        ],
-        machines::COLLECTOR,
-        1,
-    ),
-    (
-        "antimatter_relay",
-        &[
-            "minecraft:obsidian",
-            "minecraft:obsidian",
-            "minecraft:obsidian",
-            "minecraft:obsidian",
-            "minecraft:obsidian",
-            "minecraft:obsidian",
-            "minecraft:obsidian",
-            "minecraft:obsidian",
-            machines::COLLECTOR,
-        ],
-        machines::RELAY,
-        1,
-    ),
-    (
-        "energy_collector_mk2",
-        &[
-            machines::COLLECTORS[0], machines::COLLECTORS[0], machines::COLLECTORS[0],
-            machines::COLLECTORS[0], machines::COLLECTORS[0], machines::COLLECTORS[0],
-            machines::COLLECTORS[0], machines::COLLECTORS[0], "minecraft:diamond",
-        ],
-        machines::COLLECTORS[1],
-        1,
-    ),
-    (
-        "energy_collector_mk3",
-        &[
-            machines::COLLECTORS[1], machines::COLLECTORS[1], machines::COLLECTORS[1],
-            machines::COLLECTORS[1], machines::COLLECTORS[1], machines::COLLECTORS[1],
-            machines::COLLECTORS[1], machines::COLLECTORS[1], "minecraft:nether_star",
-        ],
-        machines::COLLECTORS[2],
-        1,
-    ),
-    (
-        "antimatter_relay_mk2",
-        &[
-            machines::RELAYS[0], machines::RELAYS[0], machines::RELAYS[0],
-            machines::RELAYS[0], machines::RELAYS[0], machines::RELAYS[0],
-            machines::RELAYS[0], machines::RELAYS[0], "minecraft:diamond",
-        ],
-        machines::RELAYS[1],
-        1,
-    ),
-    (
-        "antimatter_relay_mk3",
-        &[
-            machines::RELAYS[1], machines::RELAYS[1], machines::RELAYS[1],
-            machines::RELAYS[1], machines::RELAYS[1], machines::RELAYS[1],
-            machines::RELAYS[1], machines::RELAYS[1], "minecraft:nether_star",
-        ],
-        machines::RELAYS[2],
-        1,
-    ),
-    (
-        "alchemical_coal",
-        &[
-            "minecraft:coal",
-            "minecraft:coal",
-            "minecraft:coal",
-            "minecraft:coal",
-            "minecraft:redstone",
-        ],
-        "projecte:alchemical_coal",
-        4,
-    ),
-    (
-        "mobius_fuel",
-        &[
-            "projecte:alchemical_coal",
-            "projecte:alchemical_coal",
-            "projecte:alchemical_coal",
-            "projecte:alchemical_coal",
-            "minecraft:glowstone_dust",
-        ],
-        "projecte:mobius_fuel",
-        4,
-    ),
-    (
-        "aeternalis_fuel",
-        &[
-            "projecte:mobius_fuel",
-            "projecte:mobius_fuel",
-            "projecte:mobius_fuel",
-            "projecte:mobius_fuel",
-            "minecraft:glowstone_dust",
-        ],
-        "projecte:aeternalis_fuel",
-        4,
-    ),
-    (
-        "dark_matter",
-        &[
-            "minecraft:coal",
-            "minecraft:coal",
-            "minecraft:coal",
-            "minecraft:coal",
-            "minecraft:coal",
-            "minecraft:coal",
-            "minecraft:coal",
-            "minecraft:coal",
-            "minecraft:diamond",
-        ],
-        "projecte:dark_matter",
-        1,
-    ),
-    (
-        "red_matter",
-        &[
-            "projecte:dark_matter",
-            "projecte:dark_matter",
-            "projecte:dark_matter",
-            "projecte:dark_matter",
-            "projecte:dark_matter",
-            "projecte:dark_matter",
-            "projecte:dark_matter",
-            "projecte:dark_matter",
-            "minecraft:diamond_block",
-        ],
-        "projecte:red_matter",
-        1,
-    ),
-    (
-        "klein_star_ein",
-        &[
-            "minecraft:diamond",
-            "minecraft:diamond",
-            "minecraft:diamond",
-            "minecraft:diamond",
-            "minecraft:diamond",
-            "minecraft:diamond",
-            "minecraft:diamond",
-            "minecraft:diamond",
-            "minecraft:glowstone",
-        ],
-        "projecte:klein_star_ein",
-        1,
-    ),
-    (
-        "klein_star_zwei",
-        &[
-            "projecte:klein_star_ein",
-            "projecte:klein_star_ein",
-            "projecte:klein_star_ein",
-            "projecte:klein_star_ein",
-            "minecraft:nether_star",
-        ],
-        "projecte:klein_star_zwei",
-        1,
-    ),
-    (
-        "klein_star_drei",
-        &[
-            "projecte:klein_star_zwei",
-            "projecte:klein_star_zwei",
-            "projecte:klein_star_zwei",
-            "projecte:klein_star_zwei",
-            "minecraft:nether_star",
-        ],
-        "projecte:klein_star_drei",
-        1,
-    ),
-    (
-        "klein_star_vier",
-        &[
-            "projecte:klein_star_drei",
-            "projecte:klein_star_drei",
-            "projecte:klein_star_drei",
-            "projecte:klein_star_drei",
-            "minecraft:nether_star",
-        ],
-        "projecte:klein_star_vier",
-        1,
-    ),
-    (
-        "klein_star_sphere",
-        &[
-            "projecte:klein_star_vier",
-            "projecte:klein_star_vier",
-            "projecte:klein_star_vier",
-            "projecte:klein_star_vier",
-            "minecraft:nether_star",
-        ],
-        "projecte:klein_star_sphere",
-        1,
-    ),
-    (
-        "klein_star_omega",
-        &[
-            "projecte:klein_star_sphere",
-            "projecte:klein_star_sphere",
-            "projecte:klein_star_sphere",
-            "projecte:klein_star_sphere",
-            "minecraft:nether_star",
-        ],
-        "projecte:klein_star_omega",
-        1,
-    ),
-];

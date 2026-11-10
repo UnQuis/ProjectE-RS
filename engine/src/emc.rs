@@ -2,7 +2,19 @@
 //!
 //! Values follow ProjectE's spirit (one cobblestone is 1 EMC, a diamond is
 //! 8192) but are deliberately kept in one readable table so a pack author can
-//! audit them. Unknown vanilla items fall back to cheap tag-like rules.
+//! audit them. Unknown vanilla items fall back to cheap tag-like rules, and
+//! only inside the `minecraft` namespace.
+//!
+//! Fuel values are ProjectE's ratios on this table's coal value: coal is 32,
+//! Alchemical Coal 128, Mobius Fuel 512 and Aeternalis Fuel 2048, so each
+//! tier is four times the last and the four-to-one crafting step in
+//! `recipes.rs` moves no EMC. Fuel blocks are nine fuels. Machine upgrade
+//! tiers are four times the tier below them; those prices are provisional and
+//! are listed for review in `PROGRESSION.md`.
+//!
+//! `furnace_burn` is listen-only at the pinned Horizon revision, so no burn
+//! time is registered from here; `alchemical::burn_ticks` carries the intended
+//! numbers as metadata.
 
 /// The value of one item, or 0 when the item has no EMC value.
 pub fn value(id: &str) -> u64 {
@@ -165,19 +177,15 @@ fn table_value(id: &str) -> Option<u64> {
         "projecte:klein_star_drei" => 131072,
         "projecte:klein_star_vier" => 524288,
         "projecte:transmutation_table" => 32768,
+        "projecte:alchemical_coal_block" => 1152,
+        "projecte:mobius_fuel_block" => 4608,
+        "projecte:aeternalis_fuel_block" => 18432,
         "projecte:energy_collector" => 16384,
+        "projecte:energy_collector_mk2" => 65536,
+        "projecte:energy_collector_mk3" => 262144,
         "projecte:antimatter_relay" => 65536,
-        _ => return None,
-    })
-}
-
-/// The burn value ProjectE's fuels carry (not used by vanilla furnaces yet;
-/// exposed for future furnace hooks).
-pub fn fuel_value(id: &str) -> Option<u64> {
-    Some(match id {
-        "projecte:alchemical_coal" => 128,
-        "projecte:mobius_fuel" => 512,
-        "projecte:aeternalis_fuel" => 2048,
+        "projecte:antimatter_relay_mk2" => 262144,
+        "projecte:antimatter_relay_mk3" => 1048576,
         _ => return None,
     })
 }

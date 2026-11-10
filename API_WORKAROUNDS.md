@@ -66,3 +66,59 @@ Do not replace this with a read-copy-write sequence: two machines could otherwis
 - Collectors feed adjacent Relays. Relays feed adjacent Relays only when the target has a lower fill ratio, reducing back-and-forth transfers. Machine slots are implemented; Collector fuel upgrades and Condensers are not implemented yet.
 - Klein Stars have persistent component storage and can be charged/discharged through Collector and Relay machine slots. Direct player-inventory transfer is not implemented yet.
 - Attachment read/write errors in the existing player-data layer are a separate cleanup item; do not silently copy those patterns into the energy backend.
+- Machine upgrade recipes (Collector MK2/MK3, Relay MK2/MK3) now exist in `engine/src/recipes.rs`, but a Collector still cannot upgrade fuel inside its own slots; that machine behavior is a later phase.
+
+## 5. Philosopher's Stone as a crafting catalyst
+
+**Current implementation**
+
+- Every recipe that needs the Philosopher's Stone lists it as an ordinary ingredient in its data-pack JSON (`engine/src/recipes.rs`, `CATALYST_RECIPES`).
+- The `item_crafted` hook gives one stone back for each craft whose recipe id is in that list, through `Host::give_stack`.
+- If the inventory cannot take the stone, the player is told in chat that the stone could not be returned; the failure is never silent.
+
+**Why this is a workaround**
+
+Vanilla recipe types (`minecraft:crafting_shaped` / `crafting_shapeless`) consume every ingredient, and the pinned data-pack format has no "container item" or "kept ingredient" flag. ProjectE's stone is a catalyst that stays in the grid, which is behavior, not decoration: without the refund a player would lose a 16,384 EMC item on their first fuel craft.
+
+The refund is a listener, not part of the craft, so it is applied after the result has been taken. It therefore depends on the inventory having room at that moment. Crafting frees the ingredient slots first, so the normal case always fits, but a full inventory is still reported to the player instead of being hidden.
+
+**Known risk:** a data pack that redefines one of this mod's recipe ids without the stone as an ingredient would receive free stones. Recipe ids are namespaced `projecte:`, so this is a pack-author trust boundary, not a multiplayer exploit.
+
+**Migration when Horizon supports it**
+
+1. Replace the refund with a recipe type that declares a kept ingredient, if the pinned recipe API grows one.
+2. Remove `CATALYST_RECIPES` and the `item_crafted` refund in one change; never keep both.
+3. Re-run the recipe tests in `recipes.rs`, which prove each catalyst recipe holds the stone and each non-catalyst recipe does not.
+
+## 6. World transmutation writes block states by name
+
+**Current implementation**
+
+- `use_item_on` resolves a partner block (`engine/src/alchemical.rs`, `world_swap`) and applies it with `Host::edit_blocks`, a single one-block run whose filter is the block that was clicked.
+- The player's dimension comes from `NativeServerPlayer::dimension`; the edit helper only accepts the level being ticked, which is the server's authoritative level.
+- Refusals (`Err`) and no-ops (`Ok(0)`) are reported to the player; they are never treated as success.
+
+**Why this is a workaround**
+
+`Host::set_block` needs a `BlockStateId`, and the pinned catalog exposes no helper that turns a block name into one (`native_default_state` exists inside Horizon but is not exported). `edit_blocks` takes block states as commands write them, so it is the only name-based write available to a trait mod. Its filter also gives the transform a compare-and-set guarantee that a `set_block` call would have to build by hand.
+
+Trade-offs: the write bypasses neighbour updates and block-entity drops (documented behavior of `fill ... strict`), and it cannot carry NBT. ProjectE's stone only swaps plain blocks, so both limits are acceptable for now.
+
+**Migration when Horizon exposes a state-id helper or a state-aware `set_block` path**
+
+1. Resolve the target state once and use `set_block` with explicit flags.
+2. Keep the compare-and-set check by re-reading the block before the write.
+3. Delete the single-run `NativeBlockEdit` construction in `lib.rs`.
+
+## 7. EMC values are not data-driven yet
+
+- `data_map_types` can register `projecte:emc` for `minecraft:item`, and a data pack can ship `data/projecte/data_maps/item/emc.json`.
+- The pinned `Host` exposes **no** data-map read helper: `native_data_map` and `native_data_map_entries` exist inside `horizon-client` but are not in `native-hooks.json`, so a trait mod cannot call them.
+- Until that changes, EMC resolution stays in the static table in `engine/src/emc.rs` plus the vanilla-only family rules. Registering the map type or shipping the JSON alone would not make the resolver data-driven, so this crate does neither yet.
+- Do not hand-roll a resource-file parser to imitate data maps: pack precedence, per-entry `replace`, tag expansion and `remove` would have to be re-implemented and would not match the server's merged map.
+
+**Migration when a read helper exists**
+
+1. Register `projecte:emc` through `data_map_types` and ship the default values as a data-pack file.
+2. Replace `emc::table_value` lookups with a read of the merged map, keeping the vanilla family rules as a documented fallback for entries the map does not cover.
+3. Keep the static table as the shipped default data, not as a second runtime source of truth.
