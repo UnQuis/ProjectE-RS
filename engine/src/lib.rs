@@ -571,7 +571,7 @@ const RECIPES: &[(&str, &[&str], &str, u32)] = &[
             "minecraft:obsidian",
             "minecraft:obsidian",
             "minecraft:obsidian",
-            COLLECTOR,
+            machines::COLLECTOR,
         ],
         machines::RELAY,
         1,
