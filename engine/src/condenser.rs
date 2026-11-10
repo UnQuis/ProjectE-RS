@@ -281,7 +281,7 @@ mod tests {
     #[test]
     fn input_is_limited_by_remaining_capacity() {
         let state = CondenserState { stored_emc: 9_950 };
-        let plan = plan_input_conversion(state, MK2, 32, 10).unwrap();
+        let plan = plan_input_conversion(state, MK1, 32, 10).unwrap();
         assert_eq!(plan.consumed_items, 1);
         assert_eq!(plan.credited_emc, 32);
         assert_eq!(plan.next_state.stored_emc, 9_982);
@@ -290,7 +290,7 @@ mod tests {
     #[test]
     fn input_does_not_consume_when_one_item_does_not_fit() {
         let state = CondenserState { stored_emc: 9_990 };
-        let plan = plan_input_conversion(state, MK2, 32, 10).unwrap();
+        let plan = plan_input_conversion(state, MK1, 32, 10).unwrap();
         assert_eq!(plan.consumed_items, 0);
         assert_eq!(plan.credited_emc, 0);
         assert_eq!(plan.next_state, state);
@@ -327,7 +327,8 @@ mod tests {
         let state = CondenserState {
             stored_emc: 8192 * 10,
         };
-        let plan = plan_output_production(state, MK1, 8192, 64).unwrap();
+        let spec = CondenserSpec { capacity: 100_000, ..MK1 };
+        let plan = plan_output_production(state, spec, 8192, 64).unwrap();
         assert_eq!(plan.produced_items, 1);
         assert_eq!(plan.charged_emc, 8192);
         assert_eq!(plan.next_state.stored_emc, 8192 * 9);
@@ -365,7 +366,7 @@ mod tests {
     #[test]
     fn receive_emc_is_limited_to_free_capacity() {
         let state = CondenserState { stored_emc: 9_950 };
-        let (accepted, next) = plan_receive_emc(state, MK2, 100).unwrap();
+        let (accepted, next) = plan_receive_emc(state, MK1, 100).unwrap();
         assert_eq!(accepted, 50);
         assert_eq!(next.stored_emc, 10_000);
     }
@@ -378,7 +379,7 @@ mod tests {
             Err(CondenserError::ZeroCapacity)
         );
         assert_eq!(
-            validate_state(CondenserState { stored_emc: 11 }, MK1),
+            validate_state(CondenserState { stored_emc: 10_001 }, MK1),
             Err(CondenserError::BufferExceedsCapacity)
         );
     }
