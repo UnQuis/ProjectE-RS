@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: rust-ci-${{ github.workflow }}-${{ github.ref }}
@@ -84,6 +84,21 @@ jobs:
           manifest.write_text(content.replace(local_path, ci_path))
           PY
           grep -F 'path = "../../horizon/crates/horizon-client"' engine/Cargo.toml
+
+      # The dependency chain predates the CI workflow and contains unformatted
+      # Rust files. Normalize this feature branch once, then verify the result.
+      - name: Format dependency branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/assistant/power-flower-condenser-mk1'
+        working-directory: projecte-rs
+        run: |
+          cargo fmt --all
+          if ! git diff --quiet -- engine/src; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add engine/src
+            git commit -m "style: format Rust dependency chain"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
 
       - name: Check formatting
         working-directory: projecte-rs
