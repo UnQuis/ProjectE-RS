@@ -260,11 +260,9 @@ fn table_pos(host: &dyn Host) -> Option<[i32; 3]> {
 /// catalogue, filtered and sorted. One function so the drawing code, the
 /// tooltips and the click handler never disagree about what is shown.
 pub(crate) fn browse_items(state: &TableScreen) -> Vec<&'static str> {
-    state
-        .browser
-        .visible(&super::state::PREVIEW_ITEMS, |id| {
-            i64::try_from(crate::emc::value(id)).unwrap_or(i64::MAX)
-        })
+    state.browser.visible(&super::state::PREVIEW_ITEMS, |id| {
+        i64::try_from(crate::emc::value(id)).unwrap_or(i64::MAX)
+    })
 }
 
 // --- the panels ------------------------------------------------------------
