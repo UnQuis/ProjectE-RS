@@ -111,11 +111,7 @@ pub(crate) const SHAPED: &[ShapedRecipe] = &[
     ShapedRecipe {
         name: "transmutation_table",
         pattern: ["OSO", "SPS", "OSO"],
-        key: &[
-            ('O', OBSIDIAN),
-            ('S', STONE_BLOCK),
-            ('P', STONE),
-        ],
+        key: &[('O', OBSIDIAN), ('S', STONE_BLOCK), ('P', STONE)],
         result: TABLE,
         count: 1,
     },
@@ -123,11 +119,7 @@ pub(crate) const SHAPED: &[ShapedRecipe] = &[
     ShapedRecipe {
         name: "energy_collector",
         pattern: ["GGG", "GDG", "GFG"],
-        key: &[
-            ('G', GLOWSTONE),
-            ('D', DIAMOND_BLOCK),
-            ('F', FURNACE),
-        ],
+        key: &[('G', GLOWSTONE), ('D', DIAMOND_BLOCK), ('F', FURNACE)],
         result: COLLECTOR,
         count: 1,
     },
@@ -135,11 +127,7 @@ pub(crate) const SHAPED: &[ShapedRecipe] = &[
     ShapedRecipe {
         name: "antimatter_relay",
         pattern: ["OOO", "OXO", "ODO"],
-        key: &[
-            ('O', OBSIDIAN),
-            ('X', GLASS),
-            ('D', DIAMOND_BLOCK),
-        ],
+        key: &[('O', OBSIDIAN), ('X', GLASS), ('D', DIAMOND_BLOCK)],
         result: RELAY,
         count: 1,
     },
@@ -148,44 +136,28 @@ pub(crate) const SHAPED: &[ShapedRecipe] = &[
     ShapedRecipe {
         name: "energy_collector_mk2",
         pattern: ["GGM", "GCG", "GGG"],
-        key: &[
-            ('G', GLOWSTONE),
-            ('M', DARK_MATTER),
-            ('C', COLLECTOR),
-        ],
+        key: &[('G', GLOWSTONE), ('M', DARK_MATTER), ('C', COLLECTOR)],
         result: COLLECTOR_MK2,
         count: 1,
     },
     ShapedRecipe {
         name: "energy_collector_mk3",
         pattern: ["GGR", "GCG", "GGG"],
-        key: &[
-            ('G', GLOWSTONE),
-            ('R', RED_MATTER),
-            ('C', COLLECTOR_MK2),
-        ],
+        key: &[('G', GLOWSTONE), ('R', RED_MATTER), ('C', COLLECTOR_MK2)],
         result: COLLECTOR_MK3,
         count: 1,
     },
     ShapedRecipe {
         name: "antimatter_relay_mk2",
         pattern: ["GGM", "GRG", "GGG"],
-        key: &[
-            ('G', GLOWSTONE),
-            ('M', DARK_MATTER),
-            ('R', RELAY),
-        ],
+        key: &[('G', GLOWSTONE), ('M', DARK_MATTER), ('R', RELAY)],
         result: RELAY_MK2,
         count: 1,
     },
     ShapedRecipe {
         name: "antimatter_relay_mk3",
         pattern: ["GGM", "GRG", "GGG"],
-        key: &[
-            ('G', GLOWSTONE),
-            ('M', RED_MATTER),
-            ('R', RELAY_MK2),
-        ],
+        key: &[('G', GLOWSTONE), ('M', RED_MATTER), ('R', RELAY_MK2)],
         result: RELAY_MK3,
         count: 1,
     },
@@ -240,7 +212,13 @@ pub(crate) const SHAPELESS: &[ShapelessRecipe] = &[
     },
     ShapelessRecipe {
         name: "mobius_fuel",
-        ingredients: &[ALCHEMICAL_COAL, ALCHEMICAL_COAL, ALCHEMICAL_COAL, ALCHEMICAL_COAL, STONE],
+        ingredients: &[
+            ALCHEMICAL_COAL,
+            ALCHEMICAL_COAL,
+            ALCHEMICAL_COAL,
+            ALCHEMICAL_COAL,
+            STONE,
+        ],
         result: MOBIUS_FUEL,
         count: 1,
     },
@@ -272,7 +250,13 @@ pub(crate) const SHAPELESS: &[ShapelessRecipe] = &[
     // Klein Star upgrades: four of a tier plus a nether star.
     ShapelessRecipe {
         name: "klein_star_zwei",
-        ingredients: &[KLEIN_STAR_EIN, KLEIN_STAR_EIN, KLEIN_STAR_EIN, KLEIN_STAR_EIN, NETHER_STAR],
+        ingredients: &[
+            KLEIN_STAR_EIN,
+            KLEIN_STAR_EIN,
+            KLEIN_STAR_EIN,
+            KLEIN_STAR_EIN,
+            NETHER_STAR,
+        ],
         result: KLEIN_STAR_ZWEI,
         count: 1,
     },
@@ -550,8 +534,18 @@ mod tests {
                 .expect("fuel recipe");
             assert_eq!(recipe.result, fuel);
             assert_eq!(recipe.count, 1);
-            assert_eq!(recipe.ingredients.iter().filter(|id| **id == previous).count(), 4);
-            assert_eq!(recipe.ingredients.iter().filter(|id| **id == STONE).count(), 1);
+            assert_eq!(
+                recipe
+                    .ingredients
+                    .iter()
+                    .filter(|id| **id == previous)
+                    .count(),
+                4
+            );
+            assert_eq!(
+                recipe.ingredients.iter().filter(|id| **id == STONE).count(),
+                1
+            );
         }
     }
 
@@ -603,7 +597,11 @@ mod tests {
                 "{key}: {kind}"
             );
             let expected_count = if key.ends_with("_from_block") { 9 } else { 1 };
-            assert_eq!(value["result"]["count"].as_u64(), Some(expected_count), "{key}");
+            assert_eq!(
+                value["result"]["count"].as_u64(),
+                Some(expected_count),
+                "{key}"
+            );
             if kind == "minecraft:crafting_shaped" {
                 assert_eq!(value["pattern"].as_array().map(|rows| rows.len()), Some(3));
             } else {
