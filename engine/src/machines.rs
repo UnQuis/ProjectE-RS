@@ -35,12 +35,19 @@ const TRANSFER_LIMIT: [i64; 3] = [64, 192, 640];
 const RELAY_BONUS_PER_TICK_MILLI: [i64; 3] = [50, 150, 500];
 
 const FACES: [[i32; 3]; 6] = [
-    [0, -1, 0], [0, 1, 0], [0, 0, -1],
-    [0, 0, 1], [-1, 0, 0], [1, 0, 0],
+    [0, -1, 0],
+    [0, 1, 0],
+    [0, 0, -1],
+    [0, 0, 1],
+    [-1, 0, 0],
+    [1, 0, 0],
 ];
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum Machine { Collector(usize), Relay(usize) }
+enum Machine {
+    Collector(usize),
+    Relay(usize),
+}
 
 impl Machine {
     fn of(block: &str) -> Option<Self> {
@@ -76,16 +83,22 @@ impl Machine {
     }
 }
 
-pub(crate) fn is_machine(block: &str) -> bool { Machine::of(block).is_some() }
+pub(crate) fn is_machine(block: &str) -> bool {
+    Machine::of(block).is_some()
+}
 
 pub(crate) fn block_entity(block: &str) -> Option<(String, Compound)> {
     is_machine(block).then(|| (BLOCK_ENTITY.to_owned(), Compound::new()))
 }
 
-pub(crate) fn has_tick(block: &str) -> bool { is_machine(block) }
+pub(crate) fn has_tick(block: &str) -> bool {
+    is_machine(block)
+}
 
 pub(crate) fn container(block: &str) -> Option<ModContainer> {
-    if !is_machine(block) { return None; }
+    if !is_machine(block) {
+        return None;
+    }
     Some(ModContainer {
         slots: 3,
         faces: [vec![2, 1], vec![0], vec![1], vec![1], vec![1], vec![1]],
@@ -107,11 +120,17 @@ fn write_long(nbt: &mut Compound, key: &str, value: i64) {
     nbt.insert(key.into(), Tag::Long(value));
 }
 
-fn read_emc(nbt: &Compound) -> i64 { read_long(nbt, EMC_KEY).max(0) }
-fn write_emc(nbt: &mut Compound, value: i64) { write_long(nbt, EMC_KEY, value.max(0)); }
+fn read_emc(nbt: &Compound) -> i64 {
+    read_long(nbt, EMC_KEY).max(0)
+}
+fn write_emc(nbt: &mut Compound, value: i64) {
+    write_long(nbt, EMC_KEY, value.max(0));
+}
 
 fn migrate_legacy_buffer(host: &mut dyn Host, pos: [i32; 3], nbt: &mut Compound, max: i64) -> bool {
-    if nbt.get(&EMC_KEY.into()).is_some() { return true; }
+    if nbt.get(&EMC_KEY.into()).is_some() {
+        return true;
+    }
     let legacy = match data::BUFFER.get(host, Holder::BlockEntity(pos)) {
         Ok(value) => value.clamp(0, max),
         Err(_) => return false,
@@ -122,7 +141,11 @@ fn migrate_legacy_buffer(host: &mut dyn Host, pos: [i32; 3], nbt: &mut Compound,
 }
 
 fn collector_sun_level(sky_open: bool, daytime: bool, light: u8) -> u8 {
-    if sky_open && daytime { 16 } else { light.min(15).saturating_add(1).min(16) }
+    if sky_open && daytime {
+        16
+    } else {
+        light.min(15).saturating_add(1).min(16)
+    }
 }
 
 fn collector_sun(host: &dyn Host, pos: [i32; 3]) -> u8 {
@@ -140,15 +163,22 @@ fn collector_sun(host: &dyn Host, pos: [i32; 3]) -> u8 {
 fn collector_generation(rate_per_second: i64, sun: u8, micro: i64) -> (i64, i64) {
     let produced_micro = rate_per_second
         .saturating_mul(i64::from(sun.min(16)))
-        .saturating_mul(MICRO_PER_EMC) / 320;
-    let total = micro.clamp(0, MICRO_PER_EMC - 1).saturating_add(produced_micro);
+        .saturating_mul(MICRO_PER_EMC)
+        / 320;
+    let total = micro
+        .clamp(0, MICRO_PER_EMC - 1)
+        .saturating_add(produced_micro);
     (total / MICRO_PER_EMC, total % MICRO_PER_EMC)
 }
 
 fn share(offer: i64, room: &[i64]) -> Vec<i64> {
-    if room.is_empty() || offer <= 0 { return vec![0; room.len()]; }
+    if room.is_empty() || offer <= 0 {
+        return vec![0; room.len()];
+    }
     let each = offer / room.len() as i64;
-    room.iter().map(|available| each.min(*available).max(0)).collect()
+    room.iter()
+        .map(|available| each.min(*available).max(0))
+        .collect()
 }
 
 fn push_emc(host: &mut dyn Host, pos: [i32; 3], source: Machine, stored: i64, offer: i64) -> i64 {
@@ -158,9 +188,15 @@ fn push_emc(host: &mut dyn Host, pos: [i32; 3], source: Machine, stored: i64, of
 
     for face in FACES {
         let target_pos = [pos[0] + face[0], pos[1] + face[1], pos[2] + face[2]];
-        let Some(target) = Machine::of(&host.block(target_pos)) else { continue };
-        let Some(block_entity) = host.mod_block_entity(target_pos) else { continue };
-        if block_entity.id != BLOCK_ENTITY { continue; }
+        let Some(target) = Machine::of(&host.block(target_pos)) else {
+            continue;
+        };
+        let Some(block_entity) = host.mod_block_entity(target_pos) else {
+            continue;
+        };
+        if block_entity.id != BLOCK_ENTITY {
+            continue;
+        }
         let target_emc = read_emc(&block_entity.nbt).min(target.capacity());
         let room = (target.capacity() - target_emc).max(0);
         if room > 0 && source.feeds(target, source_fill, target.fill(target_emc)) {
@@ -172,13 +208,19 @@ fn push_emc(host: &mut dyn Host, pos: [i32; 3], source: Machine, stored: i64, of
     let allocations = share(offer, &rooms);
     let mut total = 0;
     for ((target_pos, target), allocation) in targets.into_iter().zip(allocations) {
-        if allocation == 0 { continue; }
+        if allocation == 0 {
+            continue;
+        }
         let mut moved = 0;
         host.change_mod_block_entity(target_pos, &mut |entity| {
-            if entity.id != BLOCK_ENTITY { return; }
+            if entity.id != BLOCK_ENTITY {
+                return;
+            }
             let current = read_emc(&entity.nbt).min(target.capacity());
             moved = allocation.min(target.capacity() - current).max(0);
-            if moved > 0 { write_emc(&mut entity.nbt, current + moved); }
+            if moved > 0 {
+                write_emc(&mut entity.nbt, current + moved);
+            }
         });
         total += moved;
     }
@@ -188,18 +230,26 @@ fn push_emc(host: &mut dyn Host, pos: [i32; 3], source: Machine, stored: i64, of
 fn take_one(slot: &mut Option<ItemStack>) {
     if let Some(stack) = slot.as_mut() {
         stack.count = stack.count.saturating_sub(1);
-        if stack.count == 0 { *slot = None; }
+        if stack.count == 0 {
+            *slot = None;
+        }
     }
 }
 
 fn move_full_star(entity: &mut ModBlockEntity, input_slot: usize) {
-    if input_slot >= entity.items.len() || entity.items[input_slot].is_none() { return; }
-    if entity.items.get(2).is_some_and(Option::is_some) { return; }
+    if input_slot >= entity.items.len() || entity.items[input_slot].is_none() {
+        return;
+    }
+    if entity.items.get(2).is_some_and(Option::is_some) {
+        return;
+    }
     entity.items[2] = entity.items[input_slot].take();
 }
 
 fn furnace_data(stored: i64, capacity: i64) -> Vec<i32> {
-    let scaled = if capacity <= 0 { 0 } else {
+    let scaled = if capacity <= 0 {
+        0
+    } else {
         (stored.clamp(0, capacity) as i128 * 1000 / capacity as i128) as i32
     };
     vec![scaled, 1000, 0, 1000]
@@ -257,7 +307,11 @@ fn relay_tick(
 
     if let Some(mut input) = event.entity.items[0].clone() {
         if energy::capacity(&input.item).is_some() {
-            let moved = energy::discharge(host, &mut input, (capacity - stored).min(machine.transfer()));
+            let moved = energy::discharge(
+                host,
+                &mut input,
+                (capacity - stored).min(machine.transfer()),
+            );
             stored += moved;
             event.entity.items[0] = Some(input);
         } else {
@@ -274,9 +328,12 @@ fn relay_tick(
             stored -= energy::charge(host, &mut output, stored.min(machine.transfer()));
             event.entity.items[1] = Some(output);
             let full = event.entity.items[1].as_ref().is_some_and(|stack| {
-                energy::stored_emc(host, stack).unwrap_or(0) >= energy::capacity(&stack.item).unwrap_or(i64::MAX)
+                energy::stored_emc(host, stack).unwrap_or(0)
+                    >= energy::capacity(&stack.item).unwrap_or(i64::MAX)
             });
-            if full && event.entity.items[2].is_none() { move_full_star(event.entity, 1); }
+            if full && event.entity.items[2].is_none() {
+                move_full_star(event.entity, 1);
+            }
         }
     }
 
@@ -295,11 +352,22 @@ fn relay_tick(
     event.entity.data = furnace_data(stored, capacity);
 }
 
-pub(crate) fn tick(host: &mut dyn Host, event: &mut horizon_client::mod_api::BlockEntityTickEvent<'_>) {
-    if event.entity.id != BLOCK_ENTITY { return; }
-    let Some(machine) = Machine::of(&host.block(event.pos)) else { return };
-    if !migrate_legacy_buffer(host, event.pos, &mut event.entity.nbt, machine.capacity()) { return; }
-    if event.entity.items.len() < 3 { event.entity.items.resize(3, None); }
+pub(crate) fn tick(
+    host: &mut dyn Host,
+    event: &mut horizon_client::mod_api::BlockEntityTickEvent<'_>,
+) {
+    if event.entity.id != BLOCK_ENTITY {
+        return;
+    }
+    let Some(machine) = Machine::of(&host.block(event.pos)) else {
+        return;
+    };
+    if !migrate_legacy_buffer(host, event.pos, &mut event.entity.nbt, machine.capacity()) {
+        return;
+    }
+    if event.entity.items.len() < 3 {
+        event.entity.items.resize(3, None);
+    }
     match machine {
         Machine::Collector(tier) => collector_tick(host, event.pos, event, tier),
         Machine::Relay(tier) => relay_tick(host, event.pos, event, tier),
@@ -307,12 +375,18 @@ pub(crate) fn tick(host: &mut dyn Host, event: &mut horizon_client::mod_api::Blo
 }
 
 pub(crate) fn collect(host: &mut dyn Host, pos: [i32; 3], player: u128) {
-    let Some(machine) = Machine::of(&host.block(pos)) else { return };
+    let Some(machine) = Machine::of(&host.block(pos)) else {
+        return;
+    };
     let mut collected = 0;
     host.change_mod_block_entity(pos, &mut |entity| {
-        if entity.id != BLOCK_ENTITY { return; }
+        if entity.id != BLOCK_ENTITY {
+            return;
+        }
         collected = read_emc(&entity.nbt).min(machine.capacity());
-        if collected > 0 { write_emc(&mut entity.nbt, 0); }
+        if collected > 0 {
+            write_emc(&mut entity.nbt, 0);
+        }
     });
     if collected > 0 {
         match data::try_add_emc(host, player, collected) {
@@ -333,12 +407,17 @@ pub(crate) fn collect(host: &mut dyn Host, pos: [i32; 3], player: u128) {
                 });
                 host.tell(
                     player,
-                    Text::literal("§cCould not save your EMC balance; machine buffer was restored."),
+                    Text::literal(
+                        "§cCould not save your EMC balance; machine buffer was restored.",
+                    ),
                 );
             }
         }
     } else {
-        host.tell(player, Text::literal("§7This machine has not collected any EMC yet."));
+        host.tell(
+            player,
+            Text::literal("§7This machine has not collected any EMC yet."),
+        );
     }
 }
 
