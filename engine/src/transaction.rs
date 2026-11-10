@@ -46,7 +46,8 @@ pub(crate) fn plan_purchase(
         return Err(PurchaseError::ZeroCount);
     }
 
-    let maximum_cost = checked_cost(value, requested)?;
+    let maximum_cost = crate::emc::checked_cost(value, requested)
+        .ok_or(PurchaseError::CostOverflow)?;
     if balance < maximum_cost {
         return Err(PurchaseError::InsufficientEmc {
             required: maximum_cost,
@@ -82,7 +83,8 @@ pub(crate) fn settle_purchase(
         return Err(PurchaseError::InvalidGrant);
     }
 
-    let spent = checked_cost(plan.value, granted)?;
+    let spent = crate::emc::checked_cost(plan.value, granted)
+        .ok_or(PurchaseError::CostOverflow)?;
     if spent > plan.maximum_cost || spent > balance {
         return Err(PurchaseError::InvalidGrant);
     }
@@ -94,13 +96,22 @@ pub(crate) fn settle_purchase(
     })
 }
 
-/// Cost calculation shared by preflight and settlement. The balance is i64,
-/// so a larger product is never a valid transaction.
-fn checked_cost(value: u64, count: u32) -> Result<i64, PurchaseError> {
-    let total = value
-        .checked_mul(u64::from(count))
-        .ok_or(PurchaseError::CostOverflow)?;
-    i64::try_from(total).map_err(|_| PurchaseError::CostOverflow)
+impl PurchaseError {
+    pub(crate) fn message(self) -> String {
+        match self {
+            Self::ZeroValue => "This item has no EMC value.".to_owned(),
+            Self::ZeroCount => "Cannot transmute zero items.".to_owned(),
+            Self::CostOverflow => "That transaction is too expensive.".to_owned(),
+            Self::InsufficientEmc { required, available } => {
+                format!("Not enough EMC: need {required}, have {available}.")
+            }
+            Self::InsufficientInventory { required, available } => {
+                format!("Not enough inventory space: need {required}, have room for {available}.")
+            }
+            Self::NothingGranted => "Could not give the item.".to_owned(),
+            Self::InvalidGrant => "The inventory returned an invalid item count.".to_owned(),
+        }
+    }
 }
 
 #[cfg(test)]
