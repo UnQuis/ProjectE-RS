@@ -603,7 +603,7 @@ pub(crate) fn collect(host: &mut dyn Host, pos: [i32; 3], player: u128) {
                     Text::literal(
                         "§cCould not save your EMC balance; machine buffer was restored.",
                     ),
-                );
+                )
             }
         }
     } else {

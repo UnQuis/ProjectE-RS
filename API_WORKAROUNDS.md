@@ -68,7 +68,7 @@ Do not replace this with a read-copy-write sequence: two machines could otherwis
 - Attachment read/write errors in the existing player-data layer are a separate cleanup item; do not silently copy those patterns into the energy backend.
 - Machine upgrade recipes (Collector MK2/MK3, Relay MK2/MK3) now exist in `engine/src/recipes.rs`, but a Collector still cannot upgrade fuel inside its own slots; that machine behavior is a later phase.
 
-## 5. Condenser inventory and Power Flower routing
+## 4.1 Condenser inventory and Power Flower routing
 
 **Current implementation**
 

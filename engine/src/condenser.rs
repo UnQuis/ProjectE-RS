@@ -14,9 +14,8 @@ pub struct CondenserState {
 
 /// Per-tick limits supplied by the machine tier.
 ///
-/// Balance constants are intentionally not selected here: the public gameplay
-/// references vary by ProjectE version, so tier values belong in a later,
-/// explicitly reviewed machine specification.
+/// Each playable tier has an explicit specification. MK1's current values are
+/// initial balance choices, not a claim of exact parity with every ProjectE version.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct CondenserSpec {
     pub capacity: u64,

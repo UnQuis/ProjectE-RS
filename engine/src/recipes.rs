@@ -44,6 +44,7 @@ const DIAMOND_BLOCK: &str = "minecraft:diamond_block";
 const OBSIDIAN: &str = "minecraft:obsidian";
 const STONE_BLOCK: &str = "minecraft:stone";
 const FURNACE: &str = "minecraft:furnace";
+const CHEST: &str = "minecraft:chest";
 const GLASS: &str = "minecraft:glass";
 const IRON: &str = "minecraft:iron_ingot";
 const GOLD: &str = "minecraft:gold_ingot";
@@ -68,6 +69,8 @@ pub(crate) const RELAY: &str = "projecte:antimatter_relay";
 pub(crate) const RELAY_MK2: &str = "projecte:antimatter_relay_mk2";
 pub(crate) const RELAY_MK3: &str = "projecte:antimatter_relay_mk3";
 pub(crate) const TABLE: &str = "projecte:transmutation_table";
+pub(crate) const ALCHEMICAL_CHEST: &str = "projecte:alchemical_chest";
+pub(crate) const ENERGY_CONDENSER: &str = "projecte:energy_condenser";
 pub(crate) const KLEIN_STAR_EIN: &str = "projecte:klein_star_ein";
 pub(crate) const KLEIN_STAR_ZWEI: &str = "projecte:klein_star_zwei";
 pub(crate) const KLEIN_STAR_DREI: &str = "projecte:klein_star_drei";
@@ -129,6 +132,22 @@ pub(crate) const SHAPED: &[ShapedRecipe] = &[
         pattern: ["OOO", "OXO", "ODO"],
         key: &[('O', OBSIDIAN), ('X', GLASS), ('D', DIAMOND_BLOCK)],
         result: RELAY,
+        count: 1,
+    },
+    // Provisional Alchemical Chest recipe; verify this layout for the target version.
+    ShapedRecipe {
+        name: "alchemical_chest",
+        pattern: ["OOO", "OCO", "OOO"],
+        key: &[('O', OBSIDIAN), ('C', CHEST)],
+        result: ALCHEMICAL_CHEST,
+        count: 1,
+    },
+    // Energy Condenser MK1: obsidian corners, diamond sides, Alchemical Chest core.
+    ShapedRecipe {
+        name: "energy_condenser",
+        pattern: ["ODO", "DCD", "ODO"],
+        key: &[('O', OBSIDIAN), ('D', DIAMOND), ('C', ALCHEMICAL_CHEST)],
+        result: ENERGY_CONDENSER,
         count: 1,
     },
     // Tier upgrades: the previous machine in the middle, glowstone around it,
@@ -613,7 +632,7 @@ mod tests {
             .expect("Alchemical Chest recipe");
         assert_eq!(chest.result, ALCHEMICAL_CHEST);
         assert_eq!(crate::emc::value(ALCHEMICAL_CHEST), 544);
-        assert_eq!(crate::emc::value(CHEST) * 1, 32);
+        assert_eq!(crate::emc::value(CHEST), 32);
         assert_eq!(
             crate::emc::value(OBSIDIAN) * 8 + crate::emc::value(CHEST),
             544
