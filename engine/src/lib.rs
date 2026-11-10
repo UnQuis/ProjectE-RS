@@ -19,7 +19,7 @@ mod machines;
 mod progression;
 mod recipes;
 mod transaction;
-mod ui;
+#[allow(dead_code)] // The UI is a deliberate shell until its gameplay hooks are wired.\nmod ui;
 
 const TABLE: &str = recipes::TABLE;
 const PHILOSOPHERS_STONE: &str = alchemical::PHILOSOPHERS_STONE;
