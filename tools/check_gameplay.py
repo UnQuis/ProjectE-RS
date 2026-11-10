@@ -149,7 +149,7 @@ def validate(root: Path) -> list[str]:
         source = energy_path.read_text(encoding="utf-8")
         stars = parse_array(source, "KLEIN_STARS", strings=True)
         capacity_body = block_after(source, "pub(crate) fn capacity")
-        capacities = {key: int(value) for key, value in re.findall(r'"([^"]+)"\s*=>\s*(\d+)', capacity_body or "")}
+        capacities = {key: int(value.replace("_", "")) for key, value in re.findall(r'"([^"]+)"\s*=>\s*([\d_]+)', capacity_body or "")}
         if stars is None:
             errors.append("energy.rs: KLEIN_STARS array is missing")
         else:
