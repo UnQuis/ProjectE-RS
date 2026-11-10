@@ -280,6 +280,7 @@ fn relay_tick(
         stored -= sent;
         if sent > 0 {
             let bonus = read_long(&event.entity.nbt, BONUS_KEY)
+                .clamp(0, 999)
                 .saturating_add(RELAY_BONUS_PER_TICK_MILLI[tier]);
             stored = stored.saturating_add(bonus / 1000).min(capacity);
             write_long(&mut event.entity.nbt, BONUS_KEY, bonus % 1000);
