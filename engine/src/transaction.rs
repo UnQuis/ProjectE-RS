@@ -22,6 +22,12 @@ pub(crate) struct PurchasePlan {
     maximum_cost: i64,
 }
 
+impl PurchasePlan {
+    pub(crate) const fn maximum_cost(self) -> i64 {
+        self.maximum_cost
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct PurchaseSettlement {
     pub granted: u32,

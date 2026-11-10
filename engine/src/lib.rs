@@ -73,14 +73,14 @@ impl Hooks for ProjectE {
         }
         item(event, "projecte:dark_matter", "minecraft:coal", 64);
         item(event, "projecte:red_matter", "minecraft:redstone", 64);
-        item(event, "projecte:alchemical_coal", "minecraft:coal", 64);
-        item(event, "projecte:mobius_fuel", "minecraft:blaze_powder", 64);
-        item(
-            event,
-            "projecte:aeternalis_fuel",
+        let fuel_templates = [
+            "minecraft:coal",
+            "minecraft:blaze_powder",
             "minecraft:glowstone_dust",
-            64,
-        );
+        ];
+        for (fuel, template) in alchemical::FUEL_TIERS.iter().skip(1).zip(fuel_templates) {
+            item(event, fuel, template, 64);
+        }
     }
 
     fn component_types(&self, event: &mut ComponentTypesEvent<'_>) {
@@ -294,9 +294,18 @@ impl Hooks for ProjectE {
                 return;
             }
         };
+        let reserved = plan.maximum_cost();
+        if !data::take_emc(host, event.uuid, reserved) {
+            host.tell(
+                event.uuid,
+                Text::literal("§cYour EMC balance changed; the purchase was cancelled."),
+            );
+            return;
+        }
         let leftover = host.give_stack(event.uuid, stack(item, count));
         let leftover_count = leftover.as_ref().map_or(0, |s| s.count);
         let Some(given) = count.checked_sub(leftover_count) else {
+            data::add_emc(host, event.uuid, reserved);
             host.tell(
                 event.uuid,
                 Text::literal("§cThe inventory returned an invalid item count."),
@@ -306,13 +315,17 @@ impl Hooks for ProjectE {
         let settlement = match transaction::settle_purchase(plan, given, data.emc) {
             Ok(settlement) => settlement,
             Err(error) => {
+                data::add_emc(host, event.uuid, reserved);
                 host.tell(event.uuid, Text::literal(format!("§c{}", error.message())));
                 return;
             }
         };
-        let mut data = data;
-        data.emc = settlement.remaining_emc;
-        data::set(host, event.uuid, data.clone());
+        let refund = reserved - settlement.spent;
+        let balance = if refund > 0 {
+            data::add_emc(host, event.uuid, refund)
+        } else {
+            data::get(host, event.uuid).emc
+        };
         let spent = settlement.spent;
         let given = settlement.granted;
         host.tell(
@@ -322,7 +335,7 @@ impl Hooks for ProjectE {
                 given,
                 emc::display_name(item),
                 spent,
-                data.emc
+                balance
             )),
         );
     }
@@ -406,7 +419,7 @@ impl Hooks for ProjectE {
 
     fn tooltip(&self, host: &dyn Host, event: &mut TooltipEvent<'_>) {
         if let Some(capacity) = energy::capacity(&event.stack.item) {
-            let stored = energy::stored_emc(host, &event.stack).unwrap_or(0);
+            let stored = energy::stored_emc(host, event.stack).unwrap_or(0);
             event.lines.push((
                 Text::literal(format!("§bStored EMC: §f{stored} / {capacity}")),
                 u32::MAX,
@@ -417,6 +430,46 @@ impl Hooks for ProjectE {
             event
                 .lines
                 .push((Text::literal(format!("§7EMC: §e{}", value)), u32::MAX));
+        }
+        if event.stack.count > 1 {
+            if let Some(total) = alchemical::total_value(&event.stack.item, event.stack.count) {
+                event.lines.push((
+                    Text::literal(format!("§7Stack EMC: §e{total}")),
+                    u32::MAX,
+                ));
+            }
+        }
+        if let Some(tier) = alchemical::tier(&event.stack.item) {
+            let burn = alchemical::burn_ticks(&event.stack.item).unwrap_or(0);
+            let previous = alchemical::previous_tier(&event.stack.item).unwrap_or("none");
+            let next = alchemical::next_tier(&event.stack.item).unwrap_or("none");
+            let block = alchemical::fuel_block(&event.stack.item).unwrap_or("none");
+            event.lines.push((
+                Text::literal(format!(
+                    "§6Alchemical fuel tier {} · {} burn ticks · prev: {} · next: {} · block: {}",
+                    tier + 1,
+                    burn,
+                    previous,
+                    next,
+                    block
+                )),
+                u32::MAX,
+            ));
+        }
+        if let Some(fuel) = alchemical::fuel_of_block(&event.stack.item) {
+            event.lines.push((
+                Text::literal(format!("§6Packed fuel: {fuel}")),
+                u32::MAX,
+            ));
+        }
+        if &*event.stack.item == PHILOSOPHERS_STONE {
+            event.lines.push((
+                Text::literal(format!(
+                    "§7World swaps and {} reversible crafting conversions",
+                    alchemical::STONE_CONVERSIONS.len()
+                )),
+                u32::MAX,
+            ));
         }
     }
 
@@ -508,11 +561,20 @@ fn command_roadmap(host: &mut dyn Host) {
         "§dProjectE-RS progression (status - node - what it unlocks):",
     ));
     for node in progression::NODES {
+        let prerequisites = if node.prerequisites.is_empty() {
+            "none".to_string()
+        } else {
+            node.prerequisites.join(", ")
+        };
         host.feedback(Text::literal(format!(
-            "§7[{}] §e{}§7 - {}",
+            "§7[S{}:{}] [{}] §e{}§7 - {} | needs: {} | API: {}",
+            node.stage,
+            node.id,
             node.status.label(),
             node.name,
-            node.unlocks
+            node.unlocks,
+            prerequisites,
+            node.horizon
         )));
     }
 }
@@ -645,9 +707,15 @@ fn command_transmute(host: &mut dyn Host, event: &PerformCommandEvent<'_>, args:
             return true;
         }
     };
+    let reserved = plan.maximum_cost();
+    if !data::take_emc(host, event.player.uuid, reserved) {
+        host.feedback(Text::literal("§cYour EMC balance changed; the transmutation was cancelled."));
+        return true;
+    }
     let leftover = host.give_stack(event.player.uuid, stack(&id, count));
     let leftover_count = leftover.as_ref().map_or(0, |s| s.count);
     let Some(given) = count.checked_sub(leftover_count) else {
+        data::add_emc(host, event.player.uuid, reserved);
         host.feedback(Text::literal(
             "§cThe inventory returned an invalid item count.",
         ));
@@ -656,13 +724,17 @@ fn command_transmute(host: &mut dyn Host, event: &PerformCommandEvent<'_>, args:
     let settlement = match transaction::settle_purchase(plan, given, data.emc) {
         Ok(settlement) => settlement,
         Err(error) => {
+            data::add_emc(host, event.player.uuid, reserved);
             host.feedback(Text::literal(format!("§c{}", error.message())));
             return true;
         }
     };
-    let mut data = data;
-    data.emc = settlement.remaining_emc;
-    data::set(host, event.player.uuid, data.clone());
+    let refund = reserved - settlement.spent;
+    let balance = if refund > 0 {
+        data::add_emc(host, event.player.uuid, refund)
+    } else {
+        data::get(host, event.player.uuid).emc
+    };
     let spent = settlement.spent;
     let given = settlement.granted;
     host.feedback(Text::literal(format!(
@@ -670,7 +742,7 @@ fn command_transmute(host: &mut dyn Host, event: &PerformCommandEvent<'_>, args:
         given,
         emc::display_name(&id),
         spent,
-        data.emc
+        balance
     )));
     true
 }

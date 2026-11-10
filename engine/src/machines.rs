@@ -19,8 +19,6 @@ pub(crate) const RELAYS: [&str; 3] = [
     "projecte:antimatter_relay_mk2",
     "projecte:antimatter_relay_mk3",
 ];
-pub(crate) const COLLECTOR: &str = COLLECTORS[0];
-pub(crate) const RELAY: &str = RELAYS[0];
 pub(crate) const ALCHEMICAL_CHEST: &str = "projecte:alchemical_chest";
 const ALCHEMICAL_CHEST_BLOCK_ENTITY: &str = "projecte:alchemical_chest";
 
@@ -203,7 +201,7 @@ fn collector_sun(host: &dyn Host, pos: [i32; 3]) -> u8 {
     let above = [pos[0], pos[1] + 1, pos[2]];
     let (block_light, sky_light) = host.light(above);
     let time = host.day_time().rem_euclid(24_000);
-    let daytime = (time < 12_300 || time > 23_850) && host.weather().0 < 0.2;
+    let daytime = !(12_300..=23_850).contains(&time) && host.weather().0 < 0.2;
     collector_sun_level(
         sky_light == 15,
         daytime,
@@ -398,17 +396,17 @@ fn relay_tick(
         }
     }
 
-    if let Some(mut output) = event.entity.items[1].clone() {
-        if energy::capacity(&output.item).is_some() {
+    if let Some(mut output) = event.entity.items[1].clone()
+        && energy::capacity(&output.item).is_some()
+    {
             stored -= energy::charge(host, &mut output, stored.min(machine.transfer()));
             event.entity.items[1] = Some(output);
             let full = event.entity.items[1].as_ref().is_some_and(|stack| {
                 energy::stored_emc(host, stack).unwrap_or(0)
                     >= energy::capacity(&stack.item).unwrap_or(i64::MAX)
             });
-            if full && event.entity.items[2].is_none() {
-                move_full_star(event.entity, 1);
-            }
+        if full && event.entity.items[2].is_none() {
+            move_full_star(event.entity, 1);
         }
     }
 
@@ -484,7 +482,7 @@ fn condenser_tick(
             continue;
         };
         let remaining = input.count - consumed;
-        event.entity.items[slot] = (remaining > 0).then(|| ItemStack {
+        event.entity.items[slot] = (remaining > 0).then_some(ItemStack {
             count: remaining,
             ..input
         });
