@@ -37,8 +37,8 @@ pub(crate) fn stored_emc(
         return Ok(0);
     };
     Ok(match host.component(stack, STORED_EMC_COMPONENT)? {
-        Some(Tag::Long(value)) => value.clamp(0, capacity),
-        Some(Tag::Int(value)) => i64::from(value).clamp(0, capacity),
+        Some(Tag::Long(value)) => (*value).clamp(0, capacity),
+        Some(Tag::Int(value)) => i64::from(*value).clamp(0, capacity),
         _ => 0,
     })
 }
