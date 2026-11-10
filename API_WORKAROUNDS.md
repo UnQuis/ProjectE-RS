@@ -14,7 +14,7 @@ Pinned Horizon revision: `fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca`.
 - The Collector's current buffer is updated directly in `BlockEntityTickEvent.entity`.
 - A one-time compatibility migration reads the legacy `projecte:buffer` attachment from PR #3 and moves it into the `emc` NBT field on the machine's first tick.
 - Adjacent Relay block entities are modified through `Host::change_mod_block_entity`.
-- Machine collection clears the NBT value and credits the player's ProjectE attachment.
+- Machine collection clears the NBT value, credits the player's ProjectE attachment through a fallible write, and attempts to restore the machine buffer if that write fails.
 - The storage is server-authoritative and persists with the block entity.
 
 **Why this is a workaround**
