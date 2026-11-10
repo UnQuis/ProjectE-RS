@@ -453,8 +453,15 @@ fn condenser_tick(
 pub(crate) fn tick(host: &mut dyn Host, event: &mut horizon_client::mod_api::BlockEntityTickEvent<'_>) {
     if event.entity.id != BLOCK_ENTITY { return; }
     let Some(machine) = Machine::of(&host.block(event.pos)) else { return };
-    if !migrate_legacy_buffer(host, event.pos, &mut event.entity.nbt, machine.capacity()) { return; }
-    if event.entity.items.len() < 3 { event.entity.items.resize(3, None); }
+    if !matches!(machine, Machine::Condenser(_))
+        && !migrate_legacy_buffer(host, event.pos, &mut event.entity.nbt, machine.capacity())
+    {
+        return;
+    }
+    let required_slots = if matches!(machine, Machine::Condenser(_)) { 9 } else { 3 };
+    if event.entity.items.len() < required_slots {
+        event.entity.items.resize(required_slots, None);
+    }
     match machine {
         Machine::Collector(tier) => collector_tick(host, event.pos, event, tier),
         Machine::Relay(tier) => relay_tick(host, event.pos, event, tier),
