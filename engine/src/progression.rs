@@ -150,7 +150,11 @@ pub(crate) const NODES: &[Node] = &[
         name: "Energy Condenser MK1 and MK2",
         stage: 2,
         status: Status::Partial,
-        prerequisites: &["antimatter_relay", "transmutation_table", "alchemical_chest"],
+        prerequisites: &[
+            "antimatter_relay",
+            "transmutation_table",
+            "alchemical_chest",
+        ],
         unlocks: "Automatic item duplication paid for with EMC",
         horizon: "MK1 uses block_entity_container and NBT; MK2 batching and inventory layout remain missing",
     },
@@ -249,7 +253,12 @@ pub(crate) const NODES: &[Node] = &[
         name: "Advancement progression",
         stage: 4,
         status: Status::Planned,
-        prerequisites: &["philosophers_stone", "alchemical_fuels", "dark_matter", "red_matter"],
+        prerequisites: &[
+            "philosophers_stone",
+            "alchemical_fuels",
+            "dark_matter",
+            "red_matter",
+        ],
         unlocks: "Visible goals and unlock relationships across the whole mod",
         horizon: "advancement files through data_pack_files; the catalog also has advancement hooks",
     },
@@ -330,10 +339,21 @@ mod tests {
 
     #[test]
     fn the_foundation_is_complete_and_the_endgame_is_not() {
-        assert_eq!(node("philosophers_stone").map(|n| n.status), Some(Status::Implemented));
-        assert_eq!(node("alchemical_fuels").map(|n| n.status), Some(Status::Implemented));
+        assert_eq!(
+            node("philosophers_stone").map(|n| n.status),
+            Some(Status::Implemented)
+        );
+        assert_eq!(
+            node("alchemical_fuels").map(|n| n.status),
+            Some(Status::Implemented)
+        );
         // Nothing in the matter tiers is finished yet.
-        for id in ["matter_blocks", "matter_tools", "matter_armor", "utility_devices"] {
+        for id in [
+            "matter_blocks",
+            "matter_tools",
+            "matter_armor",
+            "utility_devices",
+        ] {
             let node = node(id).expect("a roadmap node");
             assert_ne!(node.status, Status::Implemented, "{id}");
         }

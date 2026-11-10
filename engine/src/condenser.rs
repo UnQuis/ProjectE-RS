@@ -49,7 +49,9 @@ impl CondenserError {
             Self::BufferExceedsCapacity => "Condenser EMC buffer exceeds its capacity.",
             Self::ZeroEmcValue => "The item has no positive EMC value.",
             Self::ArithmeticOverflow => "The EMC operation exceeds the supported numeric range.",
-            Self::SettlementExceedsPlan => "The inventory settled more items than the plan allowed.",
+            Self::SettlementExceedsPlan => {
+                "The inventory settled more items than the plan allowed."
+            }
         }
     }
 }
@@ -83,10 +85,7 @@ pub struct OutputProductionPlan {
 }
 
 /// Validate a state against its tier capacity.
-pub fn validate_state(
-    state: CondenserState,
-    spec: CondenserSpec,
-) -> Result<(), CondenserError> {
+pub fn validate_state(state: CondenserState, spec: CondenserSpec) -> Result<(), CondenserError> {
     if spec.capacity == 0 {
         return Err(CondenserError::ZeroCapacity);
     }
@@ -245,7 +244,12 @@ pub fn plan_receive_emc(
         .stored_emc
         .checked_add(accepted)
         .ok_or(CondenserError::ArithmeticOverflow)?;
-    Ok((accepted, CondenserState { stored_emc: next_balance }))
+    Ok((
+        accepted,
+        CondenserState {
+            stored_emc: next_balance,
+        },
+    ))
 }
 
 #[cfg(test)]
@@ -321,7 +325,9 @@ mod tests {
 
     #[test]
     fn output_respects_throughput_and_inventory_room() {
-        let state = CondenserState { stored_emc: 8192 * 10 };
+        let state = CondenserState {
+            stored_emc: 8192 * 10,
+        };
         let plan = plan_output_production(state, MK1, 8192, 64).unwrap();
         assert_eq!(plan.produced_items, 1);
         assert_eq!(plan.charged_emc, 8192);
@@ -330,7 +336,9 @@ mod tests {
 
     #[test]
     fn output_settlement_charges_only_items_actually_inserted() {
-        let state = CondenserState { stored_emc: 8192 * 10 };
+        let state = CondenserState {
+            stored_emc: 8192 * 10,
+        };
         let plan = plan_output_production(state, MK2, 8192, 10).unwrap();
         let settled = settle_output_production(plan, 4).unwrap();
         assert_eq!(settled.produced_items, 4);
