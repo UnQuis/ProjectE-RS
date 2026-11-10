@@ -163,14 +163,20 @@ impl Hooks for ProjectE {
         if value == 0 {
             return;
         }
-        let count = if event.mode == 1 {
+        let count: u32 = if event.mode == 1 {
             64
         } else if event.button == 1 {
             16
         } else {
             1
         };
-        let cost = value.saturating_mul(count as u64) as i64;
+        let Some(cost) = emc::checked_cost(value, count) else {
+            host.tell(
+                event.uuid,
+                Text::literal("§cThat transaction is too expensive."),
+            );
+            return;
+        };
         if data.emc < cost {
             host.tell(
                 event.uuid,
@@ -181,20 +187,31 @@ impl Hooks for ProjectE {
             );
             return;
         }
-        if inventory_room(host, event.uuid, item) < count as u32 {
+        if inventory_room(host, event.uuid, item) < count {
             host.tell(event.uuid, Text::literal("§cNot enough inventory space."));
             return;
         }
         let mut data = data;
-        let leftover = host.give_stack(event.uuid, stack(item, count as u32));
+        let leftover = host.give_stack(event.uuid, stack(item, count));
         let leftover_count = leftover.as_ref().map_or(0, |s| s.count);
-        let given = count as u32 - leftover_count;
+        let given = count - leftover_count;
         if given == 0 {
             host.tell(event.uuid, Text::literal("§cCould not give the item."));
             return;
         }
-        let spent = value.saturating_mul(u64::from(given)) as i64;
-        data.emc = data.emc.saturating_sub(spent);
+        let Some(spent) = emc::checked_cost(value, given) else {
+            host.tell(
+                event.uuid,
+                Text::literal("§cThat transaction is too expensive."),
+            );
+            return;
+        };
+        // `spent <= cost <= data.emc` (given <= count and the cost was
+        // checked above), so this subtraction cannot underflow. The
+        // unrepresentable-spent branch above is defensive: it is
+        // unreachable for a well-behaved host, and no wrapping cost is
+        // ever deducted.
+        data.emc -= spent;
         data::set(host, event.uuid, data.clone());
         host.tell(
             event.uuid,
@@ -508,7 +525,10 @@ fn command_transmute(host: &mut dyn Host, event: &PerformCommandEvent<'_>, args:
         )));
         return true;
     }
-    let cost = value.saturating_mul(u64::from(count)) as i64;
+    let Some(cost) = emc::checked_cost(value, count) else {
+        host.feedback(Text::literal("§cThat transaction is too expensive."));
+        return true;
+    };
     if data.emc < cost {
         host.feedback(Text::literal(format!(
             "§cNeed §e{}§c EMC, have §e{}§c.",
@@ -526,9 +546,16 @@ fn command_transmute(host: &mut dyn Host, event: &PerformCommandEvent<'_>, args:
         host.feedback(Text::literal("§cCould not give the item."));
         return true;
     }
-    let spent = value.saturating_mul(u64::from(given)) as i64;
+    let Some(spent) = emc::checked_cost(value, given) else {
+        host.feedback(Text::literal("§cThat transaction is too expensive."));
+        return true;
+    };
     let mut data = data;
-    data.emc = data.emc.saturating_sub(spent);
+    // `spent <= cost <= data.emc` (given <= count and the cost was checked
+    // above), so this subtraction cannot underflow. The
+    // unrepresentable-spent branch above is defensive: it is unreachable
+    // for a well-behaved host, and no wrapping cost is ever deducted.
+    data.emc -= spent;
     data::set(host, event.player.uuid, data.clone());
     host.feedback(Text::literal(format!(
         "§aTransmuted §e{}x {}§a for §e{} EMC§a. Balance: §e{}§a.",

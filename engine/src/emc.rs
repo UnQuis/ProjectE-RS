@@ -33,6 +33,23 @@ pub fn value(id: &str) -> u64 {
     0
 }
 
+/// Calculates the EMC cost of `count` items at `value` EMC each.
+///
+/// Returns `None` when the cost cannot be represented as an `i64` (the type
+/// used for a player's EMC balance): either the multiplication overflows
+/// `u64` or the product exceeds `i64::MAX`. Callers must reject the
+/// transaction in that case instead of wrapping the result.
+///
+/// A count of zero is defined to cost `Some(0)` for any value, including
+/// `u64::MAX`: zero items cost nothing and cannot overflow. Callers do not
+/// rely on this to grant items for free — purchases always request at least
+/// one item, and a zero `given` count is rejected before this is called for
+/// the amount actually spent.
+pub fn checked_cost(value: u64, count: u32) -> Option<i64> {
+    let total = value.checked_mul(u64::from(count))?;
+    i64::try_from(total).ok()
+}
+
 fn table_value(id: &str) -> Option<u64> {
     Some(match id {
         // Raw resources and building blocks.
@@ -196,5 +213,58 @@ mod tests {
     fn display_names() {
         assert_eq!(display_name("projecte:dark_matter"), "Dark Matter");
         assert_eq!(display_name("minecraft:glowstone_dust"), "Glowstone Dust");
+    }
+
+    #[test]
+    fn checked_cost_ordinary() {
+        assert_eq!(checked_cost(1, 1), Some(1));
+        assert_eq!(checked_cost(8192, 1), Some(8192));
+        assert_eq!(checked_cost(8192, 64), Some(524_288));
+        assert_eq!(checked_cost(32, 16), Some(512));
+        assert_eq!(checked_cost(value("minecraft:diamond"), 16), Some(131_072));
+        assert_eq!(checked_cost(value("minecraft:cobblestone"), 64), Some(64));
+        assert_eq!(checked_cost(0, 64), Some(0));
+    }
+
+    #[test]
+    fn checked_cost_largest_representable() {
+        // The largest cost that still fits in an i64.
+        assert_eq!(checked_cost(i64::MAX as u64, 1), Some(i64::MAX));
+        // Largest even product below i64::MAX: (MAX / 2) * 2 == MAX - 1.
+        assert_eq!(
+            checked_cost((i64::MAX as u64) / 2, 2),
+            Some(i64::MAX - 1)
+        );
+        assert_eq!(checked_cost(1, u32::MAX), Some(i64::from(u32::MAX)));
+    }
+
+    #[test]
+    fn checked_cost_multiplication_overflow() {
+        // Products that overflow u64 itself.
+        assert_eq!(checked_cost(u64::MAX, 2), None);
+        assert_eq!(checked_cost(u64::MAX, u32::MAX), None);
+        assert_eq!(checked_cost(1u64 << 63, 2), None);
+        assert_eq!(checked_cost(u64::MAX / 2 + 1, 2), None);
+    }
+
+    #[test]
+    fn checked_cost_conversion_overflow_beyond_i64_max() {
+        // Products that fit in u64 but exceed i64::MAX.
+        assert_eq!(checked_cost(i64::MAX as u64 + 1, 1), None);
+        assert_eq!(checked_cost(u64::MAX, 1), None);
+        // (i64::MAX) * 2 == 2^64 - 2, which fits in u64 but not in i64.
+        assert_eq!(checked_cost(i64::MAX as u64, 2), None);
+        // ((i64::MAX / 2) + 1) * 2 == i64::MAX + 1, which fits in u64.
+        assert_eq!(checked_cost((i64::MAX as u64) / 2 + 1, 2), None);
+    }
+
+    #[test]
+    fn checked_cost_zero_count() {
+        // Zero count is defined as Some(0) for any value: zero items cost
+        // nothing and cannot overflow, even at u64::MAX.
+        assert_eq!(checked_cost(8192, 0), Some(0));
+        assert_eq!(checked_cost(0, 0), Some(0));
+        assert_eq!(checked_cost(u64::MAX, 0), Some(0));
+        assert_eq!(checked_cost(i64::MAX as u64, 0), Some(0));
     }
 }
