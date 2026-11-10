@@ -390,7 +390,9 @@ mod tests {
         // a click meant for one would be read as another.
         assert_eq!(INPUT_LAST, DISPLAY_FIRST);
         assert_eq!(DISPLAY_LAST, CONFIRM);
-        const { assert!(CONFIRM < SIZE && STATUS < SIZE && BALANCE < SIZE && KNOWN < SIZE); }
+        const {
+            assert!(CONFIRM < SIZE && STATUS < SIZE && BALANCE < SIZE && KNOWN < SIZE);
+        }
         assert_eq!(SIZE, 27);
         for slot in [CONFIRM, STATUS, BALANCE, KNOWN] {
             assert!(!is_input(slot));
