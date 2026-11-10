@@ -470,7 +470,7 @@ mod tests {
     use super::*;
     use crate::ui::layout::Control;
 
-    fn new_new_new_screen() -> TableScreen {
+    fn new_screen() -> TableScreen {
         TableScreen::new(Language::English, [640.0, 360.0])
     }
 
@@ -544,7 +544,7 @@ mod tests {
     }
 
     #[test]
-    fn escape_clears_the_search_before_it_closes_the_new_screen() {
+    fn escape_clears_the_search_before_it_closes_the_screen() {
         let mut screen = new_screen();
         screen.typing = true;
         screen.browser.search = "gold".to_owned();
