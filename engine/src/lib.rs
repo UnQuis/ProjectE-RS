@@ -431,13 +431,13 @@ impl Hooks for ProjectE {
                 .lines
                 .push((Text::literal(format!("§7EMC: §e{}", value)), u32::MAX));
         }
-        if event.stack.count > 1 {
-            if let Some(total) = alchemical::total_value(&event.stack.item, event.stack.count) {
-                event.lines.push((
-                    Text::literal(format!("§7Stack EMC: §e{total}")),
-                    u32::MAX,
-                ));
-            }
+        if event.stack.count > 1
+            && let Some(total) = alchemical::total_value(&event.stack.item, event.stack.count)
+        {
+            event.lines.push((
+                Text::literal(format!("§7Stack EMC: §e{total}")),
+                u32::MAX,
+            ));
         }
         if let Some(tier) = alchemical::tier(&event.stack.item) {
             let burn = alchemical::burn_ticks(&event.stack.item).unwrap_or(0);

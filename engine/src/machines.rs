@@ -399,12 +399,12 @@ fn relay_tick(
     if let Some(mut output) = event.entity.items[1].clone()
         && energy::capacity(&output.item).is_some()
     {
-            stored -= energy::charge(host, &mut output, stored.min(machine.transfer()));
-            event.entity.items[1] = Some(output);
-            let full = event.entity.items[1].as_ref().is_some_and(|stack| {
-                energy::stored_emc(host, stack).unwrap_or(0)
-                    >= energy::capacity(&stack.item).unwrap_or(i64::MAX)
-            });
+        stored -= energy::charge(host, &mut output, stored.min(machine.transfer()));
+        event.entity.items[1] = Some(output);
+        let full = event.entity.items[1].as_ref().is_some_and(|stack| {
+            energy::stored_emc(host, stack).unwrap_or(0)
+                >= energy::capacity(&stack.item).unwrap_or(i64::MAX)
+        });
         if full && event.entity.items[2].is_none() {
             move_full_star(event.entity, 1);
         }
