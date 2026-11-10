@@ -10,18 +10,14 @@ use horizon_client::mod_api::*;
 
 mod data;
 mod emc;
+mod machines;
 mod transaction;
 
 const MOD_ID: &str = "projecte";
 const TABLE: &str = "projecte:transmutation_table";
-const COLLECTOR: &str = "projecte:energy_collector";
-const RELAY: &str = "projecte:antimatter_relay";
-const MACHINE_BE: &str = "projecte:machine";
 const PHILOSOPHERS_STONE: &str = "projecte:philosophers_stone";
 
 const MENU_SLOTS: usize = 54;
-const COLLECTOR_CAP: i64 = 100_000;
-const RELAY_CAP: i64 = 1_000_000;
 
 pub fn hooks() -> Box<dyn Hooks> {
     Box::new(ProjectE)
@@ -39,13 +35,13 @@ impl Hooks for ProjectE {
 
         event.blocks.push(Default::default());
         let collector = event.blocks.last_mut().unwrap();
-        collector.id = COLLECTOR.to_string();
+        collector.id = machines::COLLECTOR.to_string();
         collector.template = "minecraft:stone".to_string();
         collector.item = true;
 
         event.blocks.push(Default::default());
         let relay = event.blocks.last_mut().unwrap();
-        relay.id = RELAY.to_string();
+        relay.id = machines::RELAY.to_string();
         relay.template = "minecraft:stone".to_string();
         relay.item = true;
     }
@@ -68,36 +64,15 @@ impl Hooks for ProjectE {
         _host: &mut dyn Host,
         event: &mut BlockEntityEvent<'_>,
     ) -> Option<(String, Compound)> {
-        if event.block == COLLECTOR || event.block == RELAY {
-            Some((MACHINE_BE.to_string(), Compound::new()))
-        } else {
-            None
-        }
+        machines::block_entity(event.block)
     }
 
     fn block_entity_ticks(&self, _host: &dyn Host, event: &mut BlockEntityTicksEvent<'_>) {
-        if event.block == COLLECTOR || event.block == RELAY {
-            event.ticks = true;
-        }
+        event.ticks = machines::has_tick(event.block);
     }
 
     fn block_entity_tick(&self, host: &mut dyn Host, event: &mut BlockEntityTickEvent<'_>) {
-        if event.entity.id != MACHINE_BE {
-            return;
-        }
-        let block = host.block(event.pos);
-        let (rate, cap) = if block == RELAY {
-            (4, RELAY_CAP)
-        } else if block == COLLECTOR {
-            (1, COLLECTOR_CAP)
-        } else {
-            return;
-        };
-        let holder = Holder::BlockEntity(event.pos);
-        let current = data::BUFFER.get(host, holder).unwrap_or(0);
-        if current < cap {
-            let _ = data::BUFFER.set(host, holder, (current + rate).min(cap));
-        }
+        machines::tick(host, event);
     }
 
     fn right_click_block(
@@ -113,28 +88,11 @@ impl Hooks for ProjectE {
             }
             return Flow::Continue;
         }
-        if block == COLLECTOR || block == RELAY {
+        if machines::is_machine(&block) {
             let Some(player) = host.acting_player() else {
                 return Flow::Continue;
             };
-            let holder = Holder::BlockEntity(event.pos);
-            let stored = data::BUFFER.get(host, holder).unwrap_or(0);
-            if stored > 0 {
-                let total = data::add_emc(host, player.uuid, stored);
-                let _ = data::BUFFER.set(host, holder, 0);
-                host.tell(
-                    player.uuid,
-                    Text::literal(format!(
-                        "§dCollected §e{} EMC§d. Stored: §e{}§d.",
-                        stored, total
-                    )),
-                );
-            } else {
-                host.tell(
-                    player.uuid,
-                    Text::literal("§7This machine has not collected any EMC yet."),
-                );
-            }
+            machines::collect(host, event.pos, player.uuid);
             return Flow::Cancel;
         }
         Flow::Continue
@@ -599,7 +557,7 @@ const RECIPES: &[(&str, &[&str], &str, u32)] = &[
             "minecraft:glowstone",
             "minecraft:diamond",
         ],
-        COLLECTOR,
+        machines::COLLECTOR,
         1,
     ),
     (
@@ -615,7 +573,7 @@ const RECIPES: &[(&str, &[&str], &str, u32)] = &[
             "minecraft:obsidian",
             COLLECTOR,
         ],
-        RELAY,
+        machines::RELAY,
         1,
     ),
     (
