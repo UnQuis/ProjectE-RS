@@ -45,7 +45,10 @@ fn next_buffer(current: i64, rate: i64, capacity: i64) -> i64 {
         .min(capacity)
 }
 
-pub(crate) fn tick(host: &mut dyn Host, event: &mut horizon_client::mod_api::BlockEntityTickEvent<'_>) {
+pub(crate) fn tick(
+    host: &mut dyn Host,
+    event: &mut horizon_client::mod_api::BlockEntityTickEvent<'_>,
+) {
     if event.entity.id != BLOCK_ENTITY {
         return;
     }
