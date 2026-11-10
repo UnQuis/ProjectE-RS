@@ -52,8 +52,10 @@ pub(crate) mod layout {
     pub(crate) const INPUT_FIRST: usize = 0;
     pub(crate) const INPUT_LAST: usize = 9;
     /// The nine slots that show what the current deposit is worth.
-    #[cfg(test)]\n    pub(crate) const DISPLAY_FIRST: usize = 9;
-    #[cfg(test)]\n    pub(crate) const DISPLAY_LAST: usize = 18;
+    #[cfg(test)]
+    pub(crate) const DISPLAY_FIRST: usize = 9;
+    #[cfg(test)]
+    pub(crate) const DISPLAY_LAST: usize = 18;
     /// The confirm control: a display slot the player clicks to deposit.
     pub(crate) const CONFIRM: usize = 18;
     /// The slot that shows whether the deposit would be accepted.
