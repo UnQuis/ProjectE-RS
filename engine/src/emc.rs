@@ -181,6 +181,7 @@ fn table_value(id: &str) -> Option<u64> {
 
 /// The burn value ProjectE's fuels carry (not used by vanilla furnaces yet;
 /// exposed for future furnace hooks).
+#[expect(dead_code, reason = "reserved for the future furnace fuel hook")]
 pub fn fuel_value(id: &str) -> Option<u64> {
     Some(match id {
         "projecte:alchemical_coal" => 128,
