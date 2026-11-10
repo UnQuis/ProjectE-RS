@@ -46,8 +46,8 @@ pub(crate) fn plan_purchase(
         return Err(PurchaseError::ZeroCount);
     }
 
-    let maximum_cost = crate::emc::checked_cost(value, requested)
-        .ok_or(PurchaseError::CostOverflow)?;
+    let maximum_cost =
+        crate::emc::checked_cost(value, requested).ok_or(PurchaseError::CostOverflow)?;
     if balance < maximum_cost {
         return Err(PurchaseError::InsufficientEmc {
             required: maximum_cost,
@@ -83,8 +83,7 @@ pub(crate) fn settle_purchase(
         return Err(PurchaseError::InvalidGrant);
     }
 
-    let spent = crate::emc::checked_cost(plan.value, granted)
-        .ok_or(PurchaseError::CostOverflow)?;
+    let spent = crate::emc::checked_cost(plan.value, granted).ok_or(PurchaseError::CostOverflow)?;
     if spent > plan.maximum_cost || spent > balance {
         return Err(PurchaseError::InvalidGrant);
     }
@@ -102,10 +101,16 @@ impl PurchaseError {
             Self::ZeroValue => "This item has no EMC value.".to_owned(),
             Self::ZeroCount => "Cannot transmute zero items.".to_owned(),
             Self::CostOverflow => "That transaction is too expensive.".to_owned(),
-            Self::InsufficientEmc { required, available } => {
+            Self::InsufficientEmc {
+                required,
+                available,
+            } => {
                 format!("Not enough EMC: need {required}, have {available}.")
             }
-            Self::InsufficientInventory { required, available } => {
+            Self::InsufficientInventory {
+                required,
+                available,
+            } => {
                 format!("Not enough inventory space: need {required}, have room for {available}.")
             }
             Self::NothingGranted => "Could not give the item.".to_owned(),
@@ -133,14 +138,8 @@ mod tests {
 
     #[test]
     fn rejects_zero_value_and_zero_count() {
-        assert_eq!(
-            plan_purchase(0, 1, 100, 64),
-            Err(PurchaseError::ZeroValue)
-        );
-        assert_eq!(
-            plan_purchase(1, 0, 100, 64),
-            Err(PurchaseError::ZeroCount)
-        );
+        assert_eq!(plan_purchase(0, 1, 100, 64), Err(PurchaseError::ZeroValue));
+        assert_eq!(plan_purchase(1, 0, 100, 64), Err(PurchaseError::ZeroCount));
     }
 
     #[test]
