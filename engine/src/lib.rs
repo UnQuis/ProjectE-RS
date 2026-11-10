@@ -210,7 +210,10 @@ impl Hooks for ProjectE {
         }
         let spent = value.saturating_mul(u64::from(given)) as i64;
         if !data::take_emc(host, event.uuid, spent) {
-            host.tell(event.uuid, Text::literal("§cEMC balance changed; purchase cancelled."));
+            host.tell(
+                event.uuid,
+                Text::literal("§cEMC balance changed; purchase cancelled."),
+            );
             return;
         }
         let balance = data::get(host, event.uuid).emc;
@@ -306,10 +309,9 @@ impl Hooks for ProjectE {
                 .push((Text::literal(format!("§7EMC: §e{}", value)), u32::MAX));
         }
         if let Some(fuel) = emc::fuel_value(&event.stack.item) {
-            event.lines.push((
-                Text::literal(format!("§7Fuel value: §e{}", fuel)),
-                u32::MAX,
-            ));
+            event
+                .lines
+                .push((Text::literal(format!("§7Fuel value: §e{}", fuel)), u32::MAX));
         }
     }
 
@@ -542,7 +544,9 @@ fn command_transmute(host: &mut dyn Host, event: &PerformCommandEvent<'_>, args:
     }
     let spent = value.saturating_mul(u64::from(given)) as i64;
     if !data::take_emc(host, event.player.uuid, spent) {
-        host.feedback(Text::literal("§cEMC balance changed; transmutation cancelled."));
+        host.feedback(Text::literal(
+            "§cEMC balance changed; transmutation cancelled.",
+        ));
         return true;
     }
     let balance = data::get(host, event.player.uuid).emc;
