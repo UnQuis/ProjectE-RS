@@ -1,0 +1,104 @@
+name: Rust CI
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rust-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust:
+    name: Format, lint, build and test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out ProjectE-RS
+        uses: actions/checkout@v4
+        with:
+          path: projecte-rs
+
+      - name: Check out the pinned Horizon revision
+        uses: actions/checkout@v4
+        with:
+          repository: horizon-rust/horizon
+          ref: fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca
+          path: horizon
+
+      - name: Install native build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes \
+            clang \
+            cmake \
+            libasound2-dev \
+            libgl1-mesa-dev \
+            libudev-dev \
+            libwayland-dev \
+            libx11-dev \
+            libxcursor-dev \
+            libxinerama-dev \
+            libxkbcommon-dev \
+            libxrandr-dev \
+            libxi-dev \
+            pkg-config
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@1.95.0
+        with:
+          components: clippy, rustfmt
+
+      - name: Cache Cargo artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            projecte-rs -> target
+
+      # engine/Cargo.toml intentionally points at the local Horizon checkout used
+      # by the Horizon launcher. In CI, use the sibling checkout at the exact
+      # revision pinned by horizon-mixin.toml. Do not commit this rewrite.
+      - name: Prepare the pinned Horizon dependency
+        working-directory: projecte-rs
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          manifest = Path("engine/Cargo.toml")
+          content = manifest.read_text()
+          local_path = 'path = "/home/alexquasar/.local/share/horizon-launcher/native/source/fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca/crates/horizon-client"'
+          ci_path = 'path = "../../horizon/crates/horizon-client"'
+
+          if content.count(local_path) != 1:
+              raise SystemExit(
+                  "Expected exactly one pinned local horizon-client path in engine/Cargo.toml"
+              )
+
+          manifest.write_text(content.replace(local_path, ci_path))
+          PY
+          grep -F 'path = "../../horizon/crates/horizon-client"' engine/Cargo.toml
+
+      - name: Check formatting
+        working-directory: projecte-rs
+        run: cargo fmt --all -- --check
+
+      - name: Run Clippy
+        working-directory: projecte-rs
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+
+      - name: Compile all targets
+        working-directory: projecte-rs
+        run: cargo check --workspace --all-targets --locked
+
+      - name: Run tests
+        working-directory: projecte-rs
+        run: cargo test --workspace --all-targets --locked
