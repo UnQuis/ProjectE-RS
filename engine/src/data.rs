@@ -86,9 +86,7 @@ pub static BUFFER: AttachmentType<i64> = AttachmentType {
 };
 
 pub fn get(host: &mut dyn horizon_client::mod_api::Host, uuid: u128) -> PlayerData {
-    PLAYER
-        .get(host, Holder::Player(uuid))
-        .unwrap_or_default()
+    PLAYER.get(host, Holder::Player(uuid)).unwrap_or_default()
 }
 
 pub fn set(host: &mut dyn horizon_client::mod_api::Host, uuid: u128, data: PlayerData) {
@@ -103,6 +101,10 @@ pub fn add_emc(host: &mut dyn horizon_client::mod_api::Host, uuid: u128, amount:
     emc
 }
 
+#[expect(
+    dead_code,
+    reason = "reserved for the Transmutation Table purchase path"
+)]
 pub fn take_emc(host: &mut dyn horizon_client::mod_api::Host, uuid: u128, amount: i64) -> bool {
     if amount < 0 {
         return false;
@@ -124,9 +126,12 @@ mod tests {
     fn player_round_trip() {
         let data = PlayerData {
             emc: 12345,
-            learned: ["minecraft:diamond".to_string(), "projecte:dark_matter".to_string()]
-                .into_iter()
-                .collect(),
+            learned: [
+                "minecraft:diamond".to_string(),
+                "projecte:dark_matter".to_string(),
+            ]
+            .into_iter()
+            .collect(),
         };
         let encoded = encode_player(&data).unwrap();
         assert_eq!(decode_player(&encoded).unwrap(), data);
