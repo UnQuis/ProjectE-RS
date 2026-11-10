@@ -307,7 +307,7 @@ mod tests {
                         assert!(
                             crate::recipes::SHAPELESS
                                 .iter()
-                                .any(|recipe| recipe.result == *fuel),
+                                .any(|recipe| recipe.result == fuel),
                             "{fuel} has no recipe"
                         );
                     }
