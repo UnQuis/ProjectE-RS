@@ -7,6 +7,14 @@ from pathlib import Path
 
 RESOURCE_ID = re.compile(r"^[a-z0-9_.-]+:[a-z0-9/._-]+$")
 
+def unique_json_object(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"duplicate JSON key {key!r}")
+        result[key] = value
+    return result
+
 
 def block_after(source: str, marker: str):
     start = source.find(marker)
@@ -37,8 +45,8 @@ def parse_emc(root: Path) -> tuple[dict[str, int], list[str]]:
     errors = []
     path = root / "engine" / "data" / "projecte" / "data_maps" / "item" / "emc.json"
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        data = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=unique_json_object)
+    except (OSError, UnicodeError, json.JSONDecodeError, ValueError) as exc:
         return {}, [f"{path.relative_to(root)}: could not read EMC Data Map: {exc}"]
     if not isinstance(data, dict):
         return {}, [f"{path.relative_to(root)}: EMC Data Map root must be an object"]
