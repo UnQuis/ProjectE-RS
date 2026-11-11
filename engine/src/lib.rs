@@ -550,19 +550,11 @@ impl Hooks for ProjectE {
         }
     }
 
-    fn data_map_types(
-        &self,
-        _host: &mut dyn ServerHost,
-        event: &mut DataMapTypesEvent<'_>,
-    ) {
+    fn data_map_types(&self, _host: &mut ServerHost, event: &mut DataMapTypesEvent<'_>) {
         event.types.push(emc::MAP.ty());
     }
 
-    fn data_pack_files(
-        &self,
-        _host: &mut dyn ServerHost,
-        event: &mut DataPackFilesEvent<'_>,
-    ) {
+    fn data_pack_files(&self, _host: &mut ServerHost, event: &mut DataPackFilesEvent<'_>) {
         event.files.extend(recipes::files());
         event.files.extend(emc::files());
     }

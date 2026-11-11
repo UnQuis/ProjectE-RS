@@ -342,7 +342,10 @@ mod tests {
                 }
                 "emc_data_map" => {
                     assert_eq!(crate::emc::default_value("minecraft:diamond"), Some(8192));
-                    assert_eq!(crate::emc::default_value("projecte:energy_condenser"), Some(33568));
+                    assert_eq!(
+                        crate::emc::default_value("projecte:energy_condenser"),
+                        Some(33568)
+                    );
                 }
                 other => panic!("{other} claims implemented status without a registered item"),
             }

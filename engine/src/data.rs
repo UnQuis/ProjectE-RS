@@ -2,9 +2,7 @@
 
 use std::collections::BTreeSet;
 
-use mod_api::mod_api::{
-    AttachmentCodec, AttachmentError, AttachmentType, Compound, Holder, Tag,
-};
+use mod_api::mod_api::{AttachmentCodec, AttachmentError, AttachmentType, Compound, Holder, Tag};
 
 /// A player's transmutation knowledge and stored EMC.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
