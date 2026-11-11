@@ -498,13 +498,22 @@ mod tests {
     #[test]
     fn every_ingredient_and_result_has_emc_value() {
         for id in SHAPED.iter().flat_map(|r| r.key.iter().map(|(_, id)| *id)) {
-            assert!(crate::emc::default_value(id).is_some_and(|value| value > 0), "{id} has no EMC value");
+            assert!(
+                crate::emc::default_value(id).is_some_and(|value| value > 0),
+                "{id} has no EMC value"
+            );
         }
         for id in SHAPELESS.iter().flat_map(|r| r.ingredients.iter().copied()) {
-            assert!(crate::emc::default_value(id).is_some_and(|value| value > 0), "{id} has no EMC value");
+            assert!(
+                crate::emc::default_value(id).is_some_and(|value| value > 0),
+                "{id} has no EMC value"
+            );
         }
         for id in every_result() {
-            assert!(crate::emc::default_value(id).is_some_and(|value| value > 0), "{id} has no EMC value");
+            assert!(
+                crate::emc::default_value(id).is_some_and(|value| value > 0),
+                "{id} has no EMC value"
+            );
         }
     }
 
