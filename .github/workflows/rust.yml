@@ -29,8 +29,8 @@ jobs:
       - name: Check out the pinned Horizon revision
         uses: actions/checkout@v4
         with:
-          repository: horizon-rust/horizon
-          ref: fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca
+          repository: arismoko/horizon
+          ref: 1024f7b983d87a9616e1e51c709ba845f6017047
           path: horizon
 
       - name: Install native build dependencies
@@ -73,7 +73,7 @@ jobs:
 
           manifest = Path("engine/Cargo.toml")
           content = manifest.read_text()
-          local_path = 'path = "/home/alexquasar/.local/share/horizon-launcher/native/source/fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca/crates/horizon-client"'
+          local_path = 'path = "/home/alexquasar/Проекты/MCModsFin/Horizon/crates/horizon-client"'
           ci_path = 'path = "../../horizon/crates/horizon-client"'
 
           if content.count(local_path) != 1:
