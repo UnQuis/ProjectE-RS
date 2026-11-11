@@ -338,10 +338,12 @@ pub(crate) const STONE_CONVERSIONS: &[StoneConversion] = &[
     },
 ];
 
-/// Total EMC of `count` items of `id`, or `None` when the total cannot be
-/// represented.
+/// Total EMC of `count` items at `each` EMC, or `None` when the total cannot
+/// be represented.
 pub(crate) fn total_value(each: u64, count: u32) -> Option<u64> {
-    if each == 0 { return None; }
+    if each == 0 {
+        return None;
+    }
     each.checked_mul(u64::from(count))
 }
 
