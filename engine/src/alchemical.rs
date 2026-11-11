@@ -339,11 +339,8 @@ pub(crate) const STONE_CONVERSIONS: &[StoneConversion] = &[
 
 /// Total EMC of `count` items of `id`, or `None` when the total cannot be
 /// represented.
-pub(crate) fn total_value(id: &str, count: u32) -> Option<u64> {
-    let each = emc::value(id);
-    if each == 0 {
-        return None;
-    }
+pub(crate) fn total_value(each: u64, count: u32) -> Option<u64> {
+    if each == 0 { return None; }
     each.checked_mul(u64::from(count))
 }
 
@@ -367,8 +364,8 @@ mod tests {
     #[test]
     fn every_fuel_tier_is_worth_four_times_the_previous_one() {
         for pair in FUEL_TIERS.windows(2) {
-            let lower = emc::value(pair[0]);
-            let upper = emc::value(pair[1]);
+            let lower = emc::default_value(pair[0]).expect("default fuel EMC");
+            let upper = emc::default_value(pair[1]).expect("default fuel EMC");
             assert!(lower > 0 && upper > 0, "{pair:?} must have EMC values");
             assert_eq!(upper, lower * 4, "{pair:?} is not a fourfold step");
         }
@@ -377,8 +374,10 @@ mod tests {
     #[test]
     fn the_four_to_one_crafting_step_is_emc_neutral() {
         for pair in FUEL_TIERS.windows(2) {
-            let cost = total_value(pair[0], 4).expect("four of a fuel");
-            let made = total_value(pair[1], 1).expect("one fuel");
+            let lower = emc::default_value(pair[0]).expect("default fuel EMC");
+            let upper = emc::default_value(pair[1]).expect("default fuel EMC");
+            let cost = total_value(lower, 4).expect("four of a fuel");
+            let made = total_value(upper, 1).expect("one fuel");
             assert_eq!(cost, made, "{pair:?} would create or destroy EMC");
         }
     }
@@ -399,7 +398,9 @@ mod tests {
         for (fuel, block) in FUEL_BLOCKS {
             assert_eq!(fuel_block(fuel), Some(block));
             assert_eq!(fuel_of_block(block), Some(fuel));
-            assert_eq!(emc::value(block), emc::value(fuel) * 9, "{block}");
+            let fuel_value = emc::default_value(fuel).expect("default fuel EMC");
+            let block_value = emc::default_value(block).expect("default block EMC");
+            assert_eq!(block_value, fuel_value * 9, "{block}");
         }
         assert_eq!(fuel_block(COAL), None);
         assert_eq!(fuel_of_block("minecraft:coal_block"), None);
