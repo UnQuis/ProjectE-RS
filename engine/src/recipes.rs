@@ -498,13 +498,13 @@ mod tests {
     #[test]
     fn every_ingredient_and_result_has_emc_value() {
         for id in SHAPED.iter().flat_map(|r| r.key.iter().map(|(_, id)| *id)) {
-            assert!(crate::emc::value(id) > 0, "{id} has no EMC value");
+            assert!(crate::emc::default_value(id).is_some_and(|value| value > 0), "{id} has no EMC value");
         }
         for id in SHAPELESS.iter().flat_map(|r| r.ingredients.iter().copied()) {
-            assert!(crate::emc::value(id) > 0, "{id} has no EMC value");
+            assert!(crate::emc::default_value(id).is_some_and(|value| value > 0), "{id} has no EMC value");
         }
         for id in every_result() {
-            assert!(crate::emc::value(id) > 0, "{id} has no EMC value");
+            assert!(crate::emc::default_value(id).is_some_and(|value| value > 0), "{id} has no EMC value");
         }
     }
 
@@ -643,22 +643,22 @@ mod tests {
             .find(|recipe| recipe.name == "alchemical_chest")
             .expect("Alchemical Chest recipe");
         assert_eq!(chest.result, ALCHEMICAL_CHEST);
-        assert_eq!(crate::emc::value(ALCHEMICAL_CHEST), 544);
-        assert_eq!(crate::emc::value(CHEST), 32);
-        assert_eq!(
-            crate::emc::value(OBSIDIAN) * 8 + crate::emc::value(CHEST),
-            544
-        );
+        let chest_value = crate::emc::default_value(ALCHEMICAL_CHEST).expect("chest EMC");
+        let chest_ingredient = crate::emc::default_value(CHEST).expect("vanilla chest EMC");
+        let obsidian = crate::emc::default_value(OBSIDIAN).expect("obsidian EMC");
+        assert_eq!(chest_value, 544);
+        assert_eq!(chest_ingredient, 32);
+        assert_eq!(obsidian * 8 + chest_ingredient, 544);
 
         let condenser = SHAPED
             .iter()
             .find(|recipe| recipe.name == "energy_condenser")
             .expect("Energy Condenser recipe");
         assert_eq!(condenser.result, ENERGY_CONDENSER);
-        let recipe_cost = crate::emc::value(OBSIDIAN) * 4
-            + crate::emc::value(DIAMOND) * 4
-            + crate::emc::value(ALCHEMICAL_CHEST);
-        assert_eq!(crate::emc::value(ENERGY_CONDENSER), recipe_cost);
+        let recipe_cost = obsidian * 4
+            + crate::emc::default_value(DIAMOND).expect("diamond EMC") * 4
+            + chest_value;
+        assert_eq!(crate::emc::default_value(ENERGY_CONDENSER), Some(recipe_cost));
         assert_eq!(recipe_cost, 33_568);
     }
 
