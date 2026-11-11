@@ -1,6 +1,5 @@
 {
   "values": {
-    "#minecraft:carpets": 32,
     "#minecraft:leaves": 1,
     "#minecraft:logs": 32,
     "#minecraft:planks": 8,
@@ -153,11 +152,6 @@
     "minecraft:obsidian": 64,
     "minecraft:orange_carpet": 32,
     "minecraft:orange_wool": 32,
-    "minecraft:pale_oak_leaves": 1,
-    "minecraft:pale_oak_log": 32,
-    "minecraft:pale_oak_planks": 8,
-    "minecraft:pale_oak_sapling": 1,
-    "minecraft:pale_oak_wood": 32,
     "minecraft:paper": 32,
     "minecraft:phantom_membrane": 512,
     "minecraft:pink_carpet": 32,
@@ -204,8 +198,6 @@
     "minecraft:stripped_mangrove_wood": 32,
     "minecraft:stripped_oak_log": 32,
     "minecraft:stripped_oak_wood": 32,
-    "minecraft:stripped_pale_oak_log": 32,
-    "minecraft:stripped_pale_oak_wood": 32,
     "minecraft:stripped_spruce_log": 32,
     "minecraft:stripped_spruce_wood": 32,
     "minecraft:stripped_warped_hyphae": 32,
@@ -243,6 +235,7 @@
     "projecte:mobius_fuel_block": 4608,
     "projecte:philosophers_stone": 16384,
     "projecte:red_matter": 131072,
-    "projecte:transmutation_table": 32768
+    "projecte:transmutation_table": 32768,
+    "#minecraft:wool_carpets": 32
   }
 }
