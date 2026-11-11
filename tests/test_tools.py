@@ -1,3 +1,4 @@
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -36,37 +37,36 @@ class ResourceChecks(unittest.TestCase):
 
 
 class GameplayChecks(unittest.TestCase):
-    def test_emc_parser_finds_multiline_patterns(self):
-        values, errors = parse_emc("""
-            fn table_value(id: &str) -> Option<u64> {
-                Some(match id {
-                    "minecraft:stone"
-                    | "minecraft:dirt" => 1,
-                    "projecte:dark_matter" => 16384,
-                    _ => return None,
-                })
-            }
-            fn checked_cost(value: u64, count: u32) -> Option<i64> {
-                let total = value.checked_mul(u64::from(count))?;
-                i64::try_from(total).ok()
-            }
-        """)
+    def test_emc_parser_reads_datamap_values(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / "engine/data/projecte/data_maps/item/emc.json"
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps({
+                "values": {
+                    "minecraft:stone": 1,
+                    "minecraft:dirt": 1,
+                    "projecte:dark_matter": 16384,
+                    "#minecraft:logs": 32,
+                }
+            }))
+            values, errors = parse_emc(root)
         self.assertEqual(errors, [])
         self.assertEqual(values, {
-            "minecraft:stone": 1, "minecraft:dirt": 1, "projecte:dark_matter": 16384,
+            "minecraft:stone": 1, "minecraft:dirt": 1,
+            "projecte:dark_matter": 16384,
         })
 
     def test_emc_parser_rejects_duplicate_ids(self):
-        _, errors = parse_emc("""
-            fn table_value(id: &str) -> Option<u64> {
-                Some(match id {
-                    "minecraft:stone" => 1,
-                    "minecraft:stone" => 2,
-                    _ => return None,
-                })
-            }
-        """)
-        self.assertTrue(any("duplicate EMC entry" in error for error in errors))
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / "engine/data/projecte/data_maps/item/emc.json"
+            path.parent.mkdir(parents=True)
+            path.write_text(
+                '{"values":{"minecraft:stone":1,"minecraft:stone":2}}'
+            )
+            _, errors = parse_emc(root)
+        self.assertTrue(any("duplicate JSON key" in error for error in errors))
 
     def test_recipe_parser_checks_pattern_key_and_catalogue(self):
         source = """
@@ -102,10 +102,10 @@ class ManifestChecks(unittest.TestCase):
             (root / "Cargo.toml").write_text('[workspace]\nmembers=["engine"]\n')
             (root / "engine/Cargo.toml").write_text(
                 '[package]\nname="mod-projecte"\nversion="0.1.0"\n'
-                '[dependencies]\nhorizon-client={path="/opt/horizon/' + revision + '/crates/horizon-client"}\n'
+                '[dependencies]\nhorizon-client={path="../../horizon/crates/horizon-client"}\n'
             )
             (root / ".github/workflows/rust.yml").write_text(
-                'repository: horizon-rust/horizon\nref: ' + revision + "\n"
+                'repository: arismoko/horizon\nref: ' + revision + "\n"
             )
             self.assertEqual(validate_manifest(root), [])
             workflow = root / ".github/workflows/rust.yml"
