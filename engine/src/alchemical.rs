@@ -10,6 +10,7 @@
 //! tier is exactly four times the previous one and the four-to-one crafting
 //! step is EMC-neutral. See `PROGRESSION.md`.
 
+#[cfg(test)]
 use crate::emc;
 
 pub(crate) const PHILOSOPHERS_STONE: &str = "projecte:philosophers_stone";
