@@ -3,7 +3,7 @@
 This document is the end-to-end plan for the mod's Equivalent Exchange
 progression, and the record of how much of it exists today. It is written
 against the pinned Horizon revision in `horizon-mixin.toml`
-(`fdc87aec…`, native hooks API 411) and Minecraft 26.3.
+(`1024f7b…`, native hooks API 411) and Minecraft 26.3.
 
 The machine-readable half of this roadmap lives in `engine/src/progression.rs`.
 Every node below has an entry there with its status, prerequisites and Horizon
@@ -30,7 +30,7 @@ deliberate placeholders, not claims.
 | --- | --- | --- |
 | 0 — Foundation | Philosopher's Stone, Transmutation Table, EMC and knowledge | Stone and deposit-and-learn implemented; table partial |
 | 1 — Alchemy | Alchemical Coal → Mobius Fuel → Aeternalis Fuel, fuel blocks, burn time | Fuels and blocks implemented; burn time blocked |
-| 2 — Machines | Collectors, Relays, Klein Stars, Condensers, Power Flower, Alchemical Chest, data-driven EMC | Collectors/Relays/Stars partial; Alchemical Chest, Condenser MK1 and Power Flower partial; MK2 and data-map EMC outstanding |
+| 2 — Machines | Collectors, Relays, Klein Stars, Condensers, Power Flower, Alchemical Chest, data-driven EMC | Collectors/Relays/Stars partial; Alchemical Chest, Condenser MK1 and Power Flower partial; MK2 outstanding; data-map EMC implemented |
 | 3 — Matter | Dark Matter, Red Matter, matter blocks, tools, armor, Tablet, Tome | Matter items partial; everything built on them missing |
 | 4 — Endgame | Rings, amulets, bags, catalysts, advancements | Missing |
 
@@ -134,7 +134,7 @@ selection view; see §7.
 - **Horizon dependencies:** `blocks`, `open_menu`, `open_menu_with_input`,
   `set_menu_items`, `menu_contents`, `menu_clicked`, `menu_closed`,
   `menu_input_closed`, `player_stacks`, `give_stack`, attachments with a codec.
-- **Workarounds:** none for the menu itself. EMC values are static, see §6.
+- **Workarounds:** none for the menu itself. Purchases read the server's merged `projecte:emc` Data Map; client tooltip sync is not available yet.
 
 ### 2.5 EMC and knowledge — partial
 
@@ -267,14 +267,13 @@ Not a block: a documented build pattern (collectors feeding relays feeding a
 condenser). It becomes reachable once §4.4 exists; no new API is required, only
 a player-facing explanation in the tooltip or guide item.
 
-### 4.7 Data-map-driven EMC — blocked
+### 4.7 Data-map-driven EMC — implemented
 
-`data_map_types` can register `projecte:emc` for `minecraft:item` and a pack can
-ship `data/projecte/data_maps/item/emc.json`, but the pinned `Host` has no
-read helper for the merged map (`native_data_map` is internal). Until Horizon
-exports one, EMC stays in the static table plus vanilla-only family rules, and
-we ship no data-map file rather than implying pack overrides work. See
-API_WORKAROUNDS §7.
+- `Emc` implements Horizon's typed `DataMap` for `ItemKey` and registers `projecte:emc` through `data_map_types`.
+- Built-in defaults live in `engine/data/projecte/data_maps/item/emc.json` and are emitted through `data_pack_files`.
+- Runtime reads use `ItemKey::data`; Horizon resolves datapack priority, tag members, conditions, `replace`, `remove`, and `/reload`. There is no Rust-side fallback, so a removed entry stays removed.
+- `Ok(None)` means no EMC value. `UnknownType`, `Undecodable`, and `Unavailable` are handled explicitly; machine input is left untouched on errors.
+- The map is server-side and not synced to clients at this revision. Client tooltips omit EMC values rather than displaying a stale local default.
 
 ## 5. Stage 3 — matter
 
@@ -383,7 +382,7 @@ Invariants the tests enforce today:
 
 Known discrepancies, left for the balance phase with a reason for each:
 
-| Item | Table value | Contradiction | Intent |
+| Item | Default EMC | Contradiction | Intent |
 | --- | --- | --- | --- |
 | Coal | 32 | Public default is 128 | Whole fuel chain is scaled to 1/4 of the public values; ratios are preserved. Changing it rescales every fuel, block and machine. |
 | Sand / Gravel | 4 | Public default is 1 | Prototype value; harmless but inconsistent with cobblestone. |
@@ -394,7 +393,7 @@ Known discrepancies, left for the balance phase with a reason for each:
 | Dark Matter | 16,384 | Recipe is a placeholder | Value will be re-derived from the confirmed Aeternalis-based recipe. |
 | Klein Star Ein–Vier | 8,192 / 32,768 / 131,072 / 524,288 | Ingredients cost far more than the star's own value (Ein alone is 67,072) | Star values predate the recipe audit; the balance pass must re-derive them together with the upgrade recipes, which are themselves ⚠. |
 
-The table also keeps **no free transmutation**: an item with `value == 0` is
+The default Data Map also keeps **no free transmutation**: an item with `value == 0` is
 refused by `/projecte transmute`, by learning, and by the table menu, so nothing
 can be bought for nothing.
 
@@ -408,7 +407,7 @@ can be bought for nothing.
 | Table / Tablet UI | custom screen | chest menu only | none yet |
 | Collectors / Relays | native block energy | not callable | NBT buffer, §1 |
 | Klein Stars | native item energy | not callable | data component, §2 |
-| EMC values from packs | data-map read | not exported | static table, §7 |
+| EMC values from packs | `DataMap`, `ItemKey::data` | exported at the pinned revision | typed `projecte:emc` map, §7 |
 | Condensers | container slots | `block_entity_container` | none needed |
 
 ## 10. Known limitations of this phase
@@ -447,8 +446,8 @@ can be bought for nothing.
    then add matter blocks, the Transmutation Tablet, and the first tools.
 5. **Balance pass** — settle coal's value and re-base machine, matter and
    Klein Star values from their recipes (see §8).
-6. **Data-map EMC** — only when Horizon exports a read helper; do not build a
-   parallel resource parser.
+6. **Power Flower integration** — finish the Collector/Relay/Condenser network
+   behavior on top of the now-authoritative, datapack-overridable EMC map.
 
 Each of these can be implemented without redesigning this foundation: recipes
 live in `recipes.rs`, the fuel and transmutation rules in `alchemical.rs`, the
