@@ -308,11 +308,16 @@ mod tests {
         for node in NODES.iter().filter(|n| n.status == Status::Implemented) {
             match node.id {
                 "philosophers_stone" => {
-                    assert!(crate::emc::default_value(crate::alchemical::PHILOSOPHERS_STONE).is_some())
+                    assert!(
+                        crate::emc::default_value(crate::alchemical::PHILOSOPHERS_STONE).is_some()
+                    )
                 }
                 "alchemical_fuels" => {
                     for fuel in crate::alchemical::FUEL_TIERS.iter().skip(1).copied() {
-                        assert!(crate::emc::default_value(fuel).is_some_and(|value| value > 0), "{fuel}");
+                        assert!(
+                            crate::emc::default_value(fuel).is_some_and(|value| value > 0),
+                            "{fuel}"
+                        );
                         assert!(
                             crate::recipes::SHAPELESS
                                 .iter()
@@ -323,7 +328,10 @@ mod tests {
                 }
                 "fuel_blocks" => {
                     for (_, block) in crate::alchemical::FUEL_BLOCKS {
-                        assert!(crate::emc::default_value(block).is_some_and(|value| value > 0), "{block}");
+                        assert!(
+                            crate::emc::default_value(block).is_some_and(|value| value > 0),
+                            "{block}"
+                        );
                         assert!(
                             crate::recipes::SHAPED
                                 .iter()
