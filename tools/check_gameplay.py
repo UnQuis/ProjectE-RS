@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Audit literal EMC values, recipe tables and machine tier ladders in Rust sources."""
 import argparse
+import json
 import re
 from pathlib import Path
 
@@ -32,30 +33,31 @@ def rust_string_constants(source: str) -> dict[str, str]:
     ))
 
 
-def parse_emc(source: str) -> tuple[dict[str, int], list[str]]:
+def parse_emc(root: Path) -> tuple[dict[str, int], list[str]]:
     errors = []
-    body = block_after(source, "fn table_value")
-    if body is None:
-        return {}, ["emc.rs: could not locate table_value match"]
-    body = re.sub(r"//[^\n]*", "", body)
-    pattern = re.compile(r'((?:"[a-z0-9_.-]+:[a-z0-9/._-]+"(?:\s*\|\s*)?)+)\s*=>\s*(\d+)', re.S)
+    path = root / "engine" / "data" / "projecte" / "data_maps" / "item" / "emc.json"
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        return {}, [f"{path.relative_to(root)}: could not read EMC Data Map: {exc}"]
+    if not isinstance(data, dict):
+        return {}, [f"{path.relative_to(root)}: EMC Data Map root must be an object"]
+    raw_values = data.get("values")
+    if not isinstance(raw_values, dict):
+        return {}, [f"{path.relative_to(root)}: EMC Data Map values must be an object"]
     values: dict[str, int] = {}
-    for match in pattern.finditer(body):
-        ids = re.findall(r'"([^"]+)"', match.group(1))
-        value = int(match.group(2))
-        for item in ids:
-            if not RESOURCE_ID.fullmatch(item):
-                errors.append(f"emc.rs: invalid resource id {item!r}")
-            if item in values:
-                errors.append(f"emc.rs: duplicate EMC entry {item}")
-            if value <= 0:
-                errors.append(f"emc.rs: explicit EMC for {item} must be positive")
-            values[item] = value
+    for entry, amount in raw_values.items():
+        item = entry[1:] if isinstance(entry, str) and entry.startswith("#") else entry
+        if not isinstance(item, str) or not RESOURCE_ID.fullmatch(item):
+            errors.append(f"{path.relative_to(root)}: invalid EMC item/tag id {entry!r}")
+            continue
+        if type(amount) is not int or amount <= 0:
+            errors.append(f"{path.relative_to(root)}: EMC value for {entry} must be a positive integer")
+            continue
+        if not entry.startswith("#"):
+            values[entry] = amount
     if not values:
-        errors.append("emc.rs: no literal EMC entries were parsed")
-    checked = block_after(source, "pub fn checked_cost") or block_after(source, "fn checked_cost")
-    if checked is not None and ("checked_mul" not in checked or "i64::try_from" not in checked):
-        errors.append("emc.rs: checked_cost must use checked_mul and checked i64 conversion")
+        errors.append(f"{path.relative_to(root)}: no direct EMC item values were parsed")
     return values, errors
 
 
@@ -132,8 +134,16 @@ def validate(root: Path) -> list[str]:
     emc_path = engine / "emc.rs"
     if not emc_path.is_file():
         return ["engine/src/emc.rs is missing"]
-    values, found = parse_emc(emc_path.read_text(encoding="utf-8"))
+    emc_source = emc_path.read_text(encoding="utf-8")
+    values, found = parse_emc(root)
     errors.extend(found)
+    if "impl DataMap for Emc" not in emc_source or "item.data(host, &MAP)" not in emc_source:
+        errors.append("emc.rs: runtime EMC must use the typed Horizon DataMap read")
+    if "data_maps/projecte:item/emc" not in emc_source:
+        errors.append("emc.rs: the built-in projecte:emc datapack resource is not emitted")
+    checked = block_after(emc_source, "pub fn checked_cost")
+    if checked is not None and ("checked_mul" not in checked or "i64::try_from" not in checked):
+        errors.append("emc.rs: checked_cost must use checked_mul and checked i64 conversion")
 
     recipes_path = engine / "recipes.rs"
     if recipes_path.is_file():
@@ -141,7 +151,7 @@ def validate(root: Path) -> list[str]:
         errors.extend(found)
         for recipe in recipes:
             for item in [recipe["result"], *recipe["ingredients"]]:
-                if item.startswith("projecte:") and item not in values:
+                if item not in values:
                     errors.append(f"recipes.rs: {recipe['name']} uses {item} without an explicit EMC value")
 
     energy_path = engine / "energy.rs"
