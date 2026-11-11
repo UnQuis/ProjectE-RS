@@ -56,11 +56,6 @@ jobs:
         with:
           components: clippy, rustfmt
 
-      - name: Cache Cargo artifacts
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: |
-            projecte-rs -> target
 
       # engine/Cargo.toml intentionally points at the local Horizon checkout used
       # by the Horizon launcher. In CI, use the sibling checkout at the exact
@@ -84,6 +79,12 @@ jobs:
           manifest.write_text(content.replace(local_path, ci_path))
           PY
           grep -F 'path = "../../horizon/crates/horizon-client"' engine/Cargo.toml
+
+      - name: Cache Cargo artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            projecte-rs -> target
 
       - name: Validate mod metadata, resources and gameplay tables
         working-directory: projecte-rs
