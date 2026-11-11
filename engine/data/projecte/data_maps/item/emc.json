@@ -236,6 +236,16 @@
     "projecte:philosophers_stone": 16384,
     "projecte:red_matter": 131072,
     "projecte:transmutation_table": 32768,
-    "#minecraft:wool_carpets": 32
+    "#minecraft:wool_carpets": 32,
+    "#minecraft:crimson_stems": 32,
+    "#minecraft:warped_stems": 32,
+    "#minecraft:coal_ores": 256,
+    "#minecraft:copper_ores": 256,
+    "#minecraft:iron_ores": 384,
+    "#minecraft:gold_ores": 3072,
+    "#minecraft:redstone_ores": 256,
+    "#minecraft:lapis_ores": 256,
+    "#minecraft:diamond_ores": 256,
+    "#minecraft:emerald_ores": 256
   }
 }
