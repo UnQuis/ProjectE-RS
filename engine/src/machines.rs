@@ -5,7 +5,7 @@
 //! API_WORKAROUNDS.md for the workaround and migration path.
 
 use mod_api::mod_api::ItemStack;
-use mod_api::mod_api::{Compound, Holder, Host, ModBlockEntity, ModContainer, Tag, Text};
+use mod_api::mod_api::{Compound, DataMapError, Holder, Host, ModBlockEntity, ModContainer, Tag, Text};
 
 use crate::{condenser, data, emc, energy};
 
@@ -388,10 +388,19 @@ fn relay_tick(
             stored += moved;
             event.entity.items[0] = Some(input);
         } else {
-            let value = emc::value(&input.item);
-            if value > 0 && value <= (capacity - stored) as u64 {
-                stored += value as i64;
-                take_one(&mut event.entity.items[0]);
+            match emc::value(host, &input.item) {
+                Ok(Some(value)) => {
+                    if let Ok(value) = i64::try_from(value) {
+                        if value > 0 && value <= capacity - stored {
+                            stored += value;
+                            take_one(&mut event.entity.items[0]);
+                        }
+                    } else {
+                        emc::report_map_error(host, DataMapError::Undecodable);
+                    }
+                }
+                Ok(None) => {}
+                Err(error) => emc::report_map_error(host, error),
             }
         }
     }
@@ -432,7 +441,7 @@ fn same_item_payload(left: &ItemStack, right: &ItemStack) -> bool {
 /// One server-authoritative Condenser step. Slot 1 is the non-consumed target
 /// template, slot 2 is output, and slots 0/3..8 accept EMC-valued input.
 fn condenser_tick(
-    host: &dyn Host,
+    host: &mut dyn Host,
     event: &mut mod_api::mod_api::BlockEntityTickEvent<'_>,
     spec: condenser::CondenserSpec,
 ) {
@@ -447,12 +456,20 @@ fn condenser_tick(
         event.entity.data = furnace_data(stored, capacity);
         return;
     };
-    let target_value = emc::value(&target.item);
-    if target_value == 0 {
-        write_emc(&mut event.entity.nbt, stored);
-        event.entity.data = furnace_data(stored, capacity);
-        return;
-    }
+    let target_value = match emc::value(host, &target.item) {
+        Ok(Some(value)) if value > 0 => value,
+        Ok(_) => {
+            write_emc(&mut event.entity.nbt, stored);
+            event.entity.data = furnace_data(stored, capacity);
+            return;
+        }
+        Err(error) => {
+            emc::report_map_error(host, error);
+            write_emc(&mut event.entity.nbt, stored);
+            event.entity.data = furnace_data(stored, capacity);
+            return;
+        }
+    };
 
     // Process at most the tier budget. Invalid/unknown input stacks stay put;
     // the first valid stack that fits is converted.
@@ -466,10 +483,14 @@ fn condenser_tick(
         else {
             continue;
         };
-        let input_value = emc::value(&input.item);
-        if input_value == 0 {
-            continue;
-        }
+        let input_value = match emc::value(host, &input.item) {
+            Ok(Some(value)) if value > 0 => value,
+            Ok(_) => continue,
+            Err(error) => {
+                emc::report_map_error(host, error);
+                continue;
+            }
+        };
         let Ok(plan) = condenser::plan_input_conversion(state, spec, input_value, input.count)
         else {
             continue;
