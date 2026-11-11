@@ -4,7 +4,7 @@ id = "projecte"
 version = "0.1.0"
 
 [compatibility]
-horizon_revision = "fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca"
+horizon_revision = "1024f7b983d87a9616e1e51c709ba845f6017047"
 
 [api]
 path = "engine"
