@@ -15,7 +15,9 @@ impl DataMap for Emc {
     type Entry = ItemKey;
     type Value = u64;
 
-    fn id(&self) -> &str { "projecte:emc" }
+    fn id(&self) -> &str {
+        "projecte:emc"
+    }
 
     fn decode(&self, value: &Tag) -> Option<u64> {
         match value {
@@ -30,10 +32,16 @@ pub(crate) const MAP: Emc = Emc;
 static MAP_ERROR_REPORTED: AtomicBool = AtomicBool::new(false);
 
 pub(crate) fn value(host: &dyn Host, id: &str) -> Result<Option<u64>, DataMapError> {
-    let Ok(identifier) = Identifier::parse(id) else { return Ok(None); };
-    let Some(item) = host.item_key(&identifier) else { return Ok(None); };
+    let Ok(identifier) = Identifier::parse(id) else {
+        return Ok(None);
+    };
+    let Some(item) = host.item_key(&identifier) else {
+        return Ok(None);
+    };
     let result = item.data(host, &MAP);
-    if result.is_ok() { MAP_ERROR_REPORTED.store(false, Ordering::Relaxed); }
+    if result.is_ok() {
+        MAP_ERROR_REPORTED.store(false, Ordering::Relaxed);
+    }
     result
 }
 
@@ -62,9 +70,15 @@ pub fn display_name(id: &str) -> String {
     let mut out = String::with_capacity(path.len());
     let mut upper = true;
     for c in path.chars() {
-        if c == '_' { out.push(' '); upper = true; }
-        else if upper { out.extend(c.to_uppercase()); upper = false; }
-        else { out.push(c); }
+        if c == '_' {
+            out.push(' ');
+            upper = true;
+        } else if upper {
+            out.extend(c.to_uppercase());
+            upper = false;
+        } else {
+            out.push(c);
+        }
     }
     out
 }
@@ -72,7 +86,10 @@ pub fn display_name(id: &str) -> String {
 #[cfg(test)]
 pub(crate) fn default_value(id: &str) -> Option<u64> {
     let data: mod_api::mod_api::serde_json::Value =
-        mod_api::mod_api::serde_json::from_str(include_str!("../data/projecte/data_maps/item/emc.json")).ok()?;
+        mod_api::mod_api::serde_json::from_str(include_str!(
+            "../data/projecte/data_maps/item/emc.json"
+        ))
+        .ok()?;
     data.get("values")?.get(id)?.as_u64()
 }
 
@@ -85,13 +102,19 @@ mod tests {
         let ty = MAP.ty();
         assert_eq!(ty.id, "projecte:emc");
         assert_eq!(ty.registry, "minecraft:item");
+
         let files = files();
         assert_eq!(files.len(), 1);
         assert_eq!(files[0].0, "data_maps/projecte:item/emc");
+
         let data: mod_api::mod_api::serde_json::Value =
             mod_api::mod_api::serde_json::from_slice(&files[0].1).unwrap();
         assert_eq!(data["values"]["minecraft:diamond"].as_u64(), Some(8192));
-        assert_eq!(data["values"]["projecte:energy_condenser"].as_u64(), Some(33568));
+        assert_eq!(
+            data["values"]["projecte:energy_condenser"].as_u64(),
+            Some(33568)
+        );
+        assert_eq!(data["values"]["#minecraft:logs"].as_u64(), Some(32));
     }
 
     #[test]
