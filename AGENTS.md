@@ -26,7 +26,7 @@ The native crate is `engine/`; the root `horizon-mixin.toml` points to it with `
 Expected module boundaries:
 
 - `engine/src/lib.rs`: Horizon `Hooks` implementation, registration, hook orchestration, and integration between domain modules. Keep domain algorithms out of this file where practical.
-- `engine/src/emc.rs`: EMC value resolution, explicit default values, cost conversion helpers, and display/fuel metadata. Keep the resolver deterministic and independent of player state.
+- `engine/src/emc.rs`: typed DataMap descriptor/registration, merged-value reads, datapack resource emission, checked cost conversion and display metadata. Default values live in `engine/data/projecte/data_maps/item/emc.json`.
 - `engine/src/transaction.rs`: pure transaction planning and settlement. Validate before side effects; charge only for items actually granted.
 - `engine/src/data.rs`: player EMC/knowledge persistence and attachment codecs. Treat attachment operations as fallible.
 - Future modules should own focused domains (for example `machines.rs`, `energy.rs`, `knowledge.rs`, `recipes.rs`, and UI modules) rather than expanding `lib.rs indefinitely.
@@ -38,7 +38,7 @@ The module list above describes intended boundaries; do not assume every future 
 The project currently pins:
 
 - Minecraft target: `26.3`
-- Horizon revision: `fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca`
+- Horizon revision: `1024f7b983d87a9616e1e51c709ba845f6017047`
 - Native Hooks API at that revision: `411`
 
 The authoritative reference is the Horizon source at that exact commit and the repository's `HORIZON_API.md` once that documentation change is merged. API level numbers are not interchangeable: the native hooks API version is distinct from `horizon_mods::api_level::LEVEL`.
@@ -52,19 +52,24 @@ The authoritative reference is the Horizon source at that exact commit and the r
 - For cancellable hooks, return `Flow::Cancel` only when the mod has actually claimed the operation. For collection hooks, append rather than replace other mods' registrations.
 - Verify whether a function is an exported `Host` method before calling it. A method implemented privately inside Horizon's `Game` is not automatically available to this crate.
 
-### Data Maps: current API boundary
+### Data Maps: supported typed API
 
-Horizon at the pinned revision supports registering `NativeDataMapType` values through the `data_map_types` collection hook. The supported registry for EMC is `minecraft:item`; the map id should be `projecte:emc`. Data Map files use the Horizon/NeoForge-style location:
+The pinned Horizon revision exports the typed, read-only Data Map API:
 
-```text
-data/projecte/data_maps/item/emc.json
-```
+- Implement `DataMap` with an entry registry (`ItemKey` for EMC), a value type and a strict `decode(&Tag)`.
+- Register the descriptor from `data_map_types` with `event.types.push(Emc.ty())`.
+- Emit built-in defaults from `data_pack_files` under `data_maps/projecte:item/emc`. The corresponding datapack path is `data/projecte/data_maps/item/emc.json`.
+- Resolve runtime values with `ItemKey::data(host, &Emc)`; do not read Horizon's internal map storage or parse resource files yourself.
 
-The documented schema contains `replace`, `values`, and `remove`; values may target item ids or `#tags`. The map is rebuilt on world data load and `/reload`. At the pinned revision, Data Maps are server-side and are not synchronized to clients.
+Horizon owns pack priority, conditions, tag expansion, `replace`, `remove`, and atomic visibility after a successful world-data load or `/reload`. Preserve the result contract:
 
-**Important API limitation:** the pinned Horizon source contains internal `native_data_map` and `native_data_map_entries` methods, but those methods are not listed as exported native `Host` helpers in the pinned `native-hooks.json` catalog. Do not assume a ProjectE-RS hook can call them. Before implementing runtime EMC lookup from the merged Data Map, verify that Horizon has exposed a public Host read method or that the pinned API has otherwise changed. Do not silently replace Data Map semantics with a hand-rolled resource parser and claim it is equivalent: pack precedence, per-entry merging, tag expansion, and removals must remain correct.
+- `Ok(Some(value))`: a decoded value.
+- `Ok(None)`: this entry has no value, including a value removed by a higher-priority pack.
+- `DataMapError::UnknownType`: the map was not registered for this registry.
+- `DataMapError::Undecodable`: the stored JSON value cannot be represented by the decoder.
+- `DataMapError::Unavailable`: no server data maps are available.
 
-Until the read API is available, keep the limitation explicit. Registering a map type or shipping a JSON file alone does not make the runtime EMC resolver data-driven.
+Data Maps are server-side and are not synced to clients at this revision. A client-side tooltip must not fall back to built-in defaults: that could display a value different from the server's datapack. Keep EMC transactions and machine decisions server-authoritative, and fail closed on map errors.
 
 ### Energy capabilities
 
@@ -87,8 +92,9 @@ Attachments are appropriate for mod-owned player knowledge and EMC balance when 
 ## EMC and transmutation invariants
 
 - An unknown item has no EMC unless it has an explicit value or a deliberately supported, documented rule.
-- Never infer arbitrary modded item values from suffixes such as `_ingot`, `_ore`, `_log`, or `_wool`.
-- Explicit values take precedence over fallback rules.
+- Default EMC values are explicit entries in `engine/data/projecte/data_maps/item/emc.json`; there is no suffix-based runtime fallback.
+- A resolved Data Map value is authoritative. Never resurrect an entry removed by a datapack with a Rust-side fallback.
+- A modded item has no EMC unless a datapack explicitly assigns a value or includes it in a tag used by `projecte:emc`.
 - A zero EMC value is not a free purchase; it means the item is not transmutable unless a separate explicit policy says otherwise.
 - Cost calculations must reject multiplication overflow and values that cannot fit the player's balance type.
 - Validate balance, inventory room, learned knowledge, item identity, and requested count before side effects.
