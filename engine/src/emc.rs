@@ -139,4 +139,28 @@ mod tests {
         assert_eq!(default_value("projecte:energy_condenser"), Some(33568));
         assert_eq!(default_value("example:iron_ingot"), None);
     }
+    #[test]
+    fn checked_cost_handles_ordinary_values() {
+        assert_eq!(checked_cost(1, 1), Some(1));
+        assert_eq!(checked_cost(8192, 64), Some(524_288));
+        assert_eq!(checked_cost(32, 16), Some(512));
+        assert_eq!(checked_cost(0, 64), Some(0));
+    }
+
+    #[test]
+    fn checked_cost_rejects_multiplication_and_balance_overflow() {
+        assert_eq!(checked_cost(u64::MAX, 2), None);
+        assert_eq!(checked_cost(u64::MAX, u32::MAX), None);
+        assert_eq!(checked_cost(1u64 << 63, 2), None);
+        assert_eq!(checked_cost(i64::MAX as u64 + 1, 1), None);
+        assert_eq!(checked_cost(i64::MAX as u64, 2), None);
+    }
+
+    #[test]
+    fn checked_cost_zero_count_is_always_zero() {
+        assert_eq!(checked_cost(8192, 0), Some(0));
+        assert_eq!(checked_cost(0, 0), Some(0));
+        assert_eq!(checked_cost(u64::MAX, 0), Some(0));
+        assert_eq!(checked_cost(i64::MAX as u64, 0), Some(0));
+    }
 }
