@@ -71,7 +71,7 @@ pub(crate) const NODES: &[Node] = &[
         status: Status::Partial,
         prerequisites: &["philosophers_stone"],
         unlocks: "Learning items and buying learned items with EMC",
-        horizon: "blocks, open_menu, menu_clicked; data maps are unreadable, so EMC values are static (API_WORKAROUNDS.md)",
+        horizon: "blocks, open_menu, menu_clicked; purchases read the server's merged projecte:emc Data Map",
     },
     Node {
         id: "emc_acquisition",
@@ -171,10 +171,10 @@ pub(crate) const NODES: &[Node] = &[
         id: "emc_data_map",
         name: "Data-Map-driven EMC values",
         stage: 2,
-        status: Status::Blocked,
+        status: Status::Implemented,
         prerequisites: &["emc_acquisition"],
         unlocks: "Pack-defined EMC overrides through projecte:emc",
-        horizon: "the map registers through data_map_types, but there is no Host read helper at the pinned revision (API_WORKAROUNDS.md)",
+        horizon: "typed DataMap registration and ItemKey::data; Horizon resolves pack priority, tags, replace, remove, conditions and reload",
     },
     Node {
         id: "dark_matter",
@@ -308,11 +308,11 @@ mod tests {
         for node in NODES.iter().filter(|n| n.status == Status::Implemented) {
             match node.id {
                 "philosophers_stone" => {
-                    assert!(crate::emc::value(crate::alchemical::PHILOSOPHERS_STONE) > 0)
+                    assert!(crate::emc::default_value(crate::alchemical::PHILOSOPHERS_STONE).is_some())
                 }
                 "alchemical_fuels" => {
                     for fuel in crate::alchemical::FUEL_TIERS.iter().skip(1).copied() {
-                        assert!(crate::emc::value(fuel) > 0, "{fuel}");
+                        assert!(crate::emc::default_value(fuel).is_some_and(|value| value > 0), "{fuel}");
                         assert!(
                             crate::recipes::SHAPELESS
                                 .iter()
@@ -323,7 +323,7 @@ mod tests {
                 }
                 "fuel_blocks" => {
                     for (_, block) in crate::alchemical::FUEL_BLOCKS {
-                        assert!(crate::emc::value(block) > 0, "{block}");
+                        assert!(crate::emc::default_value(block).is_some_and(|value| value > 0), "{block}");
                         assert!(
                             crate::recipes::SHAPED
                                 .iter()
@@ -331,6 +331,10 @@ mod tests {
                             "{block} has no recipe"
                         );
                     }
+                }
+                "emc_data_map" => {
+                    assert_eq!(crate::emc::default_value("minecraft:diamond"), Some(8192));
+                    assert_eq!(crate::emc::default_value("projecte:energy_condenser"), Some(33568));
                 }
                 other => panic!("{other} claims implemented status without a registered item"),
             }
