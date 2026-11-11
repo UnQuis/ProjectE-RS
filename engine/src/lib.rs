@@ -805,7 +805,7 @@ fn command_learn(host: &mut dyn Host, event: &PerformCommandEvent<'_>, args: &[&
         match emc::value(host, &id) {
             Ok(Some(value)) if value > 0 => {}
             Ok(_) => { no_value += 1; continue; }
-            Err(error) {
+            Err(error) => {
                 host.feedback(Text::literal(format!("§cCould not read projecte:emc ({error:?}); no knowledge was changed.")));
                 return true;
             }
@@ -844,7 +844,7 @@ fn command_transmute(host: &mut dyn Host, event: &PerformCommandEvent<'_>, args:
             host.feedback(Text::literal(format!("§c{} has no EMC value.", emc::display_name(&id))));
             return true;
         }
-        Err(error) {
+        Err(error) => {
             host.feedback(Text::literal(format!("§cCould not read projecte:emc ({error:?}); transmutation was cancelled.")));
             return true;
         }
