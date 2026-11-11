@@ -53,16 +53,21 @@ def validate(root: Path) -> list[str]:
     if version and package.get("version") != version:
         errors.append("engine/Cargo.toml: package.version must match the mod version")
 
-    dependency = engine.get("dependencies", {}).get("horizon-client", {})
+    dependencies = engine.get("dependencies", {})
+    dependency = next(
+        (
+            value for value in dependencies.values()
+            if isinstance(value, dict) and value.get("package") == "horizon-client"
+        ),
+        dependencies.get("horizon-client", {}),
+    )
     dep_path = dependency.get("path") if isinstance(dependency, dict) else None
     if not isinstance(dep_path, str) or not dep_path:
-        errors.append("engine/Cargo.toml: horizon-client must use a pinned local path dependency")
+        errors.append("engine/Cargo.toml: the horizon-client package must use a local path dependency")
     elif dep_path.startswith("/"):
-        match = re.search(r"/([0-9a-f]{40})/crates/horizon-client/?$", dep_path)
-        if not match:
-            errors.append("engine/Cargo.toml: absolute Horizon path must contain its full revision")
-        elif revision and match.group(1) != revision:
-            errors.append("engine/Cargo.toml: Horizon path revision differs from horizon-mixin.toml")
+        normalized = dep_path.replace("\\", "/")
+        if not normalized.endswith("/Horizon/crates/horizon-client"):
+            errors.append("engine/Cargo.toml: absolute Horizon path must point at the local Horizon checkout")
     elif not dep_path.replace("\\", "/").endswith("../../horizon/crates/horizon-client"):
         errors.append("engine/Cargo.toml: unexpected relative Horizon path")
 
@@ -72,8 +77,8 @@ def validate(root: Path) -> list[str]:
     except FileNotFoundError:
         errors.append(f"{WORKFLOW}: file is missing")
     else:
-        if "repository: horizon-rust/horizon" not in workflow:
-            errors.append(f"{WORKFLOW}: must check out horizon-rust/horizon")
+        if "repository: arismoko/horizon" not in workflow:
+            errors.append(f"{WORKFLOW}: must check out arismoko/horizon, which contains the pinned typed DataMap API")
         refs = re.findall(r"(?m)^\s*ref:\s*([0-9a-f]{40})\s*$", workflow)
         if revision and revision not in refs:
             errors.append(f"{WORKFLOW}: checkout ref must match pinned Horizon revision {revision}")
