@@ -310,14 +310,16 @@ impl Hooks for ProjectE {
             return;
         }
         let data = data::get(host, event.uuid);
-        let learned = learned_items(&data);
-        let Some(item) = learned.get(event.slot as usize) else {
+        let learned = match learned_items(host, &data) {
+            Ok(items) => items,
+            Err(error) => {
+                host.tell(event.uuid, Text::literal(format!("§cEMC data map is unavailable ({error:?}).")));
+                return;
+            }
+        };
+        let Some((item, value)) = learned.get(event.slot as usize) else {
             return;
         };
-        let value = emc::value(item);
-        if value == 0 {
-            return;
-        }
         let count: u32 = if event.mode == 1 {
             64
         } else if event.button == 1 {
@@ -326,7 +328,7 @@ impl Hooks for ProjectE {
             1
         };
         let plan = match transaction::plan_purchase(
-            value,
+            *value,
             count,
             data.emc,
             inventory_room(host, event.uuid, item),
@@ -443,18 +445,10 @@ impl Hooks for ProjectE {
                     return Flow::Cancel;
                 };
                 let id = normalize_item(id);
-                let value = emc::value(&id);
-                if value == 0 {
-                    host.feedback(Text::literal(format!(
-                        "§7{} has no EMC value.",
-                        emc::display_name(&id)
-                    )));
-                } else {
-                    host.feedback(Text::literal(format!(
-                        "§e{}§7: §e{} EMC",
-                        emc::display_name(&id),
-                        value
-                    )));
+                match emc::value(host, &id) {
+                    Ok(Some(value)) if value > 0 => host.feedback(Text::literal(format!("§e{}§7: §e{} EMC", emc::display_name(&id), value))),
+                    Ok(_) => host.feedback(Text::literal(format!("§7{} has no EMC value.", emc::display_name(&id)))),
+                    Err(error) => host.feedback(Text::literal(format!("§cCould not read projecte:emc ({error:?})."))),
                 }
                 true
             }
@@ -487,18 +481,16 @@ impl Hooks for ProjectE {
                 u32::MAX,
             ));
         }
-        let value = emc::value(&event.stack.item);
-        if value > 0 {
-            event
-                .lines
-                .push((Text::literal(format!("§7EMC: §e{}", value)), u32::MAX));
-        }
-        if event.stack.count > 1
-            && let Some(total) = alchemical::total_value(&event.stack.item, event.stack.count)
-        {
-            event
-                .lines
-                .push((Text::literal(format!("§7Stack EMC: §e{total}")), u32::MAX));
+        // Data maps are not synced to clients; never show stale built-in values.
+        if let Ok(Some(value)) = emc::value(host, &event.stack.item) {
+            if value > 0 {
+                event.lines.push((Text::literal(format!("§7EMC: §e{}", value)), u32::MAX));
+            }
+            if event.stack.count > 1
+                && let Some(total) = alchemical::total_value(value, event.stack.count)
+            {
+                event.lines.push((Text::literal(format!("§7Stack EMC: §e{total}")), u32::MAX));
+            }
         }
         if let Some(tier) = alchemical::tier(&event.stack.item) {
             let burn = alchemical::burn_ticks(&event.stack.item).unwrap_or(0);
@@ -542,8 +534,13 @@ impl Hooks for ProjectE {
         }
     }
 
-    fn data_pack_files(&self, _host: &dyn Host, event: &mut DataPackFilesEvent<'_>) {
+    fn data_map_types(&self, _host: &mut dyn ServerHost, event: &mut DataMapTypesEvent<'_>) {
+        event.types.push(emc::MAP.ty());
+    }
+
+    fn data_pack_files(&self, _host: &mut dyn ServerHost, event: &mut DataPackFilesEvent<'_>) {
         event.files.extend(recipes::files());
+        event.files.extend(emc::files());
     }
 
     // --- the Transmutation Table screen -----------------------------------
@@ -642,15 +639,15 @@ fn stack(id: &str, count: u32) -> ItemStack {
     }
 }
 
-fn learned_items(data: &data::PlayerData) -> Vec<String> {
-    let mut items: Vec<String> = data
-        .learned
-        .iter()
-        .filter(|id| emc::value(id) > 0)
-        .cloned()
-        .collect();
-    items.sort_by(|a, b| emc::value(b).cmp(&emc::value(a)).then_with(|| a.cmp(b)));
-    items
+fn learned_items(host: &dyn Host, data: &data::PlayerData) -> Result<Vec<(String, u64)>, DataMapError> {
+    let mut items = Vec::with_capacity(data.learned.len());
+    for id in &data.learned {
+        if let Some(value) = emc::value(host, id)? {
+            if value > 0 { items.push((id.clone(), value)); }
+        }
+    }
+    items.sort_by(|(left_id, left_value), (right_id, right_value)| right_value.cmp(left_value).then_with(|| left_id.cmp(right_id)));
+    Ok(items)
 }
 
 /// The table's container: the slots its screen lays out.
@@ -805,13 +802,15 @@ fn command_learn(host: &mut dyn Host, event: &PerformCommandEvent<'_>, args: &[&
     let mut added = 0;
     let mut no_value = 0;
     for id in learn {
-        if emc::value(&id) == 0 {
-            no_value += 1;
-            continue;
+        match emc::value(host, &id) {
+            Ok(Some(value)) if value > 0 => {}
+            Ok(_) => { no_value += 1; continue; }
+            Err(error) {
+                host.feedback(Text::literal(format!("§cCould not read projecte:emc ({error:?}); no knowledge was changed.")));
+                return true;
+            }
         }
-        if data.learned.insert(id) {
-            added += 1;
-        }
+        if data.learned.insert(id) { added += 1; }
     }
     let total = data.learned.len();
     data::set(host, event.player.uuid, data);
@@ -839,14 +838,17 @@ fn command_transmute(host: &mut dyn Host, event: &PerformCommandEvent<'_>, args:
         .and_then(|s| s.parse::<u32>().ok())
         .unwrap_or(1)
         .clamp(1, 4096);
-    let value = emc::value(&id);
-    if value == 0 {
-        host.feedback(Text::literal(format!(
-            "§c{} has no EMC value.",
-            emc::display_name(&id)
-        )));
-        return true;
-    }
+    let value = match emc::value(host, &id) {
+        Ok(Some(value)) if value > 0 => value,
+        Ok(_) => {
+            host.feedback(Text::literal(format!("§c{} has no EMC value.", emc::display_name(&id))));
+            return true;
+        }
+        Err(error) {
+            host.feedback(Text::literal(format!("§cCould not read projecte:emc ({error:?}); transmutation was cancelled.")));
+            return true;
+        }
+    };
     let data = data::get(host, event.player.uuid);
     if !data.learned.contains(&id) {
         host.feedback(Text::literal(format!(
