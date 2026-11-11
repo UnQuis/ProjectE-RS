@@ -115,6 +115,8 @@ mod tests {
             Some(33568)
         );
         assert_eq!(data["values"]["#minecraft:logs"].as_u64(), Some(32));
+        assert_eq!(data["values"]["#minecraft:wool_carpets"].as_u64(), Some(32));
+        assert_eq!(data["values"]["#minecraft:iron_ores"].as_u64(), Some(384));
     }
 
     #[test]
