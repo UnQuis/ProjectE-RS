@@ -4,7 +4,7 @@ This file records deliberate compatibility workarounds. It is not a list of pref
 When the pinned Horizon API grows the missing trait-mod accessors, replace these implementations
 in one migration and update this document.
 
-Pinned Horizon revision: `fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca`.
+Pinned Horizon revision: `1024f7b983d87a9616e1e51c709ba845f6017047`.
 
 ## 1. Machine EMC: block-entity NBT instead of native energy access
 
@@ -126,18 +126,20 @@ Trade-offs: the write bypasses neighbour updates and block-entity drops (documen
 2. Keep the compare-and-set check by re-reading the block before the write.
 3. Delete the single-run `NativeBlockEdit` construction in `lib.rs`.
 
-## 7. EMC values are not data-driven yet
+## 7. EMC values use the typed Horizon Data Map
 
-- `data_map_types` can register `projecte:emc` for `minecraft:item`, and a data pack can ship `data/projecte/data_maps/item/emc.json`.
-- The pinned `Host` exposes **no** data-map read helper: `native_data_map` and `native_data_map_entries` exist inside `horizon-client` but are not in `native-hooks.json`, so a trait mod cannot call them.
-- Until that changes, EMC resolution stays in the static table in `engine/src/emc.rs` plus the vanilla-only family rules. Registering the map type or shipping the JSON alone would not make the resolver data-driven, so this crate does neither yet.
-- Do not hand-roll a resource-file parser to imitate data maps: pack precedence, per-entry `replace`, tag expansion and `remove` would have to be re-implemented and would not match the server's merged map.
+**Current implementation**
 
-**Migration when a read helper exists**
+- `engine/src/emc.rs` declares `Emc: DataMap<Entry = ItemKey, Value = u64>` with id `projecte:emc`.
+- The default values are in `engine/data/projecte/data_maps/item/emc.json`; `data_map_types` registers the descriptor and `data_pack_files` emits it as `data_maps/projecte:item/emc`.
+- Every runtime lookup goes through `ItemKey::data(host, &Emc)`. There is no duplicate Rust value table, suffix inference, or hand-written resource parser.
+- Horizon resolves pack priority, conditions, tag expansion, per-entry replacement, `replace`, `remove`, and reload visibility. A removed value remains absent.
+- Values must decode as non-negative integer NBT (`Int` or `Long`). Negative, fractional, string, compound and other shapes fail as `DataMapError::Undecodable`; zero is a valid value but is not transmutable.
+- A map error pauses EMC-valued machine input processing and is reported once until a successful read.
 
-1. Register `projecte:emc` through `data_map_types` and ship the default values as a data-pack file.
-2. Replace `emc::table_value` lookups with a read of the merged map, keeping the vanilla family rules as a documented fallback for entries the map does not cover.
-3. Keep the static table as the shipped default data, not as a second runtime source of truth.
+**Known API constraint**
+
+Data Maps are server-side and are not synced to clients. The tooltip hook therefore omits EMC lines when the client answers `Unavailable`; it must not show a stale built-in value when a server datapack has overridden or removed that item. Server commands, the Transmutation Table purchase path, Relays and Condensers read the server's merged map.
 
 ## 8. The Transmutation Table screen: a vanilla menu screen, not a container screen
 
