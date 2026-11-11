@@ -44,8 +44,8 @@
 //! the panel (`own_labels`), so the visible title is this mod's text in the
 //! player's language. `mod.rs::TITLE_KEY` is the single key both use.
 
-use horizon_client::items::ItemStack;
-use horizon_client::mod_api::{Host, HudBatch, NativeScreen, NativeScreenView};
+use mod_api::mod_api::ItemStack;
+use mod_api::mod_api::{Host, HudBatch, NativeScreen, NativeScreenView};
 
 use super::layout::{self, Control, Layout, Part, Rect};
 // The menu's shape is geometry, so it lives in `super::layout` with the rest

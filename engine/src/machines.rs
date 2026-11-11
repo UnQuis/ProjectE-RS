@@ -4,8 +4,8 @@
 //! surface cannot call Horizon's native energy read/write helpers. See
 //! API_WORKAROUNDS.md for the workaround and migration path.
 
-use horizon_client::items::ItemStack;
-use horizon_client::mod_api::{Compound, Holder, Host, ModBlockEntity, ModContainer, Tag, Text};
+use mod_api::mod_api::ItemStack;
+use mod_api::mod_api::{Compound, Holder, Host, ModBlockEntity, ModContainer, Tag, Text};
 
 use crate::{condenser, data, emc, energy};
 
@@ -331,7 +331,7 @@ fn furnace_data(stored: i64, capacity: i64) -> Vec<i32> {
 fn collector_tick(
     host: &mut dyn Host,
     pos: [i32; 3],
-    event: &mut horizon_client::mod_api::BlockEntityTickEvent<'_>,
+    event: &mut mod_api::mod_api::BlockEntityTickEvent<'_>,
     tier: usize,
 ) {
     let machine = Machine::Collector(tier);
@@ -371,7 +371,7 @@ fn collector_tick(
 fn relay_tick(
     host: &mut dyn Host,
     pos: [i32; 3],
-    event: &mut horizon_client::mod_api::BlockEntityTickEvent<'_>,
+    event: &mut mod_api::mod_api::BlockEntityTickEvent<'_>,
     tier: usize,
 ) {
     let machine = Machine::Relay(tier);
@@ -433,7 +433,7 @@ fn same_item_payload(left: &ItemStack, right: &ItemStack) -> bool {
 /// template, slot 2 is output, and slots 0/3..8 accept EMC-valued input.
 fn condenser_tick(
     host: &dyn Host,
-    event: &mut horizon_client::mod_api::BlockEntityTickEvent<'_>,
+    event: &mut mod_api::mod_api::BlockEntityTickEvent<'_>,
     spec: condenser::CondenserSpec,
 ) {
     let capacity = i64::try_from(spec.capacity).unwrap_or(i64::MAX);
@@ -534,7 +534,7 @@ fn condenser_tick(
 
 pub(crate) fn tick(
     host: &mut dyn Host,
-    event: &mut horizon_client::mod_api::BlockEntityTickEvent<'_>,
+    event: &mut mod_api::mod_api::BlockEntityTickEvent<'_>,
 ) {
     if event.entity.id != BLOCK_ENTITY {
         return;

@@ -38,7 +38,7 @@
 use std::collections::BTreeMap;
 use std::sync::{Mutex, MutexGuard};
 
-use horizon_client::mod_api::{Host, ItemStack, Text};
+use mod_api::mod_api::{Host, ItemStack, Text};
 
 use crate::{data, deposit};
 

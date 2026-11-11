@@ -8,4 +8,4 @@ license = "MIT"
 path = "src/lib.rs"
 
 [dependencies]
-horizon-client = { path = "/home/alexquasar/.local/share/horizon-launcher/native/source/fdc87aecdbd116bf1e08adcd062fcbaea8c2e2ca/crates/horizon-client" }
+mod_api = { package = "horizon-client", path = "/home/alexquasar/Проекты/MCModsFin/Horizon/crates/horizon-client" }

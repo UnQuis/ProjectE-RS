@@ -6,7 +6,7 @@
 
 use std::sync::Arc;
 
-use horizon_client::mod_api::*;
+use mod_api::mod_api::*;
 
 mod alchemical;
 pub mod condenser;

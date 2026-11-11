@@ -2,7 +2,7 @@
 
 use std::collections::BTreeSet;
 
-use horizon_client::mod_api::{
+use mod_api::mod_api::{
     AttachmentCodec, AttachmentError, AttachmentType, Compound, Holder, Tag,
 };
 
@@ -85,16 +85,16 @@ pub static BUFFER: AttachmentType<i64> = AttachmentType {
     sync: false,
 };
 
-pub fn get(host: &mut dyn horizon_client::mod_api::Host, uuid: u128) -> PlayerData {
+pub fn get(host: &mut dyn mod_api::mod_api::Host, uuid: u128) -> PlayerData {
     PLAYER.get(host, Holder::Player(uuid)).unwrap_or_default()
 }
 
-pub fn set(host: &mut dyn horizon_client::mod_api::Host, uuid: u128, data: PlayerData) {
+pub fn set(host: &mut dyn mod_api::mod_api::Host, uuid: u128, data: PlayerData) {
     let _ = PLAYER.set(host, Holder::Player(uuid), data);
 }
 
 pub fn try_add_emc(
-    host: &mut dyn horizon_client::mod_api::Host,
+    host: &mut dyn mod_api::mod_api::Host,
     uuid: u128,
     amount: i64,
 ) -> Result<i64, AttachmentError> {
@@ -105,11 +105,11 @@ pub fn try_add_emc(
     Ok(emc)
 }
 
-pub fn add_emc(host: &mut dyn horizon_client::mod_api::Host, uuid: u128, amount: i64) -> i64 {
+pub fn add_emc(host: &mut dyn mod_api::mod_api::Host, uuid: u128, amount: i64) -> i64 {
     try_add_emc(host, uuid, amount).unwrap_or_else(|_| get(host, uuid).emc)
 }
 
-pub fn take_emc(host: &mut dyn horizon_client::mod_api::Host, uuid: u128, amount: i64) -> bool {
+pub fn take_emc(host: &mut dyn mod_api::mod_api::Host, uuid: u128, amount: i64) -> bool {
     if amount < 0 {
         return false;
     }
