@@ -26,7 +26,7 @@
 
 use std::sync::Mutex;
 
-use mod_api::mod_api::{Flow, Host, HudBatch, NativeScreen, NativeScreenView, Text};
+use mod_api::{Flow, Host, HudBatch, NativeScreen, NativeScreenView, Text};
 
 use super::atlas;
 use super::layout;
