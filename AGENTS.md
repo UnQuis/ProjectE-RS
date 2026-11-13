@@ -11,7 +11,7 @@ The project is intended to become a complete mod with its own assets and models.
 ## Non-negotiable repository rules
 
 1. **Clean room means clean room.** Do not inspect or use ProjectE source/decompiled jars as implementation references. Do not ask another agent to do so. Use public gameplay behavior, this repository's own code, and the pinned Horizon API.
-2. **Pin compatibility.** The Horizon revision is declared in `horizon-mixin.toml`. Never silently target Horizon `main`, a newer API, or a different Minecraft version. Re-check the exact pinned source before using an API not already present in this repository.
+2. **Pin compatibility.** The exact Horizon and mixins-tool commits are declared in `engine/horizon-mod.toml` under `[native]`. Never silently target Horizon `main`, a newer API, or a different Minecraft version. Re-check the exact pinned source before using an API not already present in this repository.
 3. **Do not invent Horizon APIs.** Verify type names, hook names, method signatures, ownership, thread/side constraints, and serialization behavior against the pinned source. Distinguish internal Horizon methods from methods exported to native mods through `Host`.
 4. **Preserve server authority.** EMC balances, learned knowledge, machine state, and transmutation decisions are server-authoritative. Client-side hooks may display state but must not grant items, debit EMC, or mutate authoritative machine data.
 5. **Fail explicitly.** Do not hide storage, serialization, parsing, or transaction errors with `unwrap_or_default()`, `let _ = ...`, silent fallback, or lossy casts in production paths. Handle errors deliberately and provide actionable diagnostics.
@@ -21,7 +21,7 @@ The project is intended to become a complete mod with its own assets and models.
 
 ## Repository layout and responsibilities
 
-The native crate is `engine/`; the root `horizon-mixin.toml` points to it with `[api] path = "engine"`.
+The native crate is `engine/`; the root `engine/horizon-mod.toml` points to it with `[api] path = "engine"`.
 
 Expected module boundaries:
 
@@ -134,7 +134,7 @@ Run the crate's unit tests in the same Horizon-enabled checkout/toolchain enviro
 cargo test
 ```
 
-The crate currently has a local absolute `horizon-client` path in `engine/Cargo.toml`; the launcher stages the crate and rewrites that dependency for its generated workspace. A plain standalone Cargo invocation may therefore fail outside the staged Horizon environment. Do not "fix" this by guessing a new dependency path; coordinate a portable dependency strategy separately.
+The crate currently has a local absolute `horizon-mod-api` path in `engine/Cargo.toml`; the launcher stages the crate and rewrites that dependency for its generated workspace. A plain standalone Cargo invocation may therefore fail outside the staged Horizon environment. Do not "fix" this by guessing a new dependency path; coordinate a portable dependency strategy separately.
 
 Before reporting completion:
 
