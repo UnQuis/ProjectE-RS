@@ -1,4 +1,4 @@
-name: Rust CI
+name: Native mod CI
 
 on:
   push:
@@ -11,97 +11,49 @@ permissions:
   contents: read
 
 concurrency:
-  group: rust-ci-${{ github.workflow }}-${{ github.ref }}
+  group: native-mod-ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  rust:
-    name: Format, lint, build and test
+  native-mod:
+    name: Validate and compile ProjectE-RS only
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 30
 
     steps:
       - name: Check out ProjectE-RS
         uses: actions/checkout@v4
-        with:
-          path: projecte-rs
 
-      - name: Check out the pinned Horizon revision
-        uses: actions/checkout@v4
+      - name: Install Python
+        uses: actions/setup-python@v5
         with:
-          repository: arismoko/horizon
-          ref: 1024f7b983d87a9616e1e51c709ba845f6017047
-          path: horizon
-
-      - name: Install native build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install --yes \
-            clang \
-            cmake \
-            libasound2-dev \
-            libgl1-mesa-dev \
-            libudev-dev \
-            libwayland-dev \
-            libx11-dev \
-            libxcursor-dev \
-            libxinerama-dev \
-            libxkbcommon-dev \
-            libxrandr-dev \
-            libxi-dev \
-            pkg-config
+          python-version: "3.11"
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@1.95.0
         with:
           components: clippy, rustfmt
 
-
-      # engine/Cargo.toml intentionally points at the local Horizon checkout used
-      # by the Horizon launcher. In CI, use the sibling checkout at the exact
-      # revision pinned by horizon-mixin.toml. Do not commit this rewrite.
-      - name: Prepare the pinned Horizon dependency
-        working-directory: projecte-rs
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-
-          manifest = Path("engine/Cargo.toml")
-          content = manifest.read_text()
-          local_path = 'path = "/home/alexquasar/Проекты/MCModsFin/Horizon/crates/horizon-client"'
-          ci_path = 'path = "../../horizon/crates/horizon-client"'
-
-          if content.count(local_path) != 1:
-              raise SystemExit(
-                  "Expected exactly one pinned local horizon-client path in engine/Cargo.toml"
-              )
-
-          manifest.write_text(content.replace(local_path, ci_path))
-          PY
-          grep -F 'path = "../../horizon/crates/horizon-client"' engine/Cargo.toml
-
       - name: Cache Cargo artifacts
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
-            projecte-rs -> target
+            . -> target
 
-      - name: Validate mod metadata, resources and gameplay tables
-        working-directory: projecte-rs
+      - name: Validate metadata, resources, gameplay tables and Python tests
         run: python3 tools/gate.py --python-only
 
+      - name: Resolve the pinned mod API and refresh Cargo.lock
+        run: cargo generate-lockfile --manifest-path engine/Cargo.toml
+
       - name: Check formatting
-        working-directory: projecte-rs
-        run: cargo fmt --all -- --check
+        run: cargo fmt --manifest-path engine/Cargo.toml -- --check
 
-      - name: Run Clippy
-        working-directory: projecte-rs
-        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - name: Run Clippy on the mod crate
+        run: cargo clippy --manifest-path engine/Cargo.toml --all-targets -- -D warnings
 
-      - name: Compile all targets
-        working-directory: projecte-rs
-        run: cargo check --workspace --all-targets --locked
+      - name: Compile the mod crate
+        run: cargo check --manifest-path engine/Cargo.toml --all-targets
 
-      - name: Run tests
-        working-directory: projecte-rs
-        run: cargo test --workspace --all-targets --locked
+      - name: Run mod tests
+        run: cargo test --manifest-path engine/Cargo.toml --all-targets
