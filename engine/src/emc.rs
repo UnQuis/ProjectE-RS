@@ -85,11 +85,10 @@ pub fn display_name(id: &str) -> String {
 
 #[cfg(test)]
 pub(crate) fn default_value(id: &str) -> Option<u64> {
-    let data: mod_api::serde_json::Value =
-        mod_api::serde_json::from_str(include_str!(
-            "../data/projecte/data_maps/item/emc.json"
-        ))
-        .ok()?;
+    let data: mod_api::serde_json::Value = mod_api::serde_json::from_str(
+        include_str!("../data/projecte/data_maps/item/emc.json"),
+    )
+    .ok()?;
     data.get("values")?.get(id)?.as_u64()
 }
 
