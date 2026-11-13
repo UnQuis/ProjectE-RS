@@ -616,8 +616,8 @@ mod tests {
         assert_eq!(keys.len(), files.len(), "duplicate data-pack key");
         for (key, body) in &files {
             let text = std::str::from_utf8(body).expect("recipe json is utf-8");
-            let value: mod_api::mod_api::serde_json::Value =
-                mod_api::mod_api::serde_json::from_str(text)
+            let value: mod_api::serde_json::Value =
+                mod_api::serde_json::from_str(text)
                     .unwrap_or_else(|error| panic!("{key}: {error} in {text}"));
             let kind = value["type"].as_str().expect("recipe type");
             assert!(
