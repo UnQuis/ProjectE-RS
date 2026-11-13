@@ -88,29 +88,40 @@ class GameplayChecks(unittest.TestCase):
 
 
 class ManifestChecks(unittest.TestCase):
-    def test_manifest_and_workflow_pin_must_match(self):
+    def test_native_manifest_and_cargo_pin_must_match(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             (root / "engine").mkdir()
             (root / ".github/workflows").mkdir(parents=True)
             revision = "a" * 40
-            (root / "horizon-mixin.toml").write_text(
-                '[mod]\nid="projecte"\nversion="0.1.0"\n'
-                '[compatibility]\nhorizon_revision="' + revision + '"\n'
-                '[api]\npath="engine"\n'
+            mixins = "b" * 40
+            (root / "engine/horizon-mod.toml").write_text(
+                'id="projecte"\nversion="0.1.0"\napi="0.2"\nside="both"\n'
+                'capabilities=["registries"]\n[native]\ngame="26.3"\n'
+                'horizon="' + revision + '"\nmixins="' + mixins + '"\n'
             )
             (root / "Cargo.toml").write_text('[workspace]\nmembers=["engine"]\n')
             (root / "engine/Cargo.toml").write_text(
                 '[package]\nname="mod-projecte"\nversion="0.1.0"\n'
-                '[dependencies]\nhorizon-client={path="../../horizon/crates/horizon-client"}\n'
+                '[dependencies]\nhorizon-mod-api={git="https://github.com/arismoko/horizon",rev="'
+                + revision + '"}\n'
             )
-            (root / ".github/workflows/rust.yml").write_text(
-                'repository: arismoko/horizon\nref: ' + revision + "\n"
+            workflow = root / ".github/workflows/rust.yml"
+            workflow.write_text(
+                'cargo generate-lockfile --manifest-path engine/Cargo.toml\n'
+                'cargo check --manifest-path engine/Cargo.toml --all-targets\n'
             )
             self.assertEqual(validate_manifest(root), [])
-            workflow = root / ".github/workflows/rust.yml"
-            workflow.write_text(workflow.read_text().replace(revision, "b" * 40))
-            self.assertTrue(any("checkout ref must match" in error for error in validate_manifest(root)))
+            workflow.write_text(workflow.read_text().replace(
+                "cargo check --manifest-path engine/Cargo.toml --all-targets",
+                "cargo check --workspace"
+            ))
+            self.assertTrue(any(
+                "compile the native mod crate directly" in error
+                for error in validate_manifest(root)
+            ))
+
+
 
 
 if __name__ == "__main__":
