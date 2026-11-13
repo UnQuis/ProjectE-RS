@@ -555,10 +555,7 @@ fn condenser_tick(
     event.entity.data = furnace_data(state.stored_emc as i64, capacity);
 }
 
-pub(crate) fn tick(
-    host: &mut dyn Host,
-    event: &mut mod_api::BlockEntityTickEvent<'_>,
-) {
+pub(crate) fn tick(host: &mut dyn Host, event: &mut mod_api::BlockEntityTickEvent<'_>) {
     if event.entity.id != BLOCK_ENTITY {
         return;
     }
