@@ -3,8 +3,8 @@
 //! The charge is kept in a ProjectE-owned data component until the pinned
 //! trait-mod API exposes the native item-energy accessors. See API_WORKAROUNDS.md.
 
-use mod_api::mod_api::ItemStack;
-use mod_api::mod_api::{Host, NativeComponentError, Tag};
+use mod_api::ItemStack;
+use mod_api::{Host, NativeComponentError, Tag};
 
 pub(crate) const STORED_EMC_COMPONENT: &str = "projecte:stored_emc";
 

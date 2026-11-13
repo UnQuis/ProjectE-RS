@@ -6,7 +6,7 @@
 
 use std::sync::Arc;
 
-use mod_api::mod_api::*;
+use mod_api::*;
 
 mod alchemical;
 pub mod condenser;
@@ -34,12 +34,10 @@ const PROJECTE_MENU_SLOTS: usize = 54;
 /// revision can store the table's own state without touching another block's.
 const TABLE_BLOCK_ENTITY: &str = "projecte:transmutation_table";
 
-pub fn hooks() -> Box<dyn Hooks> {
-    Box::new(ProjectE)
-}
-
+#[derive(Default)]
 struct ProjectE;
 
+#[mod_api::horizon_mod]
 impl Hooks for ProjectE {
     fn blocks(&self, event: &mut BlocksEvent<'_>) {
         event.blocks.push(Default::default());
@@ -550,19 +548,11 @@ impl Hooks for ProjectE {
         }
     }
 
-    fn data_map_types(
-        &self,
-        _host: &mut dyn ServerHost,
-        event: &mut DataMapTypesEvent<'_>,
-    ) {
+    fn data_map_types(&self, _host: &mut ServerHost, event: &mut DataMapTypesEvent<'_>) {
         event.types.push(emc::MAP.ty());
     }
 
-    fn data_pack_files(
-        &self,
-        _host: &mut dyn ServerHost,
-        event: &mut DataPackFilesEvent<'_>,
-    ) {
+    fn data_pack_files(&self, _host: &mut ServerHost, event: &mut DataPackFilesEvent<'_>) {
         event.files.extend(recipes::files());
         event.files.extend(emc::files());
     }

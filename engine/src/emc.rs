@@ -7,7 +7,7 @@
 
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use mod_api::mod_api::{DataMap, DataMapError, Host, Identifier, ItemKey, Tag, Text};
+use mod_api::{DataMap, DataMapError, Host, Identifier, ItemKey, Tag, Text};
 
 pub(crate) struct Emc;
 
@@ -85,11 +85,9 @@ pub fn display_name(id: &str) -> String {
 
 #[cfg(test)]
 pub(crate) fn default_value(id: &str) -> Option<u64> {
-    let data: mod_api::mod_api::serde_json::Value =
-        mod_api::mod_api::serde_json::from_str(include_str!(
-            "../data/projecte/data_maps/item/emc.json"
-        ))
-        .ok()?;
+    let data: mod_api::serde_json::Value =
+        mod_api::serde_json::from_str(include_str!("../data/projecte/data_maps/item/emc.json"))
+            .ok()?;
     data.get("values")?.get(id)?.as_u64()
 }
 
@@ -107,8 +105,8 @@ mod tests {
         assert_eq!(files.len(), 1);
         assert_eq!(files[0].0, "data_maps/projecte:item/emc");
 
-        let data: mod_api::mod_api::serde_json::Value =
-            mod_api::mod_api::serde_json::from_slice(&files[0].1).unwrap();
+        let data: mod_api::serde_json::Value =
+            mod_api::serde_json::from_slice(&files[0].1).unwrap();
         assert_eq!(data["values"]["minecraft:diamond"].as_u64(), Some(8192));
         assert_eq!(
             data["values"]["projecte:energy_condenser"].as_u64(),

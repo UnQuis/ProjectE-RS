@@ -8,4 +8,4 @@ license = "MIT"
 path = "src/lib.rs"
 
 [dependencies]
-mod_api = { package = "horizon-client", path = "/home/alexquasar/Проекты/MCModsFin/Horizon/crates/horizon-client" }
+horizon-mod-api = { git = "https://github.com/arismoko/horizon", rev = "87247cac7cedfe0ddc455e1485ba1154b6089e5b" }

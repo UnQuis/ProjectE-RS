@@ -616,9 +616,8 @@ mod tests {
         assert_eq!(keys.len(), files.len(), "duplicate data-pack key");
         for (key, body) in &files {
             let text = std::str::from_utf8(body).expect("recipe json is utf-8");
-            let value: mod_api::mod_api::serde_json::Value =
-                mod_api::mod_api::serde_json::from_str(text)
-                    .unwrap_or_else(|error| panic!("{key}: {error} in {text}"));
+            let value: mod_api::serde_json::Value = mod_api::serde_json::from_str(text)
+                .unwrap_or_else(|error| panic!("{key}: {error} in {text}"));
             let kind = value["type"].as_str().expect("recipe type");
             assert!(
                 kind == "minecraft:crafting_shaped" || kind == "minecraft:crafting_shapeless",
@@ -667,7 +666,10 @@ mod tests {
         let recipe_cost = obsidian * 4
             + crate::emc::default_value(DIAMOND).expect("diamond EMC") * 4
             + chest_value;
-        assert_eq!(crate::emc::default_value(ENERGY_CONDENSER), Some(recipe_cost));
+        assert_eq!(
+            crate::emc::default_value(ENERGY_CONDENSER),
+            Some(recipe_cost)
+        );
         assert_eq!(recipe_cost, 33_568);
     }
 

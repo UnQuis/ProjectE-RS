@@ -16,7 +16,7 @@ requires the pinned Horizon checkout staged like the native launcher/CI.
 
 | Tool | Responsibility |
 | --- | --- |
-| check_manifest.py | Mod id/version, Cargo workspace, engine package, and one consistent Horizon pin |
+| check_manifest.py | Native mod id/version, Horizon and mixins pins, Cargo API dependency, and mod-only CI |
 | check_resources.py | Strict JSON parsing, duplicate-key rejection, resource paths, recipes and EMC Data Maps |
 | check_gameplay.py | EMC table uniqueness/positivity, checked arithmetic, recipe patterns/catalysts, Klein Star capacities and machine tier ladders |
 | gate.py | Runs validators and tests, then optionally the Rust quality checks |

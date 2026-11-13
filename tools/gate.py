@@ -31,10 +31,10 @@ def main() -> int:
     steps.append(("python tests", [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"]))
     if not args.python_only:
         steps.extend([
-            ("rustfmt", ["cargo", "fmt", "--all", "--", "--check"]),
-            ("clippy", ["cargo", "clippy", "--workspace", "--all-targets", "--locked", "--", "-D", "warnings"]),
-            ("cargo check", ["cargo", "check", "--workspace", "--all-targets", "--locked"]),
-            ("cargo test", ["cargo", "test", "--workspace", "--all-targets", "--locked"]),
+            ("rustfmt", ["cargo", "fmt", "--manifest-path", "engine/Cargo.toml", "--", "--check"]),
+            ("clippy", ["cargo", "clippy", "--manifest-path", "engine/Cargo.toml", "--all-targets", "--", "-D", "warnings"]),
+            ("cargo check", ["cargo", "check", "--manifest-path", "engine/Cargo.toml", "--all-targets"]),
+            ("cargo test", ["cargo", "test", "--manifest-path", "engine/Cargo.toml", "--all-targets"]),
         ])
     for name, command in steps:
         if run_step(name, command):
