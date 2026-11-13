@@ -5,9 +5,7 @@
 //! API_WORKAROUNDS.md for the workaround and migration path.
 
 use mod_api::ItemStack;
-use mod_api::{
-    Compound, DataMapError, Holder, Host, ModBlockEntity, ModContainer, Tag, Text,
-};
+use mod_api::{Compound, DataMapError, Holder, Host, ModBlockEntity, ModContainer, Tag, Text};
 
 use crate::{condenser, data, emc, energy};
 
