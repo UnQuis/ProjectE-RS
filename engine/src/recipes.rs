@@ -667,7 +667,10 @@ mod tests {
         let recipe_cost = obsidian * 4
             + crate::emc::default_value(DIAMOND).expect("diamond EMC") * 4
             + chest_value;
-        assert_eq!(crate::emc::default_value(ENERGY_CONDENSER), Some(recipe_cost));
+        assert_eq!(
+            crate::emc::default_value(ENERGY_CONDENSER),
+            Some(recipe_cost)
+        );
         assert_eq!(recipe_cost, 33_568);
     }
 
