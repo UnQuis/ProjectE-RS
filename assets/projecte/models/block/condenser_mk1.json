@@ -1,5 +1,7 @@
 {
   "textures": {
-    "particle": "projecte:block/condenser_mk1"
-  }
+    "particle": "projecte:block/condenser_mk1",
+    "all": "projecte:block/condenser_mk1"
+  },
+  "parent": "minecraft:block/cube_all"
 }

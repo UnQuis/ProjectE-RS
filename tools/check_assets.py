@@ -76,6 +76,11 @@ def model_ok(path, seen=None):
     data = json.loads(model.read_text())
     if "overrides" in data:
         problems.append(f"{path}: Java-only overrides (Horizon ignores them)")
+    loader = data.get("loader")
+    if isinstance(loader, str) and loader.startswith("neoforge:"):
+        problems.append(f"{path}: Java-only loader {loader}")
+    if "parent" not in data and "elements" not in data:
+        problems.append(f"{path}: model has neither parent nor elements")
     parent = data.get("parent", "")
     if isinstance(parent, str):
         model_ok(parent, seen)
@@ -86,6 +91,9 @@ def model_ok(path, seen=None):
                 problems.append(f"missing texture {value}")
     return True
 
+
+LANG = ROOT / "assets" / "projecte" / "lang" / "en_us.json"
+lang = json.loads(LANG.read_text())
 
 tab_ids = set(re.findall(r"projecte:[a-z0-9_]+", TAB.read_text()))
 for ident in sorted(ids):
@@ -104,6 +112,9 @@ for ident in sorted(ids):
             model_ok(variant["model"])
     if ident not in tab_ids:
         problems.append(f"{ident}: missing from creative tab")
+    name_key = ident[9:]
+    if f"item.projecte.{name_key}" not in lang and f"block.projecte.{name_key}" not in lang:
+        problems.append(f"{ident}: missing item./block. entry in en_us.json")
 
 for ident in sorted(tab_ids - ids):
     problems.append(f"{ident}: in creative tab but not registered")
