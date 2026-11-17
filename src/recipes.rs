@@ -541,7 +541,7 @@ fn shaped_json(recipe: &ShapedRecipe) -> String {
     let key = recipe
         .key
         .iter()
-        .map(|(letter, id)| format!("\"{letter}\":{{\"item\":\"{id}\"}}"))
+        .map(|(letter, id)| format!("\"{letter}\":\"{id}\""))
         .collect::<Vec<_>>()
         .join(",");
     format!(
