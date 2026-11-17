@@ -56,5 +56,6 @@
   "item.projecte.philosophers_stone": "Philosophers Stone",
   "item.projecte.red_matter": "Red Matter",
   "item.projecte.tome": "Tome",
-  "item.projecte.transmutation_table": "Transmutation Table"
+  "item.projecte.transmutation_table": "Transmutation Table",
+  "itemGroup.projecte.projecte": "ProjectE"
 }
