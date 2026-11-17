@@ -280,11 +280,11 @@ impl Hooks for ProjectE {
             ("dm_chestplate", "iron_chestplate"), ("dm_hammer", "iron_pickaxe"),
             ("dm_helmet", "iron_helmet"), ("dm_hoe", "iron_hoe"),
             ("dm_leggings", "iron_leggings"), ("dm_pick", "iron_pickaxe"),
-            ("dm_shears", "iron_shears"), ("dm_shovel", "iron_shovel"),
+            ("dm_shears", "shears"), ("dm_shovel", "iron_shovel"),
             ("dm_sword", "iron_sword"), ("rm_axe", "iron_axe"),
             ("rm_boots", "iron_boots"), ("rm_chestplate", "iron_chestplate"),
             ("rm_hammer", "iron_pickaxe"), ("rm_helmet", "iron_helmet"),
-            ("rm_pick", "iron_pickaxe"), ("rm_shears", "iron_shears"),
+            ("rm_pick", "iron_pickaxe"), ("rm_shears", "shears"),
             ("rm_shovel", "iron_shovel"), ("rm_sword", "iron_sword"),
         ] {
             item(event, &format!("projecte:{id}"), &format!("minecraft:{template}"), 1);
