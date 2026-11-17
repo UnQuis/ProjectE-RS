@@ -70,6 +70,23 @@ const DANDELION: &str = "minecraft:dandelion";
 const TRIDENT: &str = "minecraft:trident";
 const BOW: &str = "minecraft:bow";
 const COOKED_BEEF: &str = "minecraft:cooked_beef";
+const NETHER_STAR: &str = "minecraft:nether_star";
+const WHITE_WOOL: &str = "minecraft:white_wool";
+const ORANGE_WOOL: &str = "minecraft:orange_wool";
+const MAGENTA_WOOL: &str = "minecraft:magenta_wool";
+const LIGHT_BLUE_WOOL: &str = "minecraft:light_blue_wool";
+const YELLOW_WOOL: &str = "minecraft:yellow_wool";
+const LIME_WOOL: &str = "minecraft:lime_wool";
+const PINK_WOOL: &str = "minecraft:pink_wool";
+const GRAY_WOOL: &str = "minecraft:gray_wool";
+const LIGHT_GRAY_WOOL: &str = "minecraft:light_gray_wool";
+const CYAN_WOOL: &str = "minecraft:cyan_wool";
+const PURPLE_WOOL: &str = "minecraft:purple_wool";
+const BLUE_WOOL: &str = "minecraft:blue_wool";
+const BROWN_WOOL: &str = "minecraft:brown_wool";
+const GREEN_WOOL: &str = "minecraft:green_wool";
+const RED_WOOL: &str = "minecraft:red_wool";
+const BLACK_WOOL: &str = "minecraft:black_wool";
 const FEATHER: &str = "minecraft:feather";
 const LAPIS: &str = "minecraft:lapis_lazuli";
 const SUGAR: &str = "minecraft:sugar";
@@ -166,6 +183,40 @@ pub(crate) const GEM_LEGGINGS: &str = "projecte:gem_leggings";
 pub(crate) const BASIC_ALCHEMICAL_BOOK: &str = "projecte:basic_alchemical_book";
 pub(crate) const INFINITE_FUEL: &str = "projecte:infinite_fuel";
 pub(crate) const INFINITE_STEAK: &str = "projecte:infinite_steak";
+pub(crate) const RM_HOE: &str = "projecte:rm_hoe";
+pub(crate) const RM_KATAR: &str = "projecte:rm_katar";
+pub(crate) const RM_MORNING_STAR: &str = "projecte:rm_morning_star";
+pub(crate) const ADVANCED_ALCHEMICAL_BOOK: &str = "projecte:advanced_alchemical_book";
+pub(crate) const BLACK_ALCHEMICAL_BAG: &str = "projecte:black_alchemical_bag";
+pub(crate) const BLUE_ALCHEMICAL_BAG: &str = "projecte:blue_alchemical_bag";
+pub(crate) const BROWN_ALCHEMICAL_BAG: &str = "projecte:brown_alchemical_bag";
+pub(crate) const COLOSSAL_STAR_DREI: &str = "projecte:colossal_star_drei";
+pub(crate) const COLOSSAL_STAR_EIN: &str = "projecte:colossal_star_ein";
+pub(crate) const COLOSSAL_STAR_OMEGA: &str = "projecte:colossal_star_omega";
+pub(crate) const COLOSSAL_STAR_SPHERE: &str = "projecte:colossal_star_sphere";
+pub(crate) const COLOSSAL_STAR_VIER: &str = "projecte:colossal_star_vier";
+pub(crate) const COLOSSAL_STAR_ZWEI: &str = "projecte:colossal_star_zwei";
+pub(crate) const CYAN_ALCHEMICAL_BAG: &str = "projecte:cyan_alchemical_bag";
+pub(crate) const FINAL_STAR_SHARD: &str = "projecte:final_star_shard";
+pub(crate) const GRAY_ALCHEMICAL_BAG: &str = "projecte:gray_alchemical_bag";
+pub(crate) const GREEN_ALCHEMICAL_BAG: &str = "projecte:green_alchemical_bag";
+pub(crate) const LIGHT_BLUE_ALCHEMICAL_BAG: &str = "projecte:light_blue_alchemical_bag";
+pub(crate) const LIGHT_GRAY_ALCHEMICAL_BAG: &str = "projecte:light_gray_alchemical_bag";
+pub(crate) const LIME_ALCHEMICAL_BAG: &str = "projecte:lime_alchemical_bag";
+pub(crate) const MAGENTA_ALCHEMICAL_BAG: &str = "projecte:magenta_alchemical_bag";
+pub(crate) const MAGNUM_STAR_DREI: &str = "projecte:magnum_star_drei";
+pub(crate) const MAGNUM_STAR_EIN: &str = "projecte:magnum_star_ein";
+pub(crate) const MAGNUM_STAR_OMEGA: &str = "projecte:magnum_star_omega";
+pub(crate) const MAGNUM_STAR_SPHERE: &str = "projecte:magnum_star_sphere";
+pub(crate) const MAGNUM_STAR_VIER: &str = "projecte:magnum_star_vier";
+pub(crate) const MAGNUM_STAR_ZWEI: &str = "projecte:magnum_star_zwei";
+pub(crate) const MASTER_ALCHEMICAL_BOOK: &str = "projecte:master_alchemical_book";
+pub(crate) const ORANGE_ALCHEMICAL_BAG: &str = "projecte:orange_alchemical_bag";
+pub(crate) const PINK_ALCHEMICAL_BAG: &str = "projecte:pink_alchemical_bag";
+pub(crate) const PURPLE_ALCHEMICAL_BAG: &str = "projecte:purple_alchemical_bag";
+pub(crate) const RED_ALCHEMICAL_BAG: &str = "projecte:red_alchemical_bag";
+pub(crate) const WHITE_ALCHEMICAL_BAG: &str = "projecte:white_alchemical_bag";
+pub(crate) const YELLOW_ALCHEMICAL_BAG: &str = "projecte:yellow_alchemical_bag";
 pub(crate) const RM_AXE: &str = "projecte:rm_axe";
 pub(crate) const RM_BOOTS: &str = "projecte:rm_boots";
 pub(crate) const RM_CHESTPLATE: &str = "projecte:rm_chestplate";
@@ -806,6 +857,141 @@ pub(crate) const SHAPED: &[ShapedRecipe] = &[
         result: INFINITE_STEAK,
         count: 1,
     },
+    // Sixteen coloured Alchemical Bags: high dust, wool and an Alchemical Chest.
+    ShapedRecipe {
+        name: "white_alchemical_bag",
+        pattern: ["CCC", "WAW", "WWW"],
+        key: &[('C', HIGH_COVALENCE_DUST), ('W', WHITE_WOOL), ('A', ALCHEMICAL_CHEST)],
+        result: WHITE_ALCHEMICAL_BAG,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "orange_alchemical_bag",
+        pattern: ["CCC", "WAW", "WWW"],
+        key: &[('C', HIGH_COVALENCE_DUST), ('W', ORANGE_WOOL), ('A', ALCHEMICAL_CHEST)],
+        result: ORANGE_ALCHEMICAL_BAG,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "magenta_alchemical_bag",
+        pattern: ["CCC", "WAW", "WWW"],
+        key: &[('C', HIGH_COVALENCE_DUST), ('W', MAGENTA_WOOL), ('A', ALCHEMICAL_CHEST)],
+        result: MAGENTA_ALCHEMICAL_BAG,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "light_blue_alchemical_bag",
+        pattern: ["CCC", "WAW", "WWW"],
+        key: &[('C', HIGH_COVALENCE_DUST), ('W', LIGHT_BLUE_WOOL), ('A', ALCHEMICAL_CHEST)],
+        result: LIGHT_BLUE_ALCHEMICAL_BAG,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "yellow_alchemical_bag",
+        pattern: ["CCC", "WAW", "WWW"],
+        key: &[('C', HIGH_COVALENCE_DUST), ('W', YELLOW_WOOL), ('A', ALCHEMICAL_CHEST)],
+        result: YELLOW_ALCHEMICAL_BAG,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "lime_alchemical_bag",
+        pattern: ["CCC", "WAW", "WWW"],
+        key: &[('C', HIGH_COVALENCE_DUST), ('W', LIME_WOOL), ('A', ALCHEMICAL_CHEST)],
+        result: LIME_ALCHEMICAL_BAG,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "pink_alchemical_bag",
+        pattern: ["CCC", "WAW", "WWW"],
+        key: &[('C', HIGH_COVALENCE_DUST), ('W', PINK_WOOL), ('A', ALCHEMICAL_CHEST)],
+        result: PINK_ALCHEMICAL_BAG,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "gray_alchemical_bag",
+        pattern: ["CCC", "WAW", "WWW"],
+        key: &[('C', HIGH_COVALENCE_DUST), ('W', GRAY_WOOL), ('A', ALCHEMICAL_CHEST)],
+        result: GRAY_ALCHEMICAL_BAG,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "light_gray_alchemical_bag",
+        pattern: ["CCC", "WAW", "WWW"],
+        key: &[('C', HIGH_COVALENCE_DUST), ('W', LIGHT_GRAY_WOOL), ('A', ALCHEMICAL_CHEST)],
+        result: LIGHT_GRAY_ALCHEMICAL_BAG,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "cyan_alchemical_bag",
+        pattern: ["CCC", "WAW", "WWW"],
+        key: &[('C', HIGH_COVALENCE_DUST), ('W', CYAN_WOOL), ('A', ALCHEMICAL_CHEST)],
+        result: CYAN_ALCHEMICAL_BAG,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "purple_alchemical_bag",
+        pattern: ["CCC", "WAW", "WWW"],
+        key: &[('C', HIGH_COVALENCE_DUST), ('W', PURPLE_WOOL), ('A', ALCHEMICAL_CHEST)],
+        result: PURPLE_ALCHEMICAL_BAG,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "blue_alchemical_bag",
+        pattern: ["CCC", "WAW", "WWW"],
+        key: &[('C', HIGH_COVALENCE_DUST), ('W', BLUE_WOOL), ('A', ALCHEMICAL_CHEST)],
+        result: BLUE_ALCHEMICAL_BAG,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "brown_alchemical_bag",
+        pattern: ["CCC", "WAW", "WWW"],
+        key: &[('C', HIGH_COVALENCE_DUST), ('W', BROWN_WOOL), ('A', ALCHEMICAL_CHEST)],
+        result: BROWN_ALCHEMICAL_BAG,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "green_alchemical_bag",
+        pattern: ["CCC", "WAW", "WWW"],
+        key: &[('C', HIGH_COVALENCE_DUST), ('W', GREEN_WOOL), ('A', ALCHEMICAL_CHEST)],
+        result: GREEN_ALCHEMICAL_BAG,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "red_alchemical_bag",
+        pattern: ["CCC", "WAW", "WWW"],
+        key: &[('C', HIGH_COVALENCE_DUST), ('W', RED_WOOL), ('A', ALCHEMICAL_CHEST)],
+        result: RED_ALCHEMICAL_BAG,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "black_alchemical_bag",
+        pattern: ["CCC", "WAW", "WWW"],
+        key: &[('C', HIGH_COVALENCE_DUST), ('W', BLACK_WOOL), ('A', ALCHEMICAL_CHEST)],
+        result: BLACK_ALCHEMICAL_BAG,
+        count: 1,
+    },
+    // Chargeable Red Matter tools referenced by the charge capability.
+    ShapedRecipe {
+        name: "rm_hoe",
+        pattern: ["RR ", " H ", " M "],
+        key: &[('R', RED_MATTER), ('H', DM_HOE), ('M', DARK_MATTER)],
+        result: RM_HOE,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "rm_katar",
+        pattern: ["123", "4RR", "RRR"],
+        key: &[('1', RM_SHEARS), ('2', RM_AXE), ('3', RM_SWORD), ('4', RM_HOE), ('R', RED_MATTER)],
+        result: RM_KATAR,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "rm_morning_star",
+        pattern: ["123", "RRR", "RRR"],
+        key: &[('1', RM_HAMMER), ('2', RM_PICK), ('3', RM_SHOVEL), ('R', RED_MATTER)],
+        result: RM_MORNING_STAR,
+        count: 1,
+    },
 ];
 
 /// Layout-free recipes. The stone still appears where the conversion needs it.
@@ -833,6 +1019,97 @@ pub(crate) const SHAPELESS: &[ShapelessRecipe] = &[
         name: "gem_leggings",
         ingredients: &[RM_LEGGINGS, BLACK_HOLE_BAND, WATCH_OF_FLOWING_TIME, KLEIN_STAR_OMEGA],
         result: GEM_LEGGINGS,
+        count: 1,
+    },
+    // Expansion star chains and higher alchemical books.
+    ShapelessRecipe {
+        name: "magnum_star_zwei",
+        ingredients: &[MAGNUM_STAR_EIN, MAGNUM_STAR_EIN, MAGNUM_STAR_EIN, MAGNUM_STAR_EIN],
+        result: MAGNUM_STAR_ZWEI,
+        count: 1,
+    },
+    ShapelessRecipe {
+        name: "magnum_star_drei",
+        ingredients: &[MAGNUM_STAR_ZWEI, MAGNUM_STAR_ZWEI, MAGNUM_STAR_ZWEI, MAGNUM_STAR_ZWEI],
+        result: MAGNUM_STAR_DREI,
+        count: 1,
+    },
+    ShapelessRecipe {
+        name: "magnum_star_vier",
+        ingredients: &[MAGNUM_STAR_DREI, MAGNUM_STAR_DREI, MAGNUM_STAR_DREI, MAGNUM_STAR_DREI],
+        result: MAGNUM_STAR_VIER,
+        count: 1,
+    },
+    ShapelessRecipe {
+        name: "magnum_star_sphere",
+        ingredients: &[MAGNUM_STAR_VIER, MAGNUM_STAR_VIER, MAGNUM_STAR_VIER, MAGNUM_STAR_VIER],
+        result: MAGNUM_STAR_SPHERE,
+        count: 1,
+    },
+    ShapelessRecipe {
+        name: "magnum_star_omega",
+        ingredients: &[MAGNUM_STAR_SPHERE, MAGNUM_STAR_SPHERE, MAGNUM_STAR_SPHERE, MAGNUM_STAR_SPHERE],
+        result: MAGNUM_STAR_OMEGA,
+        count: 1,
+    },
+    ShapelessRecipe {
+        name: "magnum_star_ein",
+        ingredients: &[KLEIN_STAR_OMEGA, KLEIN_STAR_OMEGA, KLEIN_STAR_OMEGA, KLEIN_STAR_OMEGA],
+        result: MAGNUM_STAR_EIN,
+        count: 1,
+    },
+    ShapelessRecipe {
+        name: "colossal_star_zwei",
+        ingredients: &[COLOSSAL_STAR_EIN, COLOSSAL_STAR_EIN, COLOSSAL_STAR_EIN, COLOSSAL_STAR_EIN],
+        result: COLOSSAL_STAR_ZWEI,
+        count: 1,
+    },
+    ShapelessRecipe {
+        name: "colossal_star_drei",
+        ingredients: &[COLOSSAL_STAR_ZWEI, COLOSSAL_STAR_ZWEI, COLOSSAL_STAR_ZWEI, COLOSSAL_STAR_ZWEI],
+        result: COLOSSAL_STAR_DREI,
+        count: 1,
+    },
+    ShapelessRecipe {
+        name: "colossal_star_vier",
+        ingredients: &[COLOSSAL_STAR_DREI, COLOSSAL_STAR_DREI, COLOSSAL_STAR_DREI, COLOSSAL_STAR_DREI],
+        result: COLOSSAL_STAR_VIER,
+        count: 1,
+    },
+    ShapelessRecipe {
+        name: "colossal_star_sphere",
+        ingredients: &[COLOSSAL_STAR_VIER, COLOSSAL_STAR_VIER, COLOSSAL_STAR_VIER, COLOSSAL_STAR_VIER],
+        result: COLOSSAL_STAR_SPHERE,
+        count: 1,
+    },
+    ShapelessRecipe {
+        name: "colossal_star_omega",
+        ingredients: &[COLOSSAL_STAR_SPHERE, COLOSSAL_STAR_SPHERE, COLOSSAL_STAR_SPHERE, COLOSSAL_STAR_SPHERE],
+        result: COLOSSAL_STAR_OMEGA,
+        count: 1,
+    },
+    ShapelessRecipe {
+        name: "colossal_star_ein",
+        ingredients: &[MAGNUM_STAR_OMEGA, MAGNUM_STAR_OMEGA, MAGNUM_STAR_OMEGA, MAGNUM_STAR_OMEGA],
+        result: COLOSSAL_STAR_EIN,
+        count: 1,
+    },
+    ShapelessRecipe {
+        name: "final_star_shard",
+        ingredients: &[NETHER_STAR, COLOSSAL_STAR_OMEGA, COLOSSAL_STAR_OMEGA, COLOSSAL_STAR_OMEGA, COLOSSAL_STAR_OMEGA, COLOSSAL_STAR_OMEGA, COLOSSAL_STAR_OMEGA, COLOSSAL_STAR_OMEGA, COLOSSAL_STAR_OMEGA],
+        result: FINAL_STAR_SHARD,
+        count: 1,
+    },
+    ShapelessRecipe {
+        name: "advanced_alchemical_book",
+        ingredients: &[BASIC_ALCHEMICAL_BOOK, MAGNUM_STAR_EIN, MAGNUM_STAR_EIN, MAGNUM_STAR_EIN, MAGNUM_STAR_EIN, MAGNUM_STAR_OMEGA, MAGNUM_STAR_OMEGA, MAGNUM_STAR_OMEGA, MAGNUM_STAR_OMEGA],
+        result: ADVANCED_ALCHEMICAL_BOOK,
+        count: 1,
+    },
+    ShapelessRecipe {
+        name: "master_alchemical_book",
+        ingredients: &[ADVANCED_ALCHEMICAL_BOOK, COLOSSAL_STAR_EIN, COLOSSAL_STAR_EIN, COLOSSAL_STAR_EIN, COLOSSAL_STAR_EIN, COLOSSAL_STAR_OMEGA, COLOSSAL_STAR_OMEGA, COLOSSAL_STAR_OMEGA, COLOSSAL_STAR_OMEGA],
+        result: MASTER_ALCHEMICAL_BOOK,
         count: 1,
     },
     // Void Ring: Black Hole Band + Gem of Eternal Density + two Red Matter.
@@ -1096,6 +1373,145 @@ pub(crate) const SHAPELESS: &[ShapelessRecipe] = &[
         count: 4,
     },
 ];
+
+/// A recipe matched against a 3x3 crafting grid.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct RecipeMatch {
+    /// Fully qualified result item id.
+    pub result: &'static str,
+    pub count: u32,
+    /// How many Philosopher's Stones the caller must give back: ProjectE's
+    /// stone is a catalyst in every recipe in [`CATALYST_RECIPES`].
+    pub stone_refund: u32,
+}
+
+fn grid_cells<'a>(items: &[Option<&'a str>]) -> [Option<&'a str>; 9] {
+    let mut cells = [None; 9];
+    for (slot, item) in items.iter().take(9).enumerate() {
+        cells[slot] = *item;
+    }
+    cells
+}
+
+fn shaped_matches(pattern: &[&str; 3], key: &[(char, &str)], cells: &[Option<&str>; 9]) -> bool {
+    // Trim empty border rows/columns so a 2x2 recipe works in a 3x3 grid.
+    let rows: Vec<&str> = pattern
+        .iter()
+        .copied()
+        .filter(|row| row.chars().any(|c| c != ' '))
+        .collect();
+    if rows.is_empty() {
+        return false;
+    }
+    let chars: Vec<char> = rows[0].chars().collect();
+    let first = chars.iter().position(|c| *c != ' ').unwrap_or(0);
+    let last = chars.iter().rposition(|c| *c != ' ').unwrap_or(first);
+    if rows.iter().any(|row| {
+        row.chars()
+            .enumerate()
+            .any(|(i, c)| c != ' ' && (i < first || i > last))
+    }) {
+        return false;
+    }
+    let trimmed: Vec<String> = rows
+        .iter()
+        .map(|row| row[first..=last].to_owned())
+        .collect();
+
+    for offset_row in 0..=3 - trimmed.len() {
+        for offset_col in 0..=3 - trimmed[0].len() {
+            let mut matches = true;
+            for (row, line) in trimmed.iter().enumerate() {
+                for (col, letter) in line.chars().enumerate() {
+                    let cell = cells[(offset_row + row) * 3 + offset_col + col];
+                    let Some(id) = key.iter().find(|(k, _)| *k == letter).map(|(_, id)| *id) else {
+                        matches = false;
+                        break;
+                    };
+                    if cell != Some(id) {
+                        matches = false;
+                        break;
+                    }
+                }
+                if !matches {
+                    break;
+                }
+            }
+            // Every item outside the stamped pattern must be empty.
+            if matches {
+                for (slot, cell) in cells.iter().enumerate() {
+                    let row = slot / 3;
+                    let col = slot % 3;
+                    let inside = (offset_row..offset_row + trimmed.len()).contains(&row)
+                        && (offset_col..offset_col + trimmed[0].len()).contains(&col)
+                        && trimmed[row - offset_row].chars().nth(col - offset_col) != Some(' ');
+                    if !inside && cell.is_some() {
+                        matches = false;
+                        break;
+                    }
+                }
+            }
+            if matches {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+fn shapeless_matches(ingredients: &[&str], cells: &[Option<&str>; 9]) -> bool {
+    let mut need: Vec<&str> = ingredients.to_vec();
+    need.sort_unstable();
+    let mut have: Vec<&str> = cells.iter().filter_map(|slot| *slot).collect();
+    have.sort_unstable();
+    need == have
+}
+
+fn catalyst_refund(recipe_name: &str, ingredients: &[&str]) -> u32 {
+    if CATALYST_RECIPES.contains(&recipe_name) {
+        ingredients
+            .iter()
+            .filter(|id| **id == STONE)
+            .count() as u32
+    } else {
+        0
+    }
+}
+
+/// Match a 3x3 crafting grid (up to nine slots, `None` for empty) against the
+/// shipped recipes. Input is item ids, so the caller owns the ItemStack lookup.
+///
+/// This is the server-authoritative matching core for the Philosopher's
+/// Stone's portable crafting grid; the caller grants the result and returns
+/// `stone_refund` stones to the grid/inventory.
+pub fn match_grid(items: &[Option<&str>]) -> Option<RecipeMatch> {
+    let cells = grid_cells(items);
+    for recipe in SHAPED {
+        let ingredients: Vec<&str> = recipe
+            .pattern
+            .iter()
+            .flat_map(|row| row.chars())
+            .filter_map(|letter| recipe.key.iter().find(|(key, _)| *key == letter).map(|(_, id)| *id))
+            .collect();
+        if shaped_matches(&recipe.pattern, recipe.key, &cells) {
+            return Some(RecipeMatch {
+                result: recipe.result,
+                count: recipe.count,
+                stone_refund: catalyst_refund(recipe.name, &ingredients),
+            });
+        }
+    }
+    for recipe in SHAPELESS {
+        if shapeless_matches(recipe.ingredients, &cells) {
+            return Some(RecipeMatch {
+                result: recipe.result,
+                count: recipe.count,
+                stone_refund: catalyst_refund(recipe.name, recipe.ingredients),
+            });
+        }
+    }
+    None
+}
 
 /// Whether a matched recipe id (`projecte:alchemical_coal`) is a catalyst
 /// recipe whose Philosopher's Stone must be returned to the crafter.
@@ -1819,6 +2235,82 @@ mod tests {
         assert_eq!(r.result, GEM_LEGGINGS, "gem_leggings");
         let cost: u64 = r.ingredients.iter().map(|id| crate::emc::value(id)).sum();
         assert_eq!(cost, crate::emc::value(r.result), "gem_leggings");
+    }
+
+    #[test]
+    fn expansion_recipes_are_emc_neutral() {
+        for name in [
+            "magnum_star_ein",
+            "magnum_star_zwei",
+            "magnum_star_drei",
+            "magnum_star_vier",
+            "magnum_star_sphere",
+            "magnum_star_omega",
+            "colossal_star_ein",
+            "colossal_star_zwei",
+            "colossal_star_drei",
+            "colossal_star_vier",
+            "colossal_star_sphere",
+            "colossal_star_omega",
+            "final_star_shard",
+            "advanced_alchemical_book",
+            "master_alchemical_book",
+        ] {
+            let r = SHAPELESS.iter().find(|r| r.name == name).unwrap_or_else(|| panic!("{name}"));
+            assert_eq!(r.result, format!("projecte:{name}").leak(), "{name}");
+            let cost: u64 = r.ingredients.iter().map(|id| crate::emc::value(id)).sum();
+            assert_eq!(cost, crate::emc::value(r.result), "{name}");
+        }
+        for color in ["white", "orange", "magenta", "light_blue", "yellow", "lime", "pink", "gray", "light_gray", "cyan", "purple", "blue", "brown", "green", "red", "black"] {
+            let name = format!("{color}_alchemical_bag");
+            let r = SHAPED.iter().find(|r| r.name == name).unwrap();
+            assert_eq!(shaped_cost(r), crate::emc::value(r.result), "{name}");
+        }
+    }
+
+    #[test]
+    fn match_grid_handles_shaped_shapeless_and_catalysts() {
+        // Philosopher's Stone checkered ring.
+        let stone = [
+            Some(REDSTONE), Some(GLOWSTONE_DUST), Some(REDSTONE),
+            Some(GLOWSTONE_DUST), Some(DIAMOND), Some(GLOWSTONE_DUST),
+            Some(REDSTONE), Some(GLOWSTONE_DUST), Some(REDSTONE),
+        ];
+        assert_eq!(match_grid(&stone), Some(RecipeMatch { result: STONE, count: 1, stone_refund: 0 }));
+
+        // Transmutation Table uses the stone as a catalyst.
+        let table = [
+            Some(OBSIDIAN), Some(STONE_BLOCK), Some(OBSIDIAN),
+            Some(STONE_BLOCK), Some(STONE), Some(STONE_BLOCK),
+            Some(OBSIDIAN), Some(STONE_BLOCK), Some(OBSIDIAN),
+        ];
+        assert_eq!(match_grid(&table), Some(RecipeMatch { result: TABLE, count: 1, stone_refund: 1 }));
+
+        assert_eq!(match_grid(&[]), None);
+        assert_eq!(match_grid(&[Some("minecraft:unknown"); 9]), None);
+
+        // Shapeless fuel upgrade: the stone is also a catalyst.
+        let coal = [Some(COAL), Some(COAL), Some(COAL), Some(COAL), Some(STONE), None, None, None, None];
+        assert_eq!(match_grid(&coal), Some(RecipeMatch { result: ALCHEMICAL_COAL, count: 1, stone_refund: 1 }));
+        let shuffled = [Some(STONE), Some(COAL), None, Some(COAL), None, Some(COAL), Some(COAL), None, None];
+        assert_eq!(match_grid(&shuffled).map(|m| m.result), Some(ALCHEMICAL_COAL));
+
+        // 2x2 matter block pack in the corner of a 3x3 grid.
+        let block = [
+            Some(DARK_MATTER), Some(DARK_MATTER), None,
+            Some(DARK_MATTER), Some(DARK_MATTER), None,
+            None, None, None,
+        ];
+        assert_eq!(match_grid(&block), Some(RecipeMatch { result: DARK_MATTER_BLOCK, count: 1, stone_refund: 0 }));
+    }
+
+    #[test]
+    fn chargeable_rm_tools_are_emc_neutral() {
+        for name in ["rm_hoe", "rm_katar", "rm_morning_star"] {
+            let r = SHAPED.iter().find(|r| r.name == name).unwrap();
+            assert_eq!(r.result, format!("projecte:{name}").leak(), "{name}");
+            assert_eq!(shaped_cost(r), crate::emc::value(r.result), "{name}");
+        }
     }
 
 }

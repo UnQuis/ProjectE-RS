@@ -3,7 +3,7 @@
 //! Native mod against the generated `mod_api` (API 0.2). The crate root holds
 //! the one `#[horizon_mod] impl Hooks`; per-object moments live in Parts.
 
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
@@ -13,8 +13,12 @@ use mod_api::*;
 /// game has left the Reloading phase and `host.players()` is available.
 static PRUNE_PENDING: AtomicBool = AtomicBool::new(false);
 
+/// Windows opened by the Philosopher's Stone for portable crafting.
+static PORTABLE_MENUS: Mutex<BTreeMap<u128, i32>> = Mutex::new(BTreeMap::new());
+
 mod alchemical;
-pub mod condenser;
+pub mod charge;
+mod condenser;
 mod config;
 mod data;
 mod deposit;
@@ -48,7 +52,7 @@ struct PendingNova {
 #[derive(Default)]
 struct ProjectE {
     next_nova: AtomicU64,
-    pending_novas: Mutex<HashMap<u64, PendingNova>>,
+    pending_novas: Mutex<BTreeMap<u64, PendingNova>>,
 }
 
 #[mod_api::horizon_mod]
@@ -100,6 +104,10 @@ impl Hooks for ProjectE {
 
         let stone = r.item_key(PHILOSOPHERS_STONE);
         r.item_part(stone, StonePart);
+        for spec in charge::CHARGEABLE {
+            let key = r.item_key(spec.id);
+            r.item_part(key, ChargePart);
+        }
         r.menu_part(ui::atlas::MENU, TableMenuPart);
     }
 
@@ -292,14 +300,32 @@ impl Hooks for ProjectE {
             ("mind_stone", "diamond"), ("life_stone", "diamond"),
             ("destruction_catalyst", "blaze_powder"), ("hyperkinetic_lens", "glass"),
             ("catalytic_lens", "glass"), ("mercurial_eye", "diamond"),
-            ("watch_of_flowing_time", "diamond"), ("dark_matter_shield", "iron_chestplate"),
-            ("red_matter_shield", "iron_chestplate"), ("gem_of_eternal_density", "diamond"),
+            ("watch_of_flowing_time", "diamond"), ("dark_matter_shield", "shield"),
+            ("red_matter_shield", "shield"), ("gem_of_eternal_density", "diamond"),
             ("dark_matter_trident", "trident"), ("red_matter_trident", "trident"),
             ("rm_leggings", "iron_leggings"), ("archangel_smite", "bow"),
             ("gem_boots", "iron_boots"), ("gem_chestplate", "iron_chestplate"),
             ("gem_helmet", "iron_helmet"), ("gem_leggings", "iron_leggings"),
             ("basic_alchemical_book", "book"), ("infinite_fuel", "coal"),
             ("infinite_steak", "cooked_beef"),
+            ("magnum_star_ein", "nether_star"), ("magnum_star_zwei", "nether_star"),
+            ("magnum_star_drei", "nether_star"), ("magnum_star_vier", "nether_star"),
+            ("magnum_star_sphere", "nether_star"), ("magnum_star_omega", "nether_star"),
+            ("colossal_star_ein", "nether_star"), ("colossal_star_zwei", "nether_star"),
+            ("colossal_star_drei", "nether_star"), ("colossal_star_vier", "nether_star"),
+            ("colossal_star_sphere", "nether_star"), ("colossal_star_omega", "nether_star"),
+            ("final_star_shard", "nether_star"),
+            ("advanced_alchemical_book", "book"), ("master_alchemical_book", "book"),
+            ("white_alchemical_bag", "chest"), ("orange_alchemical_bag", "chest"),
+            ("magenta_alchemical_bag", "chest"), ("light_blue_alchemical_bag", "chest"),
+            ("yellow_alchemical_bag", "chest"), ("lime_alchemical_bag", "chest"),
+            ("pink_alchemical_bag", "chest"), ("gray_alchemical_bag", "chest"),
+            ("light_gray_alchemical_bag", "chest"), ("cyan_alchemical_bag", "chest"),
+            ("purple_alchemical_bag", "chest"), ("blue_alchemical_bag", "chest"),
+            ("brown_alchemical_bag", "chest"), ("green_alchemical_bag", "chest"),
+            ("red_alchemical_bag", "chest"), ("black_alchemical_bag", "chest"),
+            ("rm_hoe", "iron_hoe"), ("rm_katar", "iron_sword"),
+            ("rm_morning_star", "iron_sword"),
         ] {
             item(event, &format!("projecte:{id}"), &format!("minecraft:{template}"), 1);
         }
@@ -314,8 +340,14 @@ impl Hooks for ProjectE {
     }
 
     fn component_types(&self, _context: &RegistrationContext, event: &mut ComponentTypesEvent<'_>) {
-        if !event.types.iter().any(|id| id == energy::STORED_EMC_COMPONENT) {
-            event.types.push(energy::STORED_EMC_COMPONENT.to_string());
+        for id in [
+            energy::STORED_EMC_COMPONENT,
+            charge::CHARGE_COMPONENT,
+            charge::UNPROCESSED_EMC_COMPONENT,
+        ] {
+            if !event.types.iter().any(|registered| registered == id) {
+                event.types.push(id.to_string());
+            }
         }
     }
 
@@ -454,9 +486,23 @@ impl Hooks for ProjectE {
 
     fn menu_closed(&self, _host: &mut dyn ServerHost, event: &mut MenuClosedEvent) {
         deposit_menu::forget(event.uuid, event.window);
+        PORTABLE_MENUS
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .remove(&event.uuid);
     }
 
     fn menu_clicked(&self, host: &mut dyn ServerHost, event: &mut MenuClickedEvent) {
+        let portable = PORTABLE_MENUS
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .get(&event.uuid)
+            .copied()
+            == Some(event.window);
+        if portable {
+            portable_craft(host, event.uuid, event.window);
+            return;
+        }
         if deposit_menu::confirm_slot(event.uuid, event.window, event.slot).is_some() {
             let contents = deposit_menu::contents(host, event.uuid);
             let result = deposit_menu::apply(host, event.uuid, contents);
@@ -751,11 +797,144 @@ impl MenuPart for TableMenuPart {
     }
 }
 
+/// Free V-style charge stepping on weapons and relics: sneak steps down.
+struct ChargePart;
+
+#[mod_api::horizon_part]
+impl ItemPart for ChargePart {
+    fn use_item(&self, host: HostSide<'_>, event: &mut UseItemEvent<'_>) -> Option<InteractionResult> {
+        let HostSide::Server(host) = host else {
+            return None;
+        };
+        let id = event.stack.item().id(host);
+        charge::maximum_charge(&id)?;
+        let player = host.player(event.player)?;
+        let uuid = player.uuid();
+        let Some(slot) = player.selected_slot(host) else {
+            return None;
+        };
+        let mut stack = event.stack.clone();
+        let sneak = is_sneaking(host, uuid);
+        let mut balance_spent = 0i64;
+        if sneak {
+            // EXTRA_FUNCTION: pay for an ability from the stack first, then
+            // the player's EMC. Nothing is debited unless the stack write lands.
+            let charge = stack.get(&charge::CHARGE).unwrap_or(0);
+            let stored = energy::stored_emc(&stack).unwrap_or(0);
+            let Ok(data) = data::get(host, uuid) else {
+                return None;
+            };
+            let (new_stored, from_player) = if matches!(
+                id.as_str(),
+                "projecte:ignition_ring" | "projecte:swiftwolf_rending_gale"
+            ) {
+                // Continuous rings drain 0.32 EMC per tick; the fractional
+                // remainder is carried on the stack, not rounded up each time.
+                let carried = stack.get(&charge::UNPROCESSED_EMC).unwrap_or(0.0);
+                let plan = match charge::plan_fractional_consume(stored, carried, data.emc, 0.32) {
+                    Ok(plan) => plan,
+                    Err(error) => {
+                        say(host, uuid, Text::literal(format!("§7{error:?}")));
+                        return Some(InteractionResult::Success);
+                    }
+                };
+                if let Err(error) = stack.set(&charge::UNPROCESSED_EMC, plan.next_carried) {
+                    eprintln!("[projecte] could not carry fractional EMC on {id}: {error:?}");
+                    return None;
+                }
+                (plan.new_stack_stored, plan.from_player)
+            } else {
+                let cost = charge::ability_cost(&id, charge);
+                let plan = match charge::plan_consume_fuel(stored, data.emc, cost) {
+                    Ok(plan) => plan,
+                    Err(error) => {
+                        say(host, uuid, Text::literal(format!("§7{error:?}")));
+                        return Some(InteractionResult::Success);
+                    }
+                };
+                (plan.new_stack_stored, plan.from_player)
+            };
+            if let Err(error) = stack.set(&energy::STORED_EMC, new_stored) {
+                eprintln!("[projecte] could not write stored EMC on {id}: {error:?}");
+                return None;
+            }
+            balance_spent = from_player;
+        } else {
+            // V-style charging is free: one step up, sneak handled above.
+            let current = stack.get(&charge::CHARGE).unwrap_or(0);
+            let maximum = charge::maximum_charge(&id)?;
+            let next = match charge::plan_change_charge(current, maximum, false) {
+                Ok(next) => next,
+                Err(error) => {
+                    say(host, uuid, Text::literal(format!("§7{error:?}")));
+                    return Some(InteractionResult::Success);
+                }
+            };
+            if let Err(error) = stack.set(&charge::CHARGE, next) {
+                eprintln!("[projecte] could not write charge on {id}: {error:?}");
+                return None;
+            }
+        }
+        if let Err(error) = player.set_inventory_slot(host, slot as u32, Some(stack.clone())) {
+            eprintln!("[projecte] could not save charge on {id}: {error:?}");
+            return None;
+        }
+        // Read back before any authoritative debit: a refused write must not
+        // leave the player paying for an item the game never accepted.
+        let landed = player
+            .inventory_slots(host)
+            .and_then(|slots| slots.into_iter().find(|(index, _)| *index == slot as u32))
+            .is_some_and(|(_, stored)| stored == stack);
+        if !landed {
+            eprintln!("[projecte] charge write on {id} did not land; no EMC spent");
+            return None;
+        }
+        if balance_spent > 0 {
+            if let Err(error) = data::take_emc(host, uuid, balance_spent) {
+                eprintln!("[projecte] ability debit failed for {uuid}: {error:?}");
+            }
+        }
+        Some(InteractionResult::Success)
+    }
+}
+
 /// The Philosopher's Stone's own item behaviour: world transmutation.
 struct StonePart;
 
 #[mod_api::horizon_part]
 impl ItemPart for StonePart {
+    /// Portable crafting: ProjectE binds this to EXTRA_FUNCTION. Horizon has
+    /// no native crafting menu or that keybind, so a right-click opens a
+    /// one-row menu and the click handler matches the shaped/shapeless tables.
+    fn use_item(&self, host: HostSide<'_>, event: &mut UseItemEvent<'_>) -> Option<InteractionResult> {
+        let HostSide::Server(host) = host else {
+            return None;
+        };
+        let Some(uuid) = host.player(event.player).map(|player| player.uuid()) else {
+            return None;
+        };
+        match host.open_menu(
+            uuid,
+            1,
+            Text::literal("ProjectE"),
+            vec![None; 9],
+            MenuReplace::CloseFirst,
+        ) {
+            Ok(Some(window)) => {
+                PORTABLE_MENUS
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .insert(uuid, window);
+                Some(InteractionResult::Success)
+            }
+            Ok(None) => Some(InteractionResult::Success),
+            Err(error) => {
+                eprintln!("[projecte] could not open the portable crafting menu: {error:?}");
+                None
+            }
+        }
+    }
+
     fn use_on(&self, host: HostSide<'_>, event: &mut UseOnEvent<'_>) -> Option<InteractionResult> {
         let HostSide::Server(host) = host else {
             return None;
@@ -932,6 +1111,62 @@ fn feedback(host: &mut dyn ServerHost, line: Text) {
             "[projecte] command feedback failed: {error:?}"
         )));
     }
+}
+
+/// Portable crafting: match the nine menu cells against ProjectE's shaped and
+/// shapeless tables, then grant the result and the catalyst refund. The game
+/// owns the menu slots; we only rewrite them after both grants are accepted.
+fn portable_craft(host: &mut dyn ServerHost, uuid: u128, window: i32) -> bool {
+    let ids: Vec<Option<String>> = {
+        let Some(menu) = host.menu(uuid, window) else {
+            return false;
+        };
+        let Some(count) = menu.slot_count(host) else {
+            return false;
+        };
+        (0..count.min(9))
+            .map(|slot| menu.slot(host, slot).flatten().map(|item| item.item().id(host)))
+            .collect()
+    };
+    let cells: Vec<Option<&str>> = ids.iter().map(|id| id.as_deref()).collect();
+    let Some(result) = recipes::match_grid(&cells) else {
+        return false;
+    };
+    let Some(player) = host.player(uuid) else {
+        return false;
+    };
+    let Some(output) = stack(host, result.result, result.count) else {
+        return false;
+    };
+    if let Err(error) = player.give_stack(host, output) {
+        say(host, uuid, Text::literal(format!("§c{error:?}")));
+        return true;
+    }
+    if result.stone_refund > 0
+        && let Some(refund) = stack(host, PHILOSOPHERS_STONE, result.stone_refund)
+        && let Err(error) = player.give_stack(host, refund)
+    {
+        say(host, uuid, Text::literal(format!("§cCould not return the stone: {error:?}")));
+    }
+    let items: Vec<Option<ItemStack>> = {
+        let Some(menu) = host.menu(uuid, window) else {
+            return true;
+        };
+        let Some(count) = menu.slot_count(host) else {
+            return true;
+        };
+        let mut items: Vec<Option<ItemStack>> = (0..count)
+            .map(|slot| menu.slot(host, slot).flatten())
+            .collect();
+        for slot in items.iter_mut().take(9) {
+            *slot = None;
+        }
+        items
+    };
+    if let Err(error) = host.menu_set_items(uuid, window, items) {
+        eprintln!("[projecte] could not clear the crafting grid: {error:?}");
+    }
+    true
 }
 
 /// Credit EMC back after a failed or partial settlement. A failure here is

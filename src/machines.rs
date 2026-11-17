@@ -294,6 +294,18 @@ fn container_of(
 }
 
 pub(crate) fn container(block: &str) -> Option<ModContainer> {
+    // The MK3 output side is a separate menu in the reference; exposing its
+    // container here lets the server open it from the output face.
+    if block == condenser::ENERGY_CONDENSER_MK3_OUTPUT {
+        let output = slots(0, condenser::MK3_OUTPUT_SLOTS);
+        return Some(container_of(
+            condenser::MK3_OUTPUT_SLOTS,
+            Vec::new(),
+            output.clone(),
+            faces(Vec::new(), output),
+            condenser::ENERGY_CONDENSER_MK3_OUTPUT,
+        ));
+    }
     if block == ALCHEMICAL_CHEST {
         // ProjectE: a 104-slot (8 x 13) chest, inventory written at NBT root.
         let all = slots(0, 104);
@@ -535,7 +547,20 @@ fn push_emc(
             continue;
         };
         let current = read_emc(&nbt).min(target.capacity());
-        let moved = allocation.min(target.capacity() - current).max(0);
+        // Condensers validate receipt through their pure planner; other
+        // machines use the same free-room bound directly.
+        let moved = match target {
+            Machine::Condenser(spec) => condenser::plan_receive_emc(
+                condenser::CondenserState {
+                    stored_emc: (current as u64).min(spec.capacity),
+                },
+                spec,
+                allocation.max(0) as u64,
+            )
+            .map(|(accepted, _)| i64::try_from(accepted).unwrap_or(i64::MAX))
+            .unwrap_or(0),
+            _ => allocation.min(target.capacity() - current).max(0),
+        };
         if moved > 0 {
             let mut patch = Compound::new();
             write_emc(&mut patch, current + moved);
@@ -764,15 +789,23 @@ fn condenser_tick(
         if input_value == 0 {
             continue;
         }
-        let Ok(plan) = condenser::plan_input_conversion(state, spec, input_value, input.count()) else {
-            continue;
+        let plan = match condenser::plan_input_conversion(state, spec, input_value, input.count()) {
+            Ok(plan) => plan,
+            Err(error) => {
+                eprintln!("[projecte] condenser input refused: {}", error.message());
+                continue;
+            }
         };
         let consumed = plan.consumed_items;
         if consumed == 0 {
             continue;
         }
-        let Ok(settled) = condenser::settle_input_conversion(plan, consumed) else {
-            continue;
+        let settled = match condenser::settle_input_conversion(plan, consumed) {
+            Ok(settled) => settled,
+            Err(error) => {
+                eprintln!("[projecte] condenser input settlement refused: {}", error.message());
+                continue;
+            }
         };
         let remaining = input.count().saturating_sub(consumed);
         event.entity.items[slot] = if remaining > 0 {
