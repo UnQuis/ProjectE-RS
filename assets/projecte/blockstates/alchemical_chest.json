@@ -1,7 +1,7 @@
 {
   "variants": {
     "": {
-      "model": "projecte:block/advanced_alchemical_chest/black"
+      "model": "projecte:block/alchemical_chest"
     }
   }
 }

@@ -1,7 +1,7 @@
 {
   "variants": {
     "": {
-      "model": "projecte:block/transmutation_interface"
+      "model": "projecte:block/transmutation_table"
     }
   }
 }

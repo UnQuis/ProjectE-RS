@@ -230,7 +230,26 @@ impl Hooks for ProjectE {
         };
         let id = block.id(host);
         if id == TABLE {
-            return Flow::Continue;
+            let Some(acting) = host.players().acting_player() else {
+                return Flow::Continue;
+            };
+            let uuid = acting.uuid();
+            let mut items = vec![None; ui::table::TABLE_SLOTS];
+            for slot in 0..ui::table::TABLE_SLOTS {
+                if let Some(id) = ui::server::item_at_slot(host, uuid, 0, slot) {
+                    items[slot] = stack(host, &id, 1);
+                }
+            }
+            if let Err(error) = host.open_menu(
+                uuid,
+                3,
+                Text::translate(ui::TITLE_KEY, Vec::new()),
+                items,
+                MenuReplace::CloseFirst,
+            ) {
+                eprintln!("[projecte] could not open the transmutation table for {uuid}: {error:?}");
+            }
+            return Flow::Cancel;
         }
         if machines::is_collectable(&id) {
             let Some(acting) = host.players().acting_player() else {
