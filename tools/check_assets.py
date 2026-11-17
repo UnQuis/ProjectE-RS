@@ -103,6 +103,12 @@ def model_ok(path, seen=None):
     return True
 
 
+# These have dedicated item/generated models: their items/<id>.json must point
+# at the item model, never at the block model (which lacked proper UVs).
+ITEM_MODEL_REQUIRED = {
+    "transmutation_tablet", "dark_matter_shield", "red_matter_shield",
+}
+
 LANG = ROOT / "assets" / "projecte" / "lang" / "en_us.json"
 lang = json.loads(LANG.read_text())
 
@@ -113,7 +119,10 @@ for ident in sorted(ids):
     if not definition.is_file():
         problems.append(f"{ident}: missing items definition")
         continue
-    model_ok(json.loads(definition.read_text())["model"]["model"])
+    item_model = json.loads(definition.read_text())["model"]["model"]
+    if name in ITEM_MODEL_REQUIRED and not item_model.startswith("projecte:item/"):
+        problems.append(f"{ident}: expected an item model, got {item_model}")
+    model_ok(item_model)
     blockstate = ASSETS / "blockstates" / (name + ".json")
     if blockstate.is_file():
         state = json.loads(blockstate.read_text())

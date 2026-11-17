@@ -1,7 +1,77 @@
 {
+  "parent": "minecraft:block/block",
   "textures": {
-    "particle": "projecte:block/condenser_mk2",
-    "all": "projecte:block/condenser_mk2"
+    "all": "projecte:block/condenser_mk2",
+    "particle": "projecte:block/condenser_mk2"
   },
-  "parent": "minecraft:block/cube_all"
+  "elements": [
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        16,
+        16
+      ],
+      "faces": {
+        "down": {
+          "texture": "#all",
+          "uv": [
+            4,
+            8,
+            8,
+            12
+          ]
+        },
+        "up": {
+          "texture": "#all",
+          "uv": [
+            8,
+            0,
+            12,
+            4
+          ]
+        },
+        "north": {
+          "texture": "#all",
+          "uv": [
+            8,
+            12,
+            12,
+            16
+          ]
+        },
+        "south": {
+          "texture": "#all",
+          "uv": [
+            8,
+            12,
+            12,
+            16
+          ]
+        },
+        "east": {
+          "texture": "#all",
+          "uv": [
+            8,
+            12,
+            12,
+            16
+          ]
+        },
+        "west": {
+          "texture": "#all",
+          "uv": [
+            8,
+            12,
+            12,
+            16
+          ]
+        }
+      }
+    }
+  ]
 }
