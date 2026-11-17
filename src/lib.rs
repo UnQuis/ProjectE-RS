@@ -25,6 +25,7 @@ mod deposit;
 mod deposit_menu;
 mod emc;
 mod energy;
+mod input;
 mod machines;
 mod menus;
 mod progression;
@@ -102,6 +103,13 @@ impl Hooks for ProjectE {
                 .expect("interdiction block entity part");
         }
 
+        r.register_key_mapping(input::key_registration());
+        r.add_payload(
+            input::key_payload_declaration(),
+            Some(input::key_press_handler()),
+            None,
+        );
+
         let stone = r.item_key(PHILOSOPHERS_STONE);
         r.item_part(stone, StonePart);
         for spec in charge::CHARGEABLE {
@@ -149,6 +157,14 @@ impl Hooks for ProjectE {
 
     fn register_configs(&self, _host: HostSide<'_>, event: &mut RegisterConfigsEvent<'_>) {
         config::register(event);
+    }
+
+    fn key_mapping_pre(&self, host: &mut dyn ClientHost, event: &mut KeyMappingPreEvent<'_>) -> Flow {
+        if input::on_mapping_press(host, event.mapping, event.pressed) {
+            Flow::Cancel
+        } else {
+            Flow::Continue
+        }
     }
 
     fn config_loading(&self, _host: HostSide<'_>, event: &mut ConfigLoadingEvent<'_>) {
@@ -814,67 +830,48 @@ impl ItemPart for ChargePart {
             return None;
         };
         let mut stack = event.stack.clone();
-        let sneak = is_sneaking(host, uuid);
-        let mut balance_spent = 0i64;
-        if sneak {
-            // EXTRA_FUNCTION: pay for an ability from the stack first, then
-            // the player's EMC. Nothing is debited unless the stack write lands.
-            let charge = stack.get(&charge::CHARGE).unwrap_or(0);
-            let stored = energy::stored_emc(&stack).unwrap_or(0);
-            let Ok(data) = data::get(host, uuid) else {
-                return None;
-            };
-            let (new_stored, from_player) = if matches!(
-                id.as_str(),
-                "projecte:ignition_ring" | "projecte:swiftwolf_rending_gale"
-            ) {
-                // Continuous rings drain 0.32 EMC per tick; the fractional
-                // remainder is carried on the stack, not rounded up each time.
-                let carried = stack.get(&charge::UNPROCESSED_EMC).unwrap_or(0.0);
-                let plan = match charge::plan_fractional_consume(stored, carried, data.emc, 0.32) {
-                    Ok(plan) => plan,
-                    Err(error) => {
-                        say(host, uuid, Text::literal(format!("§7{error:?}")));
-                        return Some(InteractionResult::Success);
-                    }
-                };
-                if let Err(error) = stack.set(&charge::UNPROCESSED_EMC, plan.next_carried) {
-                    eprintln!("[projecte] could not carry fractional EMC on {id}: {error:?}");
-                    return None;
-                }
-                (plan.new_stack_stored, plan.from_player)
-            } else {
-                let cost = charge::ability_cost(&id, charge);
-                let plan = match charge::plan_consume_fuel(stored, data.emc, cost) {
-                    Ok(plan) => plan,
-                    Err(error) => {
-                        say(host, uuid, Text::literal(format!("§7{error:?}")));
-                        return Some(InteractionResult::Success);
-                    }
-                };
-                (plan.new_stack_stored, plan.from_player)
-            };
-            if let Err(error) = stack.set(&energy::STORED_EMC, new_stored) {
-                eprintln!("[projecte] could not write stored EMC on {id}: {error:?}");
-                return None;
-            }
-            balance_spent = from_player;
-        } else {
-            // V-style charging is free: one step up, sneak handled above.
-            let current = stack.get(&charge::CHARGE).unwrap_or(0);
-            let maximum = charge::maximum_charge(&id)?;
-            let next = match charge::plan_change_charge(current, maximum, false) {
-                Ok(next) => next,
+        // Right-click is the item's ability (ProjectE's EXTRA_FUNCTION), not a
+        // second charge path: V now handles free ±1 charge through input.rs.
+        let charge = stack.get(&charge::CHARGE).unwrap_or(0);
+        let stored = energy::stored_emc(&stack).unwrap_or(0);
+        let Ok(data) = data::get(host, uuid) else {
+            return None;
+        };
+        let (new_stored, from_player) = if matches!(
+            id.as_str(),
+            "projecte:ignition_ring" | "projecte:swiftwolf_rending_gale"
+        ) {
+            // Continuous rings drain 0.32 EMC per tick; the fractional
+            // remainder is carried on the stack, not rounded up each time.
+            let carried = stack.get(&charge::UNPROCESSED_EMC).unwrap_or(0.0);
+            let plan = match charge::plan_fractional_consume(stored, carried, data.emc, 0.32) {
+                Ok(plan) => plan,
                 Err(error) => {
                     say(host, uuid, Text::literal(format!("§7{error:?}")));
                     return Some(InteractionResult::Success);
                 }
             };
-            if let Err(error) = stack.set(&charge::CHARGE, next) {
-                eprintln!("[projecte] could not write charge on {id}: {error:?}");
+            if let Err(error) = stack.set(&charge::UNPROCESSED_EMC, plan.next_carried) {
+                eprintln!("[projecte] could not carry fractional EMC on {id}: {error:?}");
                 return None;
             }
+            (plan.new_stack_stored, plan.from_player)
+        } else {
+            let cost = charge::ability_cost(&id, charge);
+            let plan = match charge::plan_consume_fuel(stored, data.emc, cost) {
+                Ok(plan) => plan,
+                Err(error) => {
+                    say(host, uuid, Text::literal(format!("§7{error:?}")));
+                    return Some(InteractionResult::Success);
+                }
+            };
+            (plan.new_stack_stored, plan.from_player)
+        };
+        if let Err(error) = stack.set(&energy::STORED_EMC, new_stored) {
+            eprintln!("[projecte] could not write stored EMC on {id}: {error:?}");
+            return None;
         }
+        let balance_spent = from_player;
         if let Err(error) = player.set_inventory_slot(host, slot as u32, Some(stack.clone())) {
             eprintln!("[projecte] could not save charge on {id}: {error:?}");
             return None;

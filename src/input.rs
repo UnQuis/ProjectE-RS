@@ -8,7 +8,7 @@
 use std::sync::Arc;
 
 use mod_api::{
-    ClientHost, ClientModifiers, IPayloadContext, IPayloadHandler, KeyConflictContext,
+    ClientHost, IPayloadContext, IPayloadHandler, KeyConflictContext,
     KeyRegistration, PayloadBytes, PayloadDeclaration, PayloadDirection, PayloadHandleError,
     PayloadId, PayloadProtocol, HandlerThread, ServerHost,
 };
@@ -25,14 +25,9 @@ pub(crate) const KEY_PRESS_ID: &str = "projecte:key_press";
 pub(crate) const KEY_PRESS_VERSION: &str = "1";
 
 pub(crate) fn key_registration() -> KeyRegistration {
-    KeyRegistration {
-        id: CHARGE_KEY_ID.to_owned(),
-        label: CHARGE_KEY_LABEL.to_owned(),
-        key: CHARGE_KEY_DEFAULT.to_owned(),
-        modifiers: ClientModifiers::default(),
-        category: String::new(),
-        context: KeyConflictContext::Universal,
-    }
+    KeyRegistration::new(CHARGE_KEY_ID, CHARGE_KEY_DEFAULT)
+        .label(CHARGE_KEY_LABEL)
+        .context(KeyConflictContext::Universal)
 }
 
 pub(crate) fn key_payload_id() -> PayloadId {
@@ -78,7 +73,8 @@ pub(crate) fn on_mapping_press(
     if mapping != CHARGE_KEY_ID || !pressed {
         return false;
     }
-    let sneak = host.key_down(ClientModifiers::SHIFT);
+    let sneak = host.is_key_down("key.keyboard.left_shift")
+        || host.is_key_down("key.keyboard.right_shift");
     let result = host.send_payload_to_server(&key_payload_id(), encode_key_press(sneak));
     result.is_ok()
 }
@@ -98,7 +94,7 @@ pub(crate) fn apply_charge_press(
     let Some((slot, mut stack)) = slots.into_iter().find(|(slot, _)| *slot as usize == index) else {
         return false;
     };
-    let id = host.item_key_id(stack.item());
+    let id = stack.item().id(host);
     let Some(maximum) = charge::maximum_charge(&id) else {
         return false;
     };
