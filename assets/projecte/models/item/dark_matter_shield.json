@@ -1,6 +1,6 @@
 {
-  "parent": "minecraft:item/shield",
+  "parent": "minecraft:item/generated",
   "textures": {
-    "particle": "minecraft:block/diamond_block"
+    "layer0": "projecte:entity/dark_matter_shield"
   }
 }
