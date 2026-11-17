@@ -138,7 +138,8 @@ impl Hooks for ProjectE {
     }
 
     fn blocks(&self, _context: &RegistrationContext, event: &mut BlocksEvent<'_>) {
-        block(event, TABLE, "minecraft:crafting_table");
+        // The table is a flat four-pixel slab, matching the upstream model.
+        block_shaped(event, TABLE, "minecraft:crafting_table", [0.0, 0.0, 0.0, 1.0, 0.25, 1.0]);
         for id in machines::COLLECTORS
             .into_iter()
             .chain(machines::RELAYS)
@@ -146,7 +147,13 @@ impl Hooks for ProjectE {
         {
             block(event, id, "minecraft:furnace");
         }
-        block(event, machines::ALCHEMICAL_CHEST, "minecraft:chest");
+        // The chest model spans pixels 1..15 (Y 0..15); keep the hit box on it.
+        block_shaped(
+            event,
+            machines::ALCHEMICAL_CHEST,
+            "minecraft:chest",
+            [1.0 / 16.0, 0.0, 1.0 / 16.0, 15.0 / 16.0, 15.0 / 16.0, 15.0 / 16.0],
+        );
         for (_, id) in alchemical::FUEL_BLOCKS {
             block(event, id, "minecraft:coal_block");
         }
@@ -630,6 +637,22 @@ fn block(event: &mut BlocksEvent<'_>, id: &str, template: &str) {
     declaration.id = id.to_string();
     declaration.template = template.to_string();
     declaration.item = true;
+    event.blocks.push(declaration);
+}
+
+/// Register a block whose visual/hit box is one explicit cuboid in block units.
+fn block_shaped(event: &mut BlocksEvent<'_>, id: &str, template: &str, box_: [f64; 6]) {
+    let mut declaration = Block::default();
+    declaration.id = id.to_string();
+    declaration.template = template.to_string();
+    declaration.item = true;
+    let shapes = BlockShapes {
+        properties: Vec::new(),
+        values: std::collections::BTreeMap::new(),
+        default: Some(vec![box_]),
+    };
+    declaration.shapes = Some(shapes.clone());
+    declaration.collision_shapes = Some(shapes);
     event.blocks.push(declaration);
 }
 
