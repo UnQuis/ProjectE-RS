@@ -24,3 +24,6 @@ Thumbs.db
 # Pinned generated Horizon mod SDK (restored from the SDK release asset)
 /.horizon/
 
+
+# Upstream reference jar (user-provided, not part of the mod)
+/projecte-1.1.0.jar
