@@ -33,6 +33,7 @@ pub(crate) mod screen;
 pub(crate) mod state;
 pub(crate) mod table;
 pub(crate) mod server;
+pub(crate) mod machine;
 
 /// This mod's namespace, as the screen's block and translation keys use it.
 #[allow(dead_code)]

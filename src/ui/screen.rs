@@ -35,10 +35,10 @@ fn language() -> Language {
 }
 
 pub(crate) fn screen(block: &str) -> Option<Screen> {
-    if block != crate::recipes::TABLE {
-        return None;
+    if block == crate::recipes::TABLE {
+        return Some(atlas::native_screen());
     }
-    Some(atlas::native_screen())
+    super::machine::screen(block)
 }
 
 pub(crate) fn screen_draw(
@@ -49,6 +49,7 @@ pub(crate) fn screen_draw(
     origin: [f32; 2],
 ) {
     if block != crate::recipes::TABLE {
+        super::machine::draw(draw, block, data, origin);
         return;
     }
     with_state((), |state| {

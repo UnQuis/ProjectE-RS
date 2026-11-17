@@ -1,7 +1,7 @@
 {
   "variants": {
     "": {
-      "model": "projecte:block/fuel/green"
+      "model": "projecte:block/mobius_fuel_block"
     }
   }
 }

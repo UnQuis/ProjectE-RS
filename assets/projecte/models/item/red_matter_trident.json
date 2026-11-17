@@ -1,0 +1,51 @@
+{
+  "base": {
+    "parent": "minecraft:item/trident_in_hand",
+    "display": {
+      "head": {
+        "rotation": [
+          0,
+          180,
+          120
+        ],
+        "scale": [
+          1.5,
+          1.5,
+          1.5
+        ],
+        "translation": [
+          8,
+          10,
+          -11
+        ]
+      }
+    },
+    "textures": {
+      "particle": "projecte:item/red_matter_trident"
+    }
+  },
+  "gui_light": "front",
+  "loader": "neoforge:separate_transforms",
+  "overrides": [
+    {
+      "model": "projecte:item/red_matter_trident_throwing",
+      "predicate": {
+        "projecte:throwing": 1.0
+      }
+    }
+  ],
+  "perspectives": {
+    "fixed": {
+      "parent": "projecte:item/red_matter_trident_gui"
+    },
+    "ground": {
+      "parent": "projecte:item/red_matter_trident_gui"
+    },
+    "gui": {
+      "parent": "projecte:item/red_matter_trident_gui"
+    }
+  },
+  "textures": {
+    "particle": "projecte:item/red_matter_trident"
+  }
+}

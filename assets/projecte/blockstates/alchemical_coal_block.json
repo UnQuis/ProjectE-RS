@@ -1,7 +1,7 @@
 {
   "variants": {
     "": {
-      "model": "projecte:block/fuel/blue"
+      "model": "projecte:block/alchemical_coal_block"
     }
   }
 }

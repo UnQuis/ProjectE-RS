@@ -53,6 +53,11 @@ const EMERALD: &str = "minecraft:emerald";
 const ENDER_PEARL: &str = "minecraft:ender_pearl";
 const COAL: &str = "minecraft:coal";
 const CHARCOAL: &str = "minecraft:charcoal";
+const STICK: &str = "minecraft:stick";
+const STRING: &str = "minecraft:string";
+const PAPER: &str = "minecraft:paper";
+const BARREL: &str = "minecraft:barrel";
+const TNT: &str = "minecraft:tnt";
 const DARK_MATTER: &str = "projecte:dark_matter";
 const RED_MATTER: &str = "projecte:red_matter";
 
@@ -85,6 +90,22 @@ pub(crate) const RED_MATTER_BLOCK: &str = "projecte:red_matter_block";
 pub(crate) const LOW_COVALENCE_DUST: &str = "projecte:low_covalence_dust";
 pub(crate) const MEDIUM_COVALENCE_DUST: &str = "projecte:medium_covalence_dust";
 pub(crate) const HIGH_COVALENCE_DUST: &str = "projecte:high_covalence_dust";
+
+pub(crate) const CONDENSER_MK2: &str = "projecte:condenser_mk2";
+pub(crate) const CONDENSER_MK3: &str = "projecte:condenser_mk3";
+pub(crate) const MAGENTA_MATTER: &str = "projecte:magenta_matter";
+pub(crate) const MAGENTA_MATTER_BLOCK: &str = "projecte:magenta_matter_block";
+pub(crate) const TRANSMUTATION_TABLET: &str = "projecte:transmutation_tablet";
+pub(crate) const DM_PEDESTAL: &str = "projecte:dm_pedestal";
+pub(crate) const DM_FURNACE: &str = "projecte:dm_furnace";
+pub(crate) const RM_FURNACE: &str = "projecte:rm_furnace";
+pub(crate) const ALCHEMICAL_BARREL: &str = "projecte:alchemical_barrel";
+pub(crate) const REPAIR_TALISMAN: &str = "projecte:repair_talisman";
+pub(crate) const NOVA_CATALYST: &str = "projecte:nova_catalyst";
+pub(crate) const NOVA_CATACLYSM: &str = "projecte:nova_cataclysm";
+pub(crate) const DIVINING_ROD_1: &str = "projecte:divining_rod_1";
+pub(crate) const DIVINING_ROD_2: &str = "projecte:divining_rod_2";
+pub(crate) const DIVINING_ROD_3: &str = "projecte:divining_rod_3";
 
 /// Every recipe that needs the Philosopher's Stone without consuming it.
 ///
@@ -260,6 +281,125 @@ pub(crate) const SHAPED: &[ShapedRecipe] = &[
         pattern: ["MM ", "MM ", "   "],
         key: &[('M', RED_MATTER)],
         result: RED_MATTER_BLOCK,
+        count: 1,
+    },
+    // ProjectE `condenser_mk2`: four of each matter block around MK1.
+    ShapedRecipe {
+        name: "energy_condenser_mk2",
+        pattern: ["RDR", "DCD", "RDR"],
+        key: &[
+            ('R', RED_MATTER_BLOCK),
+            ('D', DARK_MATTER_BLOCK),
+            ('C', ENERGY_CONDENSER),
+        ],
+        result: CONDENSER_MK2,
+        count: 1,
+    },
+    // Expansion matter chain: six Aeternalis Fuel + three Red Matter make
+    // Magenta Matter; four of those pack into a block. These come from
+    // ProjectE's expansion_matter.json custom conversions.
+    ShapedRecipe {
+        name: "magenta_matter",
+        pattern: ["AAA", "RRR", "AAA"],
+        key: &[('A', AETERNALIS_FUEL), ('R', RED_MATTER)],
+        result: MAGENTA_MATTER,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "magenta_matter_block",
+        pattern: ["MM ", "MM ", "   "],
+        key: &[('M', MAGENTA_MATTER)],
+        result: MAGENTA_MATTER_BLOCK,
+        count: 1,
+    },
+    // ProjectE `condenser_mk3`: five MK2 condensers and four magenta blocks.
+    ShapedRecipe {
+        name: "energy_condenser_mk3",
+        pattern: ["MCM", "CCC", "MCM"],
+        key: &[('M', MAGENTA_MATTER_BLOCK), ('C', CONDENSER_MK2)],
+        result: CONDENSER_MK3,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "transmutation_tablet",
+        pattern: ["DSD", "STS", "DSD"],
+        key: &[
+            ('D', DARK_MATTER_BLOCK),
+            ('S', STONE_BLOCK),
+            ('T', TABLE),
+        ],
+        result: TRANSMUTATION_TABLET,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "dm_pedestal",
+        pattern: ["RDR", "RDR", "DDD"],
+        key: &[('R', RED_MATTER), ('D', DARK_MATTER_BLOCK)],
+        result: DM_PEDESTAL,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "dm_furnace",
+        pattern: ["DDD", "DFD", "DDD"],
+        key: &[('D', DARK_MATTER_BLOCK), ('F', FURNACE)],
+        result: DM_FURNACE,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "rm_furnace",
+        pattern: [" R ", "RFR", "   "],
+        key: &[('R', RED_MATTER_BLOCK), ('F', DM_FURNACE)],
+        result: RM_FURNACE,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "alchemical_barrel",
+        pattern: ["LMH", "SDS", "IBI"],
+        key: &[
+            ('L', LOW_COVALENCE_DUST),
+            ('M', MEDIUM_COVALENCE_DUST),
+            ('H', HIGH_COVALENCE_DUST),
+            ('S', STONE_BLOCK),
+            ('D', DIAMOND),
+            ('I', IRON),
+            ('B', BARREL),
+        ],
+        result: ALCHEMICAL_BARREL,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "repair_talisman",
+        pattern: ["LMH", "SPS", "HML"],
+        key: &[
+            ('L', LOW_COVALENCE_DUST),
+            ('M', MEDIUM_COVALENCE_DUST),
+            ('H', HIGH_COVALENCE_DUST),
+            ('S', STRING),
+            ('P', PAPER),
+        ],
+        result: REPAIR_TALISMAN,
+        count: 1,
+    },
+    // Three divining rods: eight dust and the previous rod around the centre.
+    ShapedRecipe {
+        name: "divining_rod_1",
+        pattern: ["DDD", "DSD", "DDD"],
+        key: &[('D', LOW_COVALENCE_DUST), ('S', STICK)],
+        result: DIVINING_ROD_1,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "divining_rod_2",
+        pattern: ["DDD", "DSD", "DDD"],
+        key: &[('D', MEDIUM_COVALENCE_DUST), ('S', DIVINING_ROD_1)],
+        result: DIVINING_ROD_2,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "divining_rod_3",
+        pattern: ["DDD", "DSD", "DDD"],
+        key: &[('D', HIGH_COVALENCE_DUST), ('S', DIVINING_ROD_2)],
+        result: DIVINING_ROD_3,
         count: 1,
     },
 ];
@@ -485,6 +625,19 @@ pub(crate) const SHAPELESS: &[ShapelessRecipe] = &[
         ],
         result: RED_MATTER,
         count: 1,
+    },
+    // Nova catalysts: TNT + Mobius Fuel, then a catalyst + Aeternalis Fuel.
+    ShapelessRecipe {
+        name: "nova_catalyst",
+        ingredients: &[TNT, MOBIUS_FUEL],
+        result: NOVA_CATALYST,
+        count: 2,
+    },
+    ShapelessRecipe {
+        name: "nova_cataclysm",
+        ingredients: &[NOVA_CATALYST, AETERNALIS_FUEL],
+        result: NOVA_CATACLYSM,
+        count: 2,
     },
     // Matter block deconstruction: the reverse of the two shaped pack recipes.
     ShapelessRecipe {
@@ -743,6 +896,7 @@ mod tests {
                 "recipe/projecte:stone_diamond_to_gold" => 4,
                 "recipe/projecte:stone_emerald_to_diamond" => 2,
                 "recipe/projecte:stone_pearl_to_iron" => 4,
+                "recipe/projecte:nova_catalyst" | "recipe/projecte:nova_cataclysm" => 2,
                 "recipe/projecte:low_covalence_dust"
                 | "recipe/projecte:medium_covalence_dust"
                 | "recipe/projecte:high_covalence_dust" => 40,
@@ -999,5 +1153,85 @@ mod tests {
             3
         );
         assert_eq!(red_alt.result, RED_MATTER);
+    }
+
+    #[test]
+    fn newly_ported_machines_and_tools_have_reference_recipes() {
+        let spec = |name: &'static str| {
+            SHAPED
+                .iter()
+                .find(|recipe| recipe.name == name)
+                .unwrap_or_else(|| panic!("{name} is missing"))
+        };
+        let condenser = spec("energy_condenser_mk2");
+        assert_eq!(condenser.pattern, ["RDR", "DCD", "RDR"]);
+        assert_eq!(condenser.result, CONDENSER_MK2);
+        assert_eq!(spec("transmutation_tablet").pattern, ["DSD", "STS", "DSD"]);
+        assert_eq!(spec("energy_condenser_mk3").pattern, ["MCM", "CCC", "MCM"]);
+        assert_eq!(spec("magenta_matter").pattern, ["AAA", "RRR", "AAA"]);
+        assert_eq!(spec("magenta_matter_block").pattern, ["MM ", "MM ", "   "]);
+        assert_eq!(spec("dm_pedestal").pattern, ["RDR", "RDR", "DDD"]);
+        assert_eq!(spec("dm_furnace").pattern, ["DDD", "DFD", "DDD"]);
+        assert_eq!(spec("rm_furnace").pattern, [" R ", "RFR", "   "]);
+        assert_eq!(spec("alchemical_barrel").pattern, ["LMH", "SDS", "IBI"]);
+        assert_eq!(spec("repair_talisman").pattern, ["LMH", "SPS", "HML"]);
+        for (name, result) in [
+            ("divining_rod_1", DIVINING_ROD_1),
+            ("divining_rod_2", DIVINING_ROD_2),
+            ("divining_rod_3", DIVINING_ROD_3),
+        ] {
+            assert_eq!(spec(name).pattern, ["DDD", "DSD", "DDD"]);
+            assert_eq!(spec(name).result, result);
+        }
+        for (name, first, second) in [
+            ("nova_catalyst", TNT, MOBIUS_FUEL),
+            ("nova_cataclysm", NOVA_CATALYST, AETERNALIS_FUEL),
+        ] {
+            let recipe = SHAPELESS
+                .iter()
+                .find(|recipe| recipe.name == name)
+                .unwrap_or_else(|| panic!("{name} is missing"));
+            assert_eq!(recipe.ingredients, &[first, second]);
+            assert_eq!(recipe.count, 2);
+        }
+    }
+
+    #[test]
+    fn newly_ported_values_match_their_recipe_costs() {
+        for name in [
+            "energy_condenser_mk2",
+            "energy_condenser_mk3",
+            "magenta_matter",
+            "magenta_matter_block",
+            "transmutation_tablet",
+            "dm_pedestal",
+            "dm_furnace",
+            "rm_furnace",
+            "alchemical_barrel",
+            "repair_talisman",
+            "divining_rod_1",
+            "divining_rod_2",
+            "divining_rod_3",
+        ] {
+            let recipe = SHAPED.iter().find(|recipe| recipe.name == name).unwrap();
+            assert_eq!(
+                shaped_cost(recipe),
+                crate::emc::value(recipe.result),
+                "{name}"
+            );
+        }
+        for name in ["nova_catalyst", "nova_cataclysm"] {
+            let recipe = SHAPELESS.iter().find(|recipe| recipe.name == name).unwrap();
+            let cost: u64 = recipe
+                .ingredients
+                .iter()
+                .map(|id| crate::emc::value(id))
+                .sum();
+            assert_eq!(
+                cost,
+                crate::emc::value(recipe.result) * recipe.count as u64,
+                "{name}"
+            );
+        }
     }
 }

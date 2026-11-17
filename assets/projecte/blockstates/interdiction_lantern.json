@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "hanging=false": {
+      "model": "projecte:block/interdiction_lantern"
+    },
+    "hanging=true": {
+      "model": "projecte:block/interdiction_lantern_hanging"
+    }
+  }
+}

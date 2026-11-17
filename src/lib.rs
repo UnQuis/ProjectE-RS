@@ -31,6 +31,9 @@ mod ui;
 
 const TABLE: &str = recipes::TABLE;
 const PHILOSOPHERS_STONE: &str = alchemical::PHILOSOPHERS_STONE;
+/// A full-block hit box, used by every registered machine and fuel block.
+const FULL_CUBE: [f64; 6] = [0.0, 0.0, 0.0, 1.0, 1.0, 1.0];
+
 const PROJECTE_MENU_SLOTS: usize = ui::table::TABLE_SLOTS;
 const TABLE_BLOCK_ENTITY: &str = "projecte:transmutation_table";
 
@@ -56,6 +59,7 @@ impl Hooks for ProjectE {
             .chain([
                 condenser::ENERGY_CONDENSER,
                 condenser::ENERGY_CONDENSER_MK2,
+                condenser::ENERGY_CONDENSER_MK3,
                 machines::ALCHEMICAL_CHEST,
             ])
         {
@@ -143,9 +147,13 @@ impl Hooks for ProjectE {
         for id in machines::COLLECTORS
             .into_iter()
             .chain(machines::RELAYS)
-            .chain([condenser::ENERGY_CONDENSER, condenser::ENERGY_CONDENSER_MK2])
+            .chain([
+                condenser::ENERGY_CONDENSER,
+                condenser::ENERGY_CONDENSER_MK2,
+                condenser::ENERGY_CONDENSER_MK3,
+            ])
         {
-            block(event, id, "minecraft:furnace");
+            block_shaped(event, id, "minecraft:furnace", FULL_CUBE);
         }
         // The chest model spans pixels 1..15 (Y 0..15); keep the hit box on it.
         block_shaped(
@@ -155,8 +163,32 @@ impl Hooks for ProjectE {
             [1.0 / 16.0, 0.0, 1.0 / 16.0, 15.0 / 16.0, 15.0 / 16.0, 15.0 / 16.0],
         );
         for (_, id) in alchemical::FUEL_BLOCKS {
-            block(event, id, "minecraft:coal_block");
+            block_shaped(event, id, "minecraft:coal_block", FULL_CUBE);
         }
+        // Matter, stations and barrels use full-cube hit boxes; the pedestal
+        // and the flat tablet follow their model's actual bounds.
+        for id in [
+            "projecte:dark_matter_block",
+            "projecte:red_matter_block",
+            "projecte:magenta_matter_block",
+            "projecte:dm_furnace",
+            "projecte:rm_furnace",
+            "projecte:alchemical_barrel",
+        ] {
+            block_shaped(event, id, "minecraft:furnace", FULL_CUBE);
+        }
+        block_shaped(
+            event,
+            "projecte:dm_pedestal",
+            "minecraft:furnace",
+            [3.0 / 16.0, 0.0, 3.0 / 16.0, 13.0 / 16.0, 10.0 / 16.0, 13.0 / 16.0],
+        );
+        block_shaped(
+            event,
+            "projecte:transmutation_tablet",
+            "minecraft:crafting_table",
+            [0.0, 0.0, 0.0, 1.0, 0.25, 1.0],
+        );
     }
 
     fn items(&self, _context: &RegistrationContext, event: &mut ItemsEvent<'_>) {
@@ -170,6 +202,13 @@ impl Hooks for ProjectE {
         item(event, "projecte:medium_covalence_dust", "minecraft:redstone", 64);
         item(event, "projecte:high_covalence_dust", "minecraft:glowstone_dust", 64);
         item(event, data::TOME_ID, "minecraft:book", 1);
+        item(event, "projecte:magenta_matter", "minecraft:redstone", 64);
+        item(event, "projecte:repair_talisman", "minecraft:book", 1);
+        item(event, "projecte:nova_catalyst", "minecraft:nether_star", 64);
+        item(event, "projecte:nova_cataclysm", "minecraft:nether_star", 64);
+        item(event, "projecte:divining_rod_1", "minecraft:stick", 1);
+        item(event, "projecte:divining_rod_2", "minecraft:stick", 1);
+        item(event, "projecte:divining_rod_3", "minecraft:stick", 1);
         let fuel_templates = [
             "minecraft:coal",
             "minecraft:blaze_powder",
@@ -630,14 +669,6 @@ impl ItemPart for StonePart {
         }
         Some(InteractionResult::Consume)
     }
-}
-
-fn block(event: &mut BlocksEvent<'_>, id: &str, template: &str) {
-    let mut declaration = Block::default();
-    declaration.id = id.to_string();
-    declaration.template = template.to_string();
-    declaration.item = true;
-    event.blocks.push(declaration);
 }
 
 /// Register a block whose visual/hit box is one explicit cuboid in block units.

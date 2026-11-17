@@ -88,6 +88,9 @@ impl Machine {
         if block == condenser::ENERGY_CONDENSER_MK2 {
             return Some(Self::Condenser(condenser::MK2_SPEC));
         }
+        if block == condenser::ENERGY_CONDENSER_MK3 {
+            return Some(Self::Condenser(condenser::MK3_SPEC));
+        }
         if let Some(tier) = COLLECTORS.iter().position(|id| *id == block) {
             return Some(Self::Collector(tier));
         }
@@ -188,6 +191,20 @@ pub(crate) fn container(block: &str) -> Option<ModContainer> {
     }
     let machine = Machine::of(block)?;
     match machine {
+        Machine::Condenser(spec) if spec.capacity == condenser::MK3_SPEC.capacity => {
+            // MK3's reference has two menus: 91 input slots and a separate
+            // 180-slot output (the SDK caps one menu at 256 slots). The block's
+            // primary container is the input side; the output menu id is
+            // exported for a face-specific open in `lib.rs`.
+            let input = slots(0, condenser::MK3_INPUT_SLOTS);
+            Some(container_of(
+                condenser::MK3_INPUT_SLOTS,
+                input.clone(),
+                Vec::new(),
+                faces(input, Vec::new()),
+                condenser::CONDENSER_MK3_INPUT_MENU,
+            ))
+        }
         Machine::Condenser(spec) if spec.capacity == condenser::MK2_SPEC.capacity => {
             // MK2: 42 input + 42 output slots; the output side is take-only.
             let input = slots(0, 42);
@@ -340,36 +357,25 @@ fn collector_generation(rate_per_second: i64, sun: u8, micro: i64) -> (i64, i64)
     (total / MICRO_PER_EMC, total % MICRO_PER_EMC)
 }
 
+/// Split an EMC offer evenly across the eligible neighbours.
+///
+/// ProjectE's `EmcBlockEntity.sendToAllAcceptors` gives every acceptor
+/// `emc / targetCount` and leaves the remainder in the source; it does not
+/// redistribute unused capacity. Keeping that observable behaviour matters
+/// for parity even though a fairer split is tempting.
 fn share(offer: i64, room: &[i64]) -> Vec<i64> {
+    let active: Vec<usize> = room
+        .iter()
+        .enumerate()
+        .filter_map(|(index, available)| ((*available).max(0) > 0).then_some(index))
+        .collect();
+    if active.is_empty() {
+        return vec![0; room.len()];
+    }
+    let each = offer.max(0) / active.len() as i64;
     let mut allocations = vec![0; room.len()];
-    let mut remaining = offer.max(0);
-    while remaining > 0 {
-        let active: Vec<usize> = room
-            .iter()
-            .enumerate()
-            .filter_map(|(index, available)| {
-                (allocations[index] < (*available).max(0)).then_some(index)
-            })
-            .collect();
-        if active.is_empty() {
-            break;
-        }
-        let each = remaining / active.len() as i64;
-        let remainder = remaining % active.len() as i64;
-        let mut moved = 0;
-        for (rank, index) in active.into_iter().enumerate() {
-            let extra = if (rank as i64) < remainder { 1 } else { 0 };
-            let amount = (each + extra)
-                .max(1)
-                .min((room[index] - allocations[index]).max(0))
-                .min(remaining - moved);
-            allocations[index] += amount;
-            moved += amount;
-        }
-        if moved == 0 {
-            break;
-        }
-        remaining -= moved;
+    for index in active {
+        allocations[index] = each.min(room[index].max(0));
     }
     allocations
 }
@@ -454,13 +460,37 @@ fn move_full_star(entity: &mut mod_api::ModBlockEntityView<'_>, input_slot: usiz
     entity.items[2] = entity.items[input_slot].take();
 }
 
-fn furnace_data(stored: i64, capacity: i64) -> Vec<i32> {
-    let scaled = if capacity <= 0 {
+fn star_fill(host: &dyn Host, stack: Option<&ItemStack>) -> i32 {
+    let Some(stack) = stack else {
+        return 0;
+    };
+    let Some(capacity) = energy::capacity(&item_id(host, stack)) else {
+        return 0;
+    };
+    scaled(energy::stored_emc(stack).unwrap_or(0), capacity)
+}
+
+fn scaled(current: i64, maximum: i64) -> i32 {
+    if maximum <= 0 {
         0
     } else {
-        (stored.clamp(0, capacity) as i128 * 1000 / capacity as i128) as i32
-    };
-    vec![scaled, 1000, 0, 1000]
+        (current.clamp(0, maximum) as i128 * 1000 / maximum as i128) as i32
+    }
+}
+
+/// Collector data slots: EMC fill, sky/sun level, Klein Star charge, fuel.
+fn collector_data(stored: i64, capacity: i64, sun: u8, star: i32, fuel: i32) -> Vec<i32> {
+    vec![scaled(stored, capacity), i32::from(sun), star, fuel]
+}
+
+/// Relay data slots: EMC fill, Klein Star charge, burn-slot progress.
+fn relay_data(stored: i64, capacity: i64, star: i32, burn: i32) -> Vec<i32> {
+    vec![scaled(stored, capacity), star, burn]
+}
+
+/// Condenser data slots: display EMC and required EMC, both relative to the buffer.
+fn condenser_data(stored: i64, required: i64, capacity: i64) -> Vec<i32> {
+    vec![scaled(stored, capacity), scaled(required, capacity)]
 }
 
 fn collector_tick(
@@ -501,7 +531,13 @@ fn collector_tick(
     }
     write_emc(&mut event.entity.nbt, stored);
     write_long(&mut event.entity.nbt, MICRO_KEY, next_micro);
-    event.entity.data = furnace_data(stored, capacity);
+    event.entity.data = collector_data(
+        stored,
+        capacity,
+        sun,
+        star_fill(host, event.entity.items.first().and_then(Option::as_ref)),
+        0,
+    );
 }
 
 fn relay_tick(
@@ -560,7 +596,12 @@ fn relay_tick(
         }
     }
     write_emc(&mut event.entity.nbt, stored);
-    event.entity.data = furnace_data(stored, capacity);
+    event.entity.data = relay_data(
+        stored,
+        capacity,
+        star_fill(host, event.entity.items.get(1).and_then(Option::as_ref)),
+        scaled(read_long(&event.entity.nbt, BONUS_KEY).clamp(0, 999), 1000),
+    );
 }
 
 fn same_item_payload(_host: &dyn Host, left: &ItemStack, right: &ItemStack) -> bool {
@@ -584,14 +625,14 @@ fn condenser_tick(
 
     let Some(target) = event.entity.items.get(1).and_then(Option::as_ref).cloned() else {
         write_emc(&mut event.entity.nbt, stored);
-        event.entity.data = furnace_data(stored, capacity);
+        event.entity.data = condenser_data(stored, 0, capacity);
         return;
     };
     let target_id = item_id(host, &target);
     let target_value = emc::value(&target_id);
     if target_value == 0 {
         write_emc(&mut event.entity.nbt, stored);
-        event.entity.data = furnace_data(stored, capacity);
+        event.entity.data = condenser_data(stored, 0, capacity);
         return;
     }
 
@@ -677,7 +718,7 @@ fn condenser_tick(
         &mut event.entity.nbt,
         i64::try_from(state.stored_emc).unwrap_or(i64::MAX),
     );
-    event.entity.data = furnace_data(state.stored_emc as i64, capacity);
+    event.entity.data = condenser_data(state.stored_emc as i64, target_value as i64, capacity);
 }
 
 pub(crate) fn tick(host: &mut dyn ServerHost, event: &mut mod_api::BlockEntityTickEvent<'_>) {
@@ -829,7 +870,13 @@ mod tests {
             (RELAYS[1], 14, "projecte:relay_mk2", vec![13]),
             (RELAYS[2], 22, "projecte:relay_mk3", vec![21]),
             (condenser::ENERGY_CONDENSER, 91, "projecte:energy_condenser", (0..91).collect()),
-            (condenser::ENERGY_CONDENSER_MK2, 84, "projecte:energy_condenser_mk2", (42..84).collect()),
+            (condenser::ENERGY_CONDENSER_MK2, 84, condenser::ENERGY_CONDENSER_MK2, (42..84).collect()),
+            (
+                condenser::ENERGY_CONDENSER_MK3,
+                condenser::MK3_INPUT_SLOTS,
+                condenser::CONDENSER_MK3_INPUT_MENU,
+                Vec::new(),
+            ),
             (ALCHEMICAL_CHEST, 104, "projecte:alchemical_chest", (0..104).collect()),
         ] {
             let container = container(block).unwrap_or_else(|| panic!("no container for {block}"));
@@ -850,10 +897,11 @@ mod tests {
     }
 
     #[test]
-    fn share_redistributes_unused_capacity_and_never_exceeds_offer() {
-        assert_eq!(share(100, &[20, 80]), vec![20, 80]);
+    fn share_splits_evenly_and_leaves_the_remainder_in_the_source() {
+        assert_eq!(share(100, &[20, 80]), vec![20, 50]);
         assert_eq!(share(10, &[]), Vec::<i64>::new());
-        assert_eq!(share(1, &[20, 80]), vec![1, 0]);
+        assert_eq!(share(1, &[20, 80]), vec![0, 0]);
         assert_eq!(share(200, &[20, 30]), vec![20, 30]);
+        assert_eq!(share(90, &[10, 50, 50]), vec![10, 30, 30]);
     }
 }

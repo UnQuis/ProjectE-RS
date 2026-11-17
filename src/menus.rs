@@ -10,30 +10,37 @@ use std::collections::BTreeSet;
 
 use mod_api::serde_json::{self, Value};
 
+const ALCHEMICAL_CHEST: &str = include_str!("../data/projecte/horizon/menu/alchemical_chest.json");
 const COLLECTOR_MK1: &str = include_str!("../data/projecte/horizon/menu/collector_mk1.json");
 const COLLECTOR_MK2: &str = include_str!("../data/projecte/horizon/menu/collector_mk2.json");
 const COLLECTOR_MK3: &str = include_str!("../data/projecte/horizon/menu/collector_mk3.json");
+const CONDENSER_MK2: &str = include_str!("../data/projecte/horizon/menu/condenser_mk2.json");
+const CONDENSER_MK3: &str = include_str!("../data/projecte/horizon/menu/condenser_mk3.json");
+const CONDENSER_MK3_INPUT: &str =
+    include_str!("../data/projecte/horizon/menu/condenser_mk3_input.json");
+const CONDENSER_MK3_OUTPUT: &str =
+    include_str!("../data/projecte/horizon/menu/condenser_mk3_output.json");
+const ENERGY_CONDENSER: &str = include_str!("../data/projecte/horizon/menu/energy_condenser.json");
 const RELAY_MK1: &str = include_str!("../data/projecte/horizon/menu/relay_mk1.json");
 const RELAY_MK2: &str = include_str!("../data/projecte/horizon/menu/relay_mk2.json");
 const RELAY_MK3: &str = include_str!("../data/projecte/horizon/menu/relay_mk3.json");
-const ENERGY_CONDENSER: &str = include_str!("../data/projecte/horizon/menu/energy_condenser.json");
-const ENERGY_CONDENSER_MK2: &str =
-    include_str!("../data/projecte/horizon/menu/energy_condenser_mk2.json");
-const ALCHEMICAL_CHEST: &str = include_str!("../data/projecte/horizon/menu/alchemical_chest.json");
 const TRANSMUTATION_TABLE: &str =
     include_str!("../data/projecte/horizon/menu/transmutation_table.json");
 
 /// (menu name, embedded JSON) in a fixed order for deterministic output.
 const FILES: &[(&str, &str)] = &[
+    ("alchemical_chest", ALCHEMICAL_CHEST),
     ("collector_mk1", COLLECTOR_MK1),
     ("collector_mk2", COLLECTOR_MK2),
     ("collector_mk3", COLLECTOR_MK3),
+    ("condenser_mk2", CONDENSER_MK2),
+    ("condenser_mk3", CONDENSER_MK3),
+    ("condenser_mk3_input", CONDENSER_MK3_INPUT),
+    ("condenser_mk3_output", CONDENSER_MK3_OUTPUT),
+    ("energy_condenser", ENERGY_CONDENSER),
     ("relay_mk1", RELAY_MK1),
     ("relay_mk2", RELAY_MK2),
     ("relay_mk3", RELAY_MK3),
-    ("energy_condenser", ENERGY_CONDENSER),
-    ("energy_condenser_mk2", ENERGY_CONDENSER_MK2),
-    ("alchemical_chest", ALCHEMICAL_CHEST),
     ("transmutation_table", TRANSMUTATION_TABLE),
 ];
 
@@ -101,7 +108,7 @@ pub fn validate() -> Result<Vec<(&'static str, MenuSpec)>, MenuError> {
         .collect()
 }
 
-/// The nine menu declarations, keyed as `data_pack_files` expects.
+/// The menu declarations, keyed as `data_pack_files` expects.
 pub fn data_pack_files() -> Vec<(String, Vec<u8>)> {
     // A malformed shipped declaration is a bug, not data to quietly ship:
     // report it loudly at every data load rather than letting the engine fail
@@ -142,12 +149,17 @@ mod tests {
             assert_eq!(spec.data_slots, data_slots, "{name}");
             assert_eq!(spec.first_result, result, "{name}");
         }
-        let condenser_mk2 = specs["energy_condenser_mk2"];
-        assert_eq!(condenser_mk2.slots, 84);
-        assert_eq!(condenser_mk2.data_slots, 2);
-        assert_eq!(condenser_mk2.result_count, 42);
-        assert_eq!(condenser_mk2.first_result, Some(42));
-        assert_eq!(condenser_mk2.last_result, Some(83));
+        let mk2 = specs["condenser_mk2"];
+        assert_eq!(mk2.slots, 84);
+        assert_eq!(mk2.result_count, 42);
+        assert_eq!(mk2.first_result, Some(42));
+        assert_eq!(mk2.last_result, Some(83));
+        assert_eq!(specs["condenser_mk3"].slots, 91);
+        assert_eq!(specs["condenser_mk3_input"].slots, 91);
+        assert_eq!(specs["condenser_mk3_output"].slots, 180);
+        assert_eq!(specs["condenser_mk3_output"].result_count, 180);
+        assert_eq!(specs["transmutation_table"].slots, 27);
+        assert_eq!(specs["transmutation_table"].data_slots, 1);
     }
 
     #[test]
@@ -187,10 +199,7 @@ mod tests {
         let mut keys = BTreeSet::new();
         for (index, (key, bytes)) in files.iter().enumerate() {
             assert!(keys.insert(key), "duplicate key {key}");
-            assert_eq!(
-                key,
-                &format!("horizon/menu/projecte:{}", FILES[index].0)
-            );
+            assert_eq!(key, &format!("horizon/menu/projecte:{}", FILES[index].0));
             let text = std::str::from_utf8(bytes).unwrap();
             assert_eq!(text, FILES[index].1);
             let value: Value = serde_json::from_str(text).unwrap();

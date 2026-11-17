@@ -33,9 +33,29 @@ pub const MK1_SPEC: CondenserSpec = CondenserSpec {
 
 /// The MK2 Condenser: a much larger buffer and, unlike MK1, whole input stacks
 /// and multiple outputs per tick (ProjectE `CondenserMK2BlockEntity.condense`).
-pub const ENERGY_CONDENSER_MK2: &str = "projecte:energy_condenser_mk2";
+pub const ENERGY_CONDENSER_MK2: &str = "projecte:condenser_mk2";
 pub const MK2_SPEC: CondenserSpec = CondenserSpec {
     capacity: 100_000,
+    max_input_items_per_tick: 64,
+    max_output_items_per_tick: 64,
+};
+
+/// The expansion addon's MK3 Condenser (`projecte:condenser_mk3`).
+///
+/// The reference stores EMC as `BigInteger` and gives each of six faces its
+/// own 91-slot input handler with an independent lock; the single output
+/// handler has 180 slots. This port keeps the observable slot counts and uses
+/// the `u64` domain model: the capacity is effectively unbounded and the
+/// per-tick limits mirror MK2 until a BigInteger numeric layer exists.
+pub const ENERGY_CONDENSER_MK3: &str = "projecte:condenser_mk3";
+/// The 91-slot input menu (the block's primary container).
+pub const CONDENSER_MK3_INPUT_MENU: &str = "projecte:condenser_mk3_input";
+/// The separate 180-slot output menu, opened from the output face.
+pub const ENERGY_CONDENSER_MK3_OUTPUT: &str = "projecte:condenser_mk3_output";
+pub const MK3_INPUT_SLOTS: usize = 91;
+pub const MK3_OUTPUT_SLOTS: usize = 180;
+pub const MK3_SPEC: CondenserSpec = CondenserSpec {
+    capacity: u64::MAX,
     max_input_items_per_tick: 64,
     max_output_items_per_tick: 64,
 };
@@ -285,6 +305,16 @@ mod tests {
         let plan = plan_input_conversion(CondenserState::default(), MK2, 32, 100).unwrap();
         assert_eq!(plan.consumed_items, 64);
         assert_eq!(plan.credited_emc, 2048);
+    }
+
+    #[test]
+    fn the_mk3_reference_has_91_inputs_and_180_outputs() {
+        assert_eq!(MK3_INPUT_SLOTS, 91);
+        assert_eq!(MK3_OUTPUT_SLOTS, 180);
+        assert_eq!(MK3_SPEC.capacity, u64::MAX);
+        // The single-input plan must still be bounded and overflow-safe.
+        let plan = plan_input_conversion(CondenserState::default(), MK3_SPEC, 32, 100).unwrap();
+        assert_eq!(plan.consumed_items, 64);
     }
 
     #[test]
