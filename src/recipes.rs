@@ -58,6 +58,22 @@ const STRING: &str = "minecraft:string";
 const PAPER: &str = "minecraft:paper";
 const BARREL: &str = "minecraft:barrel";
 const TNT: &str = "minecraft:tnt";
+const WATER_BUCKET: &str = "minecraft:water_bucket";
+const LAVA_BUCKET: &str = "minecraft:lava_bucket";
+const FLINT_AND_STEEL: &str = "minecraft:flint_and_steel";
+const CLOCK: &str = "minecraft:clock";
+const BRICKS: &str = "minecraft:bricks";
+const SNOWBALL: &str = "minecraft:snowball";
+const SNOW_BLOCK: &str = "minecraft:snow_block";
+const OAK_SAPLING: &str = "minecraft:oak_sapling";
+const DANDELION: &str = "minecraft:dandelion";
+const TRIDENT: &str = "minecraft:trident";
+const BOW: &str = "minecraft:bow";
+const COOKED_BEEF: &str = "minecraft:cooked_beef";
+const FEATHER: &str = "minecraft:feather";
+const LAPIS: &str = "minecraft:lapis_lazuli";
+const SUGAR: &str = "minecraft:sugar";
+const BOOK: &str = "minecraft:book";
 const DARK_MATTER: &str = "projecte:dark_matter";
 const RED_MATTER: &str = "projecte:red_matter";
 
@@ -117,6 +133,39 @@ pub(crate) const DM_PICK: &str = "projecte:dm_pick";
 pub(crate) const DM_SHEARS: &str = "projecte:dm_shears";
 pub(crate) const DM_SHOVEL: &str = "projecte:dm_shovel";
 pub(crate) const DM_SWORD: &str = "projecte:dm_sword";
+pub(crate) const IRON_BAND: &str = "projecte:iron_band";
+pub(crate) const VOLCANITE_AMULET: &str = "projecte:volcanite_amulet";
+pub(crate) const EVERTIDE_AMULET: &str = "projecte:evertide_amulet";
+pub(crate) const BLACK_HOLE_BAND: &str = "projecte:black_hole_band";
+pub(crate) const ZERO_RING: &str = "projecte:zero_ring";
+pub(crate) const HARVEST_GODDESS_BAND: &str = "projecte:harvest_goddess_band";
+pub(crate) const IGNITION_RING: &str = "projecte:ignition_ring";
+pub(crate) const SWIFTWOLF_RENDING_GALE: &str = "projecte:swiftwolf_rending_gale";
+pub(crate) const ARCANA_RING: &str = "projecte:arcana_ring";
+pub(crate) const VOID_RING: &str = "projecte:void_ring";
+pub(crate) const GEM_OF_ETERNAL_DENSITY: &str = "projecte:gem_of_eternal_density";
+pub(crate) const BODY_STONE: &str = "projecte:body_stone";
+pub(crate) const SOUL_STONE: &str = "projecte:soul_stone";
+pub(crate) const MIND_STONE: &str = "projecte:mind_stone";
+pub(crate) const LIFE_STONE: &str = "projecte:life_stone";
+pub(crate) const DESTRUCTION_CATALYST: &str = "projecte:destruction_catalyst";
+pub(crate) const HYPERKINETIC_LENS: &str = "projecte:hyperkinetic_lens";
+pub(crate) const CATALYTIC_LENS: &str = "projecte:catalytic_lens";
+pub(crate) const MERCURIAL_EYE: &str = "projecte:mercurial_eye";
+pub(crate) const WATCH_OF_FLOWING_TIME: &str = "projecte:watch_of_flowing_time";
+pub(crate) const DARK_MATTER_SHIELD: &str = "projecte:dark_matter_shield";
+pub(crate) const RED_MATTER_SHIELD: &str = "projecte:red_matter_shield";
+pub(crate) const DARK_MATTER_TRIDENT: &str = "projecte:dark_matter_trident";
+pub(crate) const RED_MATTER_TRIDENT: &str = "projecte:red_matter_trident";
+pub(crate) const RM_LEGGINGS: &str = "projecte:rm_leggings";
+pub(crate) const ARCHANGEL_SMITE: &str = "projecte:archangel_smite";
+pub(crate) const GEM_BOOTS: &str = "projecte:gem_boots";
+pub(crate) const GEM_CHESTPLATE: &str = "projecte:gem_chestplate";
+pub(crate) const GEM_HELMET: &str = "projecte:gem_helmet";
+pub(crate) const GEM_LEGGINGS: &str = "projecte:gem_leggings";
+pub(crate) const BASIC_ALCHEMICAL_BOOK: &str = "projecte:basic_alchemical_book";
+pub(crate) const INFINITE_FUEL: &str = "projecte:infinite_fuel";
+pub(crate) const INFINITE_STEAK: &str = "projecte:infinite_steak";
 pub(crate) const RM_AXE: &str = "projecte:rm_axe";
 pub(crate) const RM_BOOTS: &str = "projecte:rm_boots";
 pub(crate) const RM_CHESTPLATE: &str = "projecte:rm_chestplate";
@@ -564,10 +613,242 @@ pub(crate) const SHAPED: &[ShapedRecipe] = &[
         result: RM_SWORD,
         count: 1,
     },
+    // Phase 2 of the content audit: rings, relics and shields.
+    // Recipes from ProjectE (MIT, github.com/sinkillerj/ProjectE).
+    ShapedRecipe {
+        name: "iron_band",
+        pattern: ["III", "ILI", "III"],
+        key: &[('I', IRON), ('L', LAVA_BUCKET)],
+        result: IRON_BAND,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "volcanite_amulet",
+        pattern: ["LLL", "DDD", "LLL"],
+        key: &[('L', LAVA_BUCKET), ('D', DARK_MATTER)],
+        result: VOLCANITE_AMULET,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "evertide_amulet",
+        pattern: ["WWW", "DDD", "WWW"],
+        key: &[('W', WATER_BUCKET), ('D', DARK_MATTER)],
+        result: EVERTIDE_AMULET,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "black_hole_band",
+        pattern: ["SSS", "DID", "SSS"],
+        key: &[('S', STRING), ('D', DARK_MATTER), ('I', IRON_BAND)],
+        result: BLACK_HOLE_BAND,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "zero_ring",
+        pattern: ["SBS", "MIM", "SBS"],
+        key: &[('S', SNOW_BLOCK), ('B', SNOWBALL), ('M', DARK_MATTER), ('I', IRON_BAND)],
+        result: ZERO_RING,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "harvest_goddess_band",
+        pattern: ["SFS", "DID", "SFS"],
+        key: &[('S', OAK_SAPLING), ('F', DANDELION), ('D', DARK_MATTER), ('I', IRON_BAND)],
+        result: HARVEST_GODDESS_BAND,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "ignition_ring",
+        pattern: ["FMF", "DID", "FMF"],
+        key: &[('F', FLINT_AND_STEEL), ('D', DARK_MATTER), ('I', IRON_BAND), ('M', MOBIUS_FUEL)],
+        result: IGNITION_RING,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "swiftwolf_rending_gale",
+        pattern: ["DFD", "FIF", "DFD"],
+        key: &[('D', DARK_MATTER), ('F', FEATHER), ('I', IRON_BAND)],
+        result: SWIFTWOLF_RENDING_GALE,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "arcana_ring",
+        pattern: ["ZIH", "SMM", "MMM"],
+        key: &[('Z', ZERO_RING), ('I', IGNITION_RING), ('H', HARVEST_GODDESS_BAND), ('S', SWIFTWOLF_RENDING_GALE), ('M', RED_MATTER)],
+        result: ARCANA_RING,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "gem_of_eternal_density",
+        pattern: ["DOD", "MDM", "DOD"],
+        key: &[('D', DIAMOND), ('O', OBSIDIAN), ('M', DARK_MATTER)],
+        result: GEM_OF_ETERNAL_DENSITY,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "body_stone",
+        pattern: ["SSS", "RLR", "SSS"],
+        key: &[('S', SUGAR), ('R', RED_MATTER), ('L', LAPIS)],
+        result: BODY_STONE,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "soul_stone",
+        pattern: ["GGG", "RLR", "GGG"],
+        key: &[('G', GLOWSTONE_DUST), ('R', RED_MATTER), ('L', LAPIS)],
+        result: SOUL_STONE,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "mind_stone",
+        pattern: ["BBB", "RLR", "BBB"],
+        key: &[('B', BOOK), ('R', RED_MATTER), ('L', LAPIS)],
+        result: MIND_STONE,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "destruction_catalyst",
+        pattern: ["NMN", "MFM", "NMN"],
+        key: &[('N', NOVA_CATALYST), ('M', MOBIUS_FUEL), ('F', FLINT_AND_STEEL)],
+        result: DESTRUCTION_CATALYST,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "hyperkinetic_lens",
+        pattern: ["DDD", "MNM", "DDD"],
+        key: &[('D', DIAMOND), ('M', DARK_MATTER), ('N', NOVA_CATALYST)],
+        result: HYPERKINETIC_LENS,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "catalytic_lens",
+        pattern: ["MMM", "DMH", "MMM"],
+        key: &[('M', DARK_MATTER), ('D', DESTRUCTION_CATALYST), ('H', HYPERKINETIC_LENS)],
+        result: CATALYTIC_LENS,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "mercurial_eye",
+        pattern: ["OBO", "BRB", "BDB"],
+        key: &[('O', OBSIDIAN), ('B', BRICKS), ('R', RED_MATTER), ('D', DIAMOND)],
+        result: MERCURIAL_EYE,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "watch_of_flowing_time",
+        pattern: ["DGD", "OCO", "DGD"],
+        key: &[('D', DARK_MATTER), ('G', GLOWSTONE), ('O', OBSIDIAN), ('C', CLOCK)],
+        result: WATCH_OF_FLOWING_TIME,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "dark_matter_shield",
+        pattern: ["PMP", "PPP", " P "],
+        key: &[('P', DIAMOND), ('M', DARK_MATTER)],
+        result: DARK_MATTER_SHIELD,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "red_matter_shield",
+        pattern: ["PMP", "PSP", " P "],
+        key: &[('P', DARK_MATTER), ('M', RED_MATTER), ('S', DARK_MATTER_SHIELD)],
+        result: RED_MATTER_SHIELD,
+        count: 1,
+    },
+
+    // Phase 3: tridents, archangel bow, books and infinite items.
+    ShapedRecipe {
+        name: "dark_matter_trident",
+        pattern: ["MTM", " P ", " P "],
+        key: &[('M', DARK_MATTER), ('T', TRIDENT), ('P', DIAMOND)],
+        result: DARK_MATTER_TRIDENT,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "rm_leggings",
+        pattern: ["MMM", "MDM", "M M"],
+        key: &[('M', RED_MATTER), ('D', DM_LEGGINGS)],
+        result: RM_LEGGINGS,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "red_matter_trident",
+        pattern: ["MTM", " P ", " P "],
+        key: &[('M', RED_MATTER), ('P', DARK_MATTER), ('T', DARK_MATTER_TRIDENT)],
+        result: RED_MATTER_TRIDENT,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "archangel_smite",
+        pattern: ["BFB", "MIM", "BFB"],
+        key: &[('B', BOW), ('F', FEATHER), ('I', IRON_BAND), ('M', DARK_MATTER)],
+        result: ARCHANGEL_SMITE,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "basic_alchemical_book",
+        pattern: ["HRH", "EBP", "HRH"],
+        key: &[('H', HIGH_COVALENCE_DUST), ('R', RED_MATTER), ('E', ENDER_PEARL), ('B', BOOK), ('P', STONE)],
+        result: BASIC_ALCHEMICAL_BOOK,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "infinite_fuel",
+        pattern: ["CCC", "CTC", "CCC"],
+        key: &[('C', COAL), ('T', TRANSMUTATION_TABLET)],
+        result: INFINITE_FUEL,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "infinite_steak",
+        pattern: ["SSS", "STS", "SSS"],
+        key: &[('S', COOKED_BEEF), ('T', TRANSMUTATION_TABLET)],
+        result: INFINITE_STEAK,
+        count: 1,
+    },
 ];
 
 /// Layout-free recipes. The stone still appears where the conversion needs it.
 pub(crate) const SHAPELESS: &[ShapelessRecipe] = &[
+    // Gem armour fuses Red Matter gear with relics and a Klein Star Omega.
+    ShapelessRecipe {
+        name: "gem_boots",
+        ingredients: &[RM_BOOTS, SWIFTWOLF_RENDING_GALE, SWIFTWOLF_RENDING_GALE, KLEIN_STAR_OMEGA],
+        result: GEM_BOOTS,
+        count: 1,
+    },
+    ShapelessRecipe {
+        name: "gem_chestplate",
+        ingredients: &[RM_CHESTPLATE, VOLCANITE_AMULET, BODY_STONE, KLEIN_STAR_OMEGA],
+        result: GEM_CHESTPLATE,
+        count: 1,
+    },
+    ShapelessRecipe {
+        name: "gem_helmet",
+        ingredients: &[RM_HELMET, EVERTIDE_AMULET, SOUL_STONE, KLEIN_STAR_OMEGA],
+        result: GEM_HELMET,
+        count: 1,
+    },
+    ShapelessRecipe {
+        name: "gem_leggings",
+        ingredients: &[RM_LEGGINGS, BLACK_HOLE_BAND, WATCH_OF_FLOWING_TIME, KLEIN_STAR_OMEGA],
+        result: GEM_LEGGINGS,
+        count: 1,
+    },
+    // Void Ring: Black Hole Band + Gem of Eternal Density + two Red Matter.
+    ShapelessRecipe {
+        name: "void_ring",
+        ingredients: &[BLACK_HOLE_BAND, GEM_OF_ETERNAL_DENSITY, RED_MATTER, RED_MATTER],
+        result: VOID_RING,
+        count: 1,
+    },
+    // Life Stone combines the Body and Soul stones.
+    ShapelessRecipe {
+        name: "life_stone",
+        ingredients: &[BODY_STONE, SOUL_STONE],
+        result: LIFE_STONE,
+        count: 1,
+    },
     // Covalence dusts: 40 per craft, priced so each dust is worth exactly the
     // fraction of its ingredients (1 / 8 / 205 with this crate's base table).
     ShapelessRecipe {
@@ -969,13 +1250,21 @@ mod tests {
             );
         }
         for recipe in SHAPED {
-            if recipe.name != "philosophers_stone" {
+            // ProjectE consumes the stone in both its own crafting and the
+            // basic Alchemical Book; every other stone recipe is a catalyst.
+            if recipe.name != "philosophers_stone" && recipe.name != "basic_alchemical_book" {
                 let listed = CATALYST_RECIPES.contains(&recipe.name);
                 let holds_stone = recipe.key.iter().any(|(_, id)| *id == STONE);
                 assert_eq!(holds_stone, listed, "{} catalyst mismatch", recipe.name);
             }
         }
         for recipe in SHAPELESS {
+            // The basic Alchemical Book is the one recipe where ProjectE
+            // genuinely consumes the Philosopher's Stone as an ingredient.
+            if recipe.name == "basic_alchemical_book" {
+                assert!(recipe.ingredients.contains(&STONE));
+                continue;
+            }
             let listed = CATALYST_RECIPES.contains(&recipe.name);
             let holds_stone = recipe.ingredients.contains(&STONE);
             assert_eq!(holds_stone, listed, "{} catalyst mismatch", recipe.name);
@@ -1453,6 +1742,83 @@ mod tests {
             assert_eq!(recipe.result, const_for(name), "{name}");
             assert_eq!(shaped_cost(recipe), crate::emc::value(recipe.result), "{name}");
         }
+    }
+
+    #[test]
+    fn rings_relics_and_shields_are_emc_neutral() {
+        for (name, result) in [
+            ("iron_band", IRON_BAND),
+            ("volcanite_amulet", VOLCANITE_AMULET),
+            ("evertide_amulet", EVERTIDE_AMULET),
+            ("black_hole_band", BLACK_HOLE_BAND),
+            ("zero_ring", ZERO_RING),
+            ("harvest_goddess_band", HARVEST_GODDESS_BAND),
+            ("ignition_ring", IGNITION_RING),
+            ("swiftwolf_rending_gale", SWIFTWOLF_RENDING_GALE),
+            ("arcana_ring", ARCANA_RING),
+            ("gem_of_eternal_density", GEM_OF_ETERNAL_DENSITY),
+            ("body_stone", BODY_STONE),
+            ("soul_stone", SOUL_STONE),
+            ("mind_stone", MIND_STONE),
+            ("destruction_catalyst", DESTRUCTION_CATALYST),
+            ("hyperkinetic_lens", HYPERKINETIC_LENS),
+            ("catalytic_lens", CATALYTIC_LENS),
+            ("mercurial_eye", MERCURIAL_EYE),
+            ("watch_of_flowing_time", WATCH_OF_FLOWING_TIME),
+            ("dark_matter_shield", DARK_MATTER_SHIELD),
+            ("red_matter_shield", RED_MATTER_SHIELD),
+        ] {
+            let recipe = SHAPED.iter().find(|r| r.name == name).unwrap_or_else(|| panic!("{name}"));
+            assert_eq!(recipe.result, result, "{name}");
+            assert_eq!(shaped_cost(recipe), crate::emc::value(result), "{name}");
+        }
+        for (name, result) in [("void_ring", VOID_RING), ("life_stone", LIFE_STONE)] {
+            let recipe = SHAPELESS.iter().find(|r| r.name == name).unwrap_or_else(|| panic!("{name}"));
+            let cost: u64 = recipe.ingredients.iter().map(|id| crate::emc::value(id)).sum();
+            assert_eq!(recipe.result, result, "{name}");
+            assert_eq!(cost, crate::emc::value(result), "{name}");
+        }
+    }
+
+    #[test]
+    fn phase_three_recipes_are_emc_neutral() {
+        let r = SHAPED.iter().find(|r| r.name == "dark_matter_trident").unwrap();
+        assert_eq!(r.result, DARK_MATTER_TRIDENT, "dark_matter_trident");
+        assert_eq!(shaped_cost(r), crate::emc::value(r.result), "dark_matter_trident");
+        let r = SHAPED.iter().find(|r| r.name == "rm_leggings").unwrap();
+        assert_eq!(r.result, RM_LEGGINGS, "rm_leggings");
+        assert_eq!(shaped_cost(r), crate::emc::value(r.result), "rm_leggings");
+        let r = SHAPED.iter().find(|r| r.name == "red_matter_trident").unwrap();
+        assert_eq!(r.result, RED_MATTER_TRIDENT, "red_matter_trident");
+        assert_eq!(shaped_cost(r), crate::emc::value(r.result), "red_matter_trident");
+        let r = SHAPED.iter().find(|r| r.name == "archangel_smite").unwrap();
+        assert_eq!(r.result, ARCHANGEL_SMITE, "archangel_smite");
+        assert_eq!(shaped_cost(r), crate::emc::value(r.result), "archangel_smite");
+        let r = SHAPED.iter().find(|r| r.name == "basic_alchemical_book").unwrap();
+        assert_eq!(r.result, BASIC_ALCHEMICAL_BOOK, "basic_alchemical_book");
+        assert_eq!(shaped_cost(r), crate::emc::value(r.result), "basic_alchemical_book");
+        let r = SHAPED.iter().find(|r| r.name == "infinite_fuel").unwrap();
+        assert_eq!(r.result, INFINITE_FUEL, "infinite_fuel");
+        assert_eq!(shaped_cost(r), crate::emc::value(r.result), "infinite_fuel");
+        let r = SHAPED.iter().find(|r| r.name == "infinite_steak").unwrap();
+        assert_eq!(r.result, INFINITE_STEAK, "infinite_steak");
+        assert_eq!(shaped_cost(r), crate::emc::value(r.result), "infinite_steak");
+        let r = SHAPELESS.iter().find(|r| r.name == "gem_boots").unwrap();
+        assert_eq!(r.result, GEM_BOOTS, "gem_boots");
+        let cost: u64 = r.ingredients.iter().map(|id| crate::emc::value(id)).sum();
+        assert_eq!(cost, crate::emc::value(r.result), "gem_boots");
+        let r = SHAPELESS.iter().find(|r| r.name == "gem_chestplate").unwrap();
+        assert_eq!(r.result, GEM_CHESTPLATE, "gem_chestplate");
+        let cost: u64 = r.ingredients.iter().map(|id| crate::emc::value(id)).sum();
+        assert_eq!(cost, crate::emc::value(r.result), "gem_chestplate");
+        let r = SHAPELESS.iter().find(|r| r.name == "gem_helmet").unwrap();
+        assert_eq!(r.result, GEM_HELMET, "gem_helmet");
+        let cost: u64 = r.ingredients.iter().map(|id| crate::emc::value(id)).sum();
+        assert_eq!(cost, crate::emc::value(r.result), "gem_helmet");
+        let r = SHAPELESS.iter().find(|r| r.name == "gem_leggings").unwrap();
+        assert_eq!(r.result, GEM_LEGGINGS, "gem_leggings");
+        let cost: u64 = r.ingredients.iter().map(|id| crate::emc::value(id)).sum();
+        assert_eq!(cost, crate::emc::value(r.result), "gem_leggings");
     }
 
 }

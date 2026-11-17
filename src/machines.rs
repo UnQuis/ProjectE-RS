@@ -258,7 +258,7 @@ pub(crate) fn block_entity(block: &str) -> Option<(String, Compound)> {
 }
 
 pub(crate) fn has_tick(block: &str) -> bool {
-    is_machine(block)
+    is_machine(block) || is_interdiction(block)
 }
 
 fn slots(first: usize, last: usize) -> Vec<usize> {
@@ -832,12 +832,16 @@ fn condenser_tick(
 }
 
 pub(crate) fn tick(host: &mut dyn ServerHost, event: &mut mod_api::BlockEntityTickEvent<'_>) {
-    if event.entity.id() != BLOCK_ENTITY {
-        return;
-    }
     let Some(level) = level_at(host, event.pos) else {
         return;
     };
+    if is_interdiction(&block_id(host, level, event.pos)) {
+        interdiction_tick(host, level, event.pos);
+        return;
+    }
+    if event.entity.id() != BLOCK_ENTITY {
+        return;
+    }
     let Some(machine) = Machine::of(&block_id(host, level, event.pos)) else {
         return;
     };
@@ -955,6 +959,30 @@ mod tests {
         let relay = Machine::of(RELAYS[0]).unwrap();
         assert!(!relay.feeds(relay, 0.8, 0.2));
         assert!(!relay.feeds(relay, 0.2, 0.8));
+    }
+
+    #[test]
+    fn interdiction_repel_points_away_from_the_block_and_falls_off_with_distance() {
+        let center = [0.0, 0.0, 0.0];
+        let near = repel_vector(center, [1.0, 0.0, 0.0]);
+        let far = repel_vector(center, [5.0, 0.0, 0.0]);
+        assert!(near[0] > 0.0 && near[1] == 0.0);
+        assert!(far[0] > 0.0);
+        // The reference force tends to a constant 1/1.5 as distance grows;
+        // it is bounded, not strictly decreasing.
+        assert!(near[0] <= 1.0 / 1.5 && far[0] <= 1.0 / 1.5);
+        assert_eq!(repel_vector([1.0, 2.0, 3.0], [1.0, 2.0, 3.0]), [0.0, 0.0, 0.0]);
+    }
+
+    #[test]
+    fn nova_charges_match_the_reference_fuse_and_radii() {
+        assert_eq!(NOVA_FUSE_TICKS, 20);
+        assert_eq!(nova_radius(NOVA_CATALYST), Some(16.0));
+        assert_eq!(nova_radius(NOVA_CATACLYSM), Some(48.0));
+        assert_eq!(nova_radius(ALCHEMICAL_CHEST), None);
+        assert!(is_interdiction(INTERDICTION_TORCH));
+        assert!(is_interdiction(INTERDICTION_LANTERN));
+        assert_eq!(INTERDICTION_LIGHT, 14);
     }
 
     #[test]

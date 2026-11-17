@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "projecte:item/basic_relay"
+    "model": "projecte:item/infinite_fuel"
   }
 }

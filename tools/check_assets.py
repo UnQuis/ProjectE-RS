@@ -21,33 +21,44 @@ SRC = ROOT / "src"
 REGISTERED = """
 projecte:aeternalis_fuel projecte:aeternalis_fuel_block projecte:alchemical_barrel
 projecte:alchemical_chest projecte:alchemical_coal projecte:alchemical_coal_block
-projecte:black_advanced_alchemical_chest projecte:blue_advanced_alchemical_chest projecte:brown_advanced_alchemical_chest
+projecte:arcana_ring projecte:archangel_smite projecte:basic_alchemical_book
+projecte:black_advanced_alchemical_chest projecte:black_hole_band projecte:blue_advanced_alchemical_chest
+projecte:body_stone projecte:brown_advanced_alchemical_chest projecte:catalytic_lens
 projecte:collector_mk1 projecte:collector_mk2 projecte:collector_mk3
 projecte:compact_sun projecte:condenser_mk1 projecte:condenser_mk2
 projecte:condenser_mk3 projecte:cyan_advanced_alchemical_chest projecte:dark_matter
-projecte:dark_matter_block projecte:divining_rod_1 projecte:divining_rod_2
+projecte:dark_matter_block projecte:dark_matter_shield projecte:dark_matter_trident
+projecte:destruction_catalyst projecte:divining_rod_1 projecte:divining_rod_2
 projecte:divining_rod_3 projecte:dm_axe projecte:dm_boots
 projecte:dm_chestplate projecte:dm_furnace projecte:dm_hammer
 projecte:dm_helmet projecte:dm_hoe projecte:dm_leggings
 projecte:dm_pedestal projecte:dm_pick projecte:dm_shears
-projecte:dm_shovel projecte:dm_sword projecte:gray_advanced_alchemical_chest
-projecte:green_advanced_alchemical_chest projecte:high_covalence_dust projecte:interdiction_lantern
-projecte:interdiction_torch projecte:klein_star_drei projecte:klein_star_ein
+projecte:dm_shovel projecte:dm_sword projecte:evertide_amulet
+projecte:gem_boots projecte:gem_chestplate projecte:gem_helmet
+projecte:gem_leggings projecte:gem_of_eternal_density projecte:gray_advanced_alchemical_chest
+projecte:green_advanced_alchemical_chest projecte:harvest_goddess_band projecte:high_covalence_dust
+projecte:hyperkinetic_lens projecte:ignition_ring projecte:infinite_fuel
+projecte:infinite_steak projecte:interdiction_lantern projecte:interdiction_torch
+projecte:iron_band projecte:klein_star_drei projecte:klein_star_ein
 projecte:klein_star_omega projecte:klein_star_sphere projecte:klein_star_vier
-projecte:klein_star_zwei projecte:light_blue_advanced_alchemical_chest projecte:light_gray_advanced_alchemical_chest
-projecte:lime_advanced_alchemical_chest projecte:low_covalence_dust projecte:magenta_advanced_alchemical_chest
-projecte:magenta_matter projecte:magenta_matter_block projecte:medium_covalence_dust
+projecte:klein_star_zwei projecte:life_stone projecte:light_blue_advanced_alchemical_chest
+projecte:light_gray_advanced_alchemical_chest projecte:lime_advanced_alchemical_chest projecte:low_covalence_dust
+projecte:magenta_advanced_alchemical_chest projecte:magenta_matter projecte:magenta_matter_block
+projecte:medium_covalence_dust projecte:mercurial_eye projecte:mind_stone
 projecte:mobius_fuel projecte:mobius_fuel_block projecte:nova_cataclysm
 projecte:nova_catalyst projecte:orange_advanced_alchemical_chest projecte:philosophers_stone
 projecte:pink_advanced_alchemical_chest projecte:purple_advanced_alchemical_chest projecte:red_advanced_alchemical_chest
-projecte:red_matter projecte:red_matter_block projecte:relay_mk1
-projecte:relay_mk2 projecte:relay_mk3 projecte:repair_talisman
-projecte:rm_axe projecte:rm_boots projecte:rm_chestplate
-projecte:rm_furnace projecte:rm_hammer projecte:rm_helmet
+projecte:red_matter projecte:red_matter_block projecte:red_matter_shield
+projecte:red_matter_trident projecte:relay_mk1 projecte:relay_mk2
+projecte:relay_mk3 projecte:repair_talisman projecte:rm_axe
+projecte:rm_boots projecte:rm_chestplate projecte:rm_furnace
+projecte:rm_hammer projecte:rm_helmet projecte:rm_leggings
 projecte:rm_pick projecte:rm_shears projecte:rm_shovel
-projecte:rm_sword projecte:tome projecte:transmutation_interface
-projecte:transmutation_table projecte:transmutation_tablet projecte:white_advanced_alchemical_chest
-projecte:yellow_advanced_alchemical_chest
+projecte:rm_sword projecte:soul_stone projecte:swiftwolf_rending_gale
+projecte:tome projecte:transmutation_interface projecte:transmutation_table
+projecte:transmutation_tablet projecte:void_ring projecte:volcanite_amulet
+projecte:watch_of_flowing_time projecte:white_advanced_alchemical_chest projecte:yellow_advanced_alchemical_chest
+projecte:zero_ring
 """.split()
 ids = set(REGISTERED)
 problems = []
@@ -63,6 +74,8 @@ def model_ok(path, seen=None):
         problems.append(f"missing model {path}")
         return False
     data = json.loads(model.read_text())
+    if "overrides" in data:
+        problems.append(f"{path}: Java-only overrides (Horizon ignores them)")
     parent = data.get("parent", "")
     if isinstance(parent, str):
         model_ok(parent, seen)
@@ -84,7 +97,10 @@ for ident in sorted(ids):
     model_ok(json.loads(definition.read_text())["model"]["model"])
     blockstate = ASSETS / "blockstates" / (name + ".json")
     if blockstate.is_file():
-        for variant in json.loads(blockstate.read_text()).get("variants", {}).values():
+        state = json.loads(blockstate.read_text())
+        if "forge_marker" in state:
+            problems.append(f"{ident}: Java-only forge_marker in blockstate")
+        for variant in state.get("variants", {}).values():
             model_ok(variant["model"])
     if ident not in tab_ids:
         problems.append(f"{ident}: missing from creative tab")

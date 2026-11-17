@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "projecte:block/condenser_mk2"
+    "model": "projecte:item/void_ring"
   }
 }

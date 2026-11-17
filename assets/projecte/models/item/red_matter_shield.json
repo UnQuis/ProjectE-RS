@@ -1,13 +1,5 @@
 {
   "parent": "minecraft:item/shield",
-  "overrides": [
-    {
-      "model": "projecte:item/red_matter_shield_blocking",
-      "predicate": {
-        "projecte:blocking": 1.0
-      }
-    }
-  ],
   "textures": {
     "particle": "projecte:block/dark_matter_block"
   }

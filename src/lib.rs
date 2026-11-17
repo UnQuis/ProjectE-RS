@@ -3,8 +3,9 @@
 //! Native mod against the generated `mod_api` (API 0.2). The crate root holds
 //! the one `#[horizon_mod] impl Hooks`; per-object moments live in Parts.
 
-use std::collections::BTreeSet;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::collections::{BTreeSet, HashMap};
+use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 use mod_api::*;
 
@@ -38,8 +39,17 @@ const PROJECTE_MENU_SLOTS: usize = ui::table::TABLE_SLOTS;
 const TABLE_BLOCK_ENTITY: &str = "projecte:transmutation_table";
 
 
+struct PendingNova {
+    pos: [i32; 3],
+    radius: f32,
+    dimension: String,
+}
+
 #[derive(Default)]
-struct ProjectE;
+struct ProjectE {
+    next_nova: AtomicU64,
+    pending_novas: Mutex<HashMap<u64, PendingNova>>,
+}
 
 #[mod_api::horizon_mod]
 impl Hooks for ProjectE {
@@ -76,6 +86,16 @@ impl Hooks for ProjectE {
                 .build();
             r.block_entity_part(&kind, ProjectEBlockEntity)
                 .expect("machine block entity part");
+        }
+
+        for id in [machines::INTERDICTION_TORCH, machines::INTERDICTION_LANTERN] {
+            let name = id.rsplit(':').next().unwrap_or(id);
+            let kind = r
+                .block_entity_type(&format!("{name}_entity"))
+                .blocks(&[id])
+                .build();
+            r.block_entity_part(&kind, ProjectEBlockEntity)
+                .expect("interdiction block entity part");
         }
 
         let stone = r.item_key(PHILOSOPHERS_STONE);
@@ -193,16 +213,24 @@ impl Hooks for ProjectE {
         // for the interface and the sun, and the chest box for every colour.
         block_shaped(
             event,
-            "projecte:interdiction_torch",
+            machines::INTERDICTION_TORCH,
             "minecraft:torch",
             [7.0 / 16.0, 0.0, 7.0 / 16.0, 9.0 / 16.0, 10.0 / 16.0, 9.0 / 16.0],
         );
+        if let Some(declaration) = event.blocks.last_mut() {
+            declaration.properties.light = Some(machines::INTERDICTION_LIGHT);
+        }
         block_shaped(
             event,
-            "projecte:interdiction_lantern",
+            machines::INTERDICTION_LANTERN,
             "minecraft:lantern",
             [5.0 / 16.0, 0.0, 5.0 / 16.0, 11.0 / 16.0, 10.0 / 16.0, 11.0 / 16.0],
         );
+        if let Some(declaration) = event.blocks.last_mut() {
+            declaration.properties.light = Some(machines::INTERDICTION_LIGHT);
+        }
+        block_shaped(event, machines::NOVA_CATALYST, "minecraft:furnace", FULL_CUBE);
+        block_shaped(event, machines::NOVA_CATACLYSM, "minecraft:furnace", FULL_CUBE);
         block_shaped(event, "projecte:transmutation_interface", "minecraft:furnace", FULL_CUBE);
         block_shaped(event, "projecte:compact_sun", "minecraft:furnace", FULL_CUBE);
         const CHEST_BOX: [f64; 6] = [
@@ -234,8 +262,6 @@ impl Hooks for ProjectE {
         item(event, data::TOME_ID, "minecraft:book", 1);
         item(event, "projecte:magenta_matter", "minecraft:redstone", 64);
         item(event, "projecte:repair_talisman", "minecraft:book", 1);
-        item(event, "projecte:nova_catalyst", "minecraft:nether_star", 64);
-        item(event, "projecte:nova_cataclysm", "minecraft:nether_star", 64);
         item(event, "projecte:divining_rod_1", "minecraft:stick", 1);
         item(event, "projecte:divining_rod_2", "minecraft:stick", 1);
         item(event, "projecte:divining_rod_3", "minecraft:stick", 1);
@@ -252,6 +278,28 @@ impl Hooks for ProjectE {
             ("rm_hammer", "iron_pickaxe"), ("rm_helmet", "iron_helmet"),
             ("rm_pick", "iron_pickaxe"), ("rm_shears", "iron_shears"),
             ("rm_shovel", "iron_shovel"), ("rm_sword", "iron_sword"),
+        ] {
+            item(event, &format!("projecte:{id}"), &format!("minecraft:{template}"), 1);
+        }
+        // Phase 2: rings, amulets, stones, lenses and relics.
+        for (id, template) in [
+            ("iron_band", "iron_ingot"), ("volcanite_amulet", "nether_star"),
+            ("evertide_amulet", "nether_star"), ("black_hole_band", "iron_ingot"),
+            ("zero_ring", "iron_ingot"), ("harvest_goddess_band", "iron_ingot"),
+            ("ignition_ring", "iron_ingot"), ("swiftwolf_rending_gale", "nether_star"),
+            ("arcana_ring", "iron_ingot"), ("void_ring", "iron_ingot"),
+            ("body_stone", "diamond"), ("soul_stone", "diamond"),
+            ("mind_stone", "diamond"), ("life_stone", "diamond"),
+            ("destruction_catalyst", "blaze_powder"), ("hyperkinetic_lens", "glass"),
+            ("catalytic_lens", "glass"), ("mercurial_eye", "diamond"),
+            ("watch_of_flowing_time", "diamond"), ("dark_matter_shield", "iron_chestplate"),
+            ("red_matter_shield", "iron_chestplate"), ("gem_of_eternal_density", "diamond"),
+            ("dark_matter_trident", "trident"), ("red_matter_trident", "trident"),
+            ("rm_leggings", "iron_leggings"), ("archangel_smite", "bow"),
+            ("gem_boots", "iron_boots"), ("gem_chestplate", "iron_chestplate"),
+            ("gem_helmet", "iron_helmet"), ("gem_leggings", "iron_leggings"),
+            ("basic_alchemical_book", "book"), ("infinite_fuel", "coal"),
+            ("infinite_steak", "cooked_beef"),
         ] {
             item(event, &format!("projecte:{id}"), &format!("minecraft:{template}"), 1);
         }
@@ -353,7 +401,40 @@ impl Hooks for ProjectE {
             machines::collect(host, pos, acting.uuid());
             return Flow::Cancel;
         }
+        if let Some(radius) = machines::nova_radius(&id) {
+            let token = self.next_nova.fetch_add(1, Ordering::Relaxed) + 1;
+            let dimension = event.click.dimension.key().id().to_owned();
+            self.pending_novas
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .insert(token, PendingNova { pos, radius, dimension });
+            if let Err(error) = host.schedule_task(machines::NOVA_FUSE_TICKS, token) {
+                self.pending_novas
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .remove(&token);
+                eprintln!("[projecte] could not schedule a nova: {error:?}");
+            }
+            return Flow::Cancel;
+        }
         Flow::Continue
+    }
+
+    fn scheduled_task(&self, host: &mut dyn ServerHost, event: &mut ScheduledTaskEvent<'_>) {
+        let Some(pending) = self
+            .pending_novas
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .remove(&event.token)
+        else {
+            return;
+        };
+        let Some(level) = host.level(&pending.dimension) else {
+            return;
+        };
+        if !machines::nova_detonate(host, level, pending.pos, pending.radius) {
+            eprintln!("[projecte] nova detonation at {:?} was refused", pending.pos);
+        }
     }
 
     fn item_crafted(&self, host: &mut dyn ServerHost, event: &mut ItemCraftedEvent<'_>) {

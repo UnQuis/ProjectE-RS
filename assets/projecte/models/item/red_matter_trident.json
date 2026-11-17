@@ -26,14 +26,6 @@
   },
   "gui_light": "front",
   "loader": "neoforge:separate_transforms",
-  "overrides": [
-    {
-      "model": "projecte:item/red_matter_trident_throwing",
-      "predicate": {
-        "projecte:throwing": 1.0
-      }
-    }
-  ],
   "perspectives": {
     "fixed": {
       "parent": "projecte:item/red_matter_trident_gui"
