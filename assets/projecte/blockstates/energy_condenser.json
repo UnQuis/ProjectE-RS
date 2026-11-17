@@ -1,7 +1,7 @@
 {
   "variants": {
     "": {
-      "model": "projecte:block/condenser_mk3"
+      "model": "projecte:block/condenser_mk1"
     }
   }
 }

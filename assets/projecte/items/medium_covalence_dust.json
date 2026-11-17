@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "minecraft:item/redstone"
+    "model": "projecte:item/medium_covalence_dust"
   }
 }

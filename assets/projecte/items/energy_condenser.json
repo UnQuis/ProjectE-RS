@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "projecte:item/condenser_mk3"
+    "model": "projecte:block/condenser_mk1"
   }
 }
