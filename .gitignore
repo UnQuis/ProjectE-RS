@@ -21,3 +21,6 @@ Thumbs.db
 .env.*
 !.env.example
 
+# Pinned generated Horizon mod SDK (restored from the SDK release asset)
+/.horizon/
+

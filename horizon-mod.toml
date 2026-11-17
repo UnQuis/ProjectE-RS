@@ -1,0 +1,13 @@
+id = "projecte"
+name = "ProjectE-RS"
+version = "0.1.0"
+description = "Equivalent Exchange mechanics for Minecraft 26.3 on Horizon"
+authors = []
+api = "0.2"
+side = "both"
+capabilities = ["registries"]
+
+[native]
+game = "26.3"
+horizon = "4dc6455d4a6773224792eb1f121a9b939dff3170"
+mixins = "e59da9094f0c2fdda6c627fe9eff22dec6a906f0"
