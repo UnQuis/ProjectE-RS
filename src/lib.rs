@@ -4,8 +4,13 @@
 //! the one `#[horizon_mod] impl Hooks`; per-object moments live in Parts.
 
 use std::collections::BTreeSet;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use mod_api::*;
+
+/// Set by `data_maps_updated`; consumed on the next `server_tick` when the
+/// game has left the Reloading phase and `host.players()` is available.
+static PRUNE_PENDING: AtomicBool = AtomicBool::new(false);
 
 mod alchemical;
 pub mod condenser;
@@ -74,13 +79,18 @@ impl Hooks for ProjectE {
         r.menu_part(ui::atlas::MENU, TableMenuPart);
     }
 
-    /// The EMC data map was rebuilt on a server reload: forget learned ids
-    /// that no longer have a value, on the authoritative side only.
-    fn data_maps_updated(&self, host: HostSide<'_>, event: &mut DataMapsUpdatedEvent<'_>) {
-        let HostSide::Server(host) = host else {
-            return;
-        };
+    /// The EMC data map was rebuilt on a server reload. Defer pruning to the
+    /// next server tick: `host.players()` is not available during the Reloading
+    /// phase in which this hook runs, and calling it panics the server.
+    fn data_maps_updated(&self, _host: HostSide<'_>, event: &mut DataMapsUpdatedEvent<'_>) {
         if event.registry != "minecraft:item" || event.cause != DataMapsUpdateCause::ServerReload {
+            return;
+        }
+        PRUNE_PENDING.store(true, Ordering::Release);
+    }
+
+    fn server_tick(&self, host: &mut dyn ServerHost, _event: &mut ServerTickEvent<'_>) {
+        if !PRUNE_PENDING.swap(false, Ordering::AcqRel) {
             return;
         }
         for player in host.players().server_players() {
@@ -182,12 +192,12 @@ impl Hooks for ProjectE {
             "projecte emc set <player:player> <amount:integer>",
             2,
         ));
-        event.commands.push(Command::new("projecte learn [item:word]"));
+        event.commands.push(Command::new("projecte learn [item:id]"));
         event.commands.push(Command::new(
-            "projecte transmute <item:word> [count:integer]",
+            "projecte transmute <item:id> [count:integer]",
         ));
         event.commands.push(Command::new("projecte table"));
-        event.commands.push(Command::new("projecte value <item:word>"));
+        event.commands.push(Command::new("projecte value <item:id>"));
         event.commands.push(Command::new("projecte reset"));
         event.commands.push(Command::new("projecte roadmap"));
         event.commands.push(Command::new("projecte deposit"));

@@ -1,0 +1,7 @@
+{
+  "parent": "projecte:block/power_flower/base",
+  "textures": {
+    "collector": "projecte:block/collector/red",
+    "relay": "projecte:block/relay/red"
+  }
+}
