@@ -20,7 +20,7 @@ const CONDENSER_MK3_INPUT: &str =
     include_str!("../data/projecte/horizon/menu/condenser_mk3_input.json");
 const CONDENSER_MK3_OUTPUT: &str =
     include_str!("../data/projecte/horizon/menu/condenser_mk3_output.json");
-const ENERGY_CONDENSER: &str = include_str!("../data/projecte/horizon/menu/energy_condenser.json");
+const ENERGY_CONDENSER: &str = include_str!("../data/projecte/horizon/menu/condenser_mk1.json");
 const RELAY_MK1: &str = include_str!("../data/projecte/horizon/menu/relay_mk1.json");
 const RELAY_MK2: &str = include_str!("../data/projecte/horizon/menu/relay_mk2.json");
 const RELAY_MK3: &str = include_str!("../data/projecte/horizon/menu/relay_mk3.json");
@@ -37,7 +37,7 @@ const FILES: &[(&str, &str)] = &[
     ("condenser_mk3", CONDENSER_MK3),
     ("condenser_mk3_input", CONDENSER_MK3_INPUT),
     ("condenser_mk3_output", CONDENSER_MK3_OUTPUT),
-    ("energy_condenser", ENERGY_CONDENSER),
+    ("condenser_mk1", ENERGY_CONDENSER),
     ("relay_mk1", RELAY_MK1),
     ("relay_mk2", RELAY_MK2),
     ("relay_mk3", RELAY_MK3),
@@ -141,7 +141,7 @@ mod tests {
             ("relay_mk1", 8, 3, Some(7)),
             ("relay_mk2", 14, 3, Some(13)),
             ("relay_mk3", 22, 3, Some(21)),
-            ("energy_condenser", 91, 2, None),
+            ("condenser_mk1", 91, 2, None),
             ("alchemical_chest", 104, 0, None),
         ] {
             let spec = specs[name];

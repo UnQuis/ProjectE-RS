@@ -189,6 +189,36 @@ impl Hooks for ProjectE {
             "minecraft:crafting_table",
             [0.0, 0.0, 0.0, 1.0, 0.25, 1.0],
         );
+        // Hit boxes follow each model: a thin torch and lantern, full cubes
+        // for the interface and the sun, and the chest box for every colour.
+        block_shaped(
+            event,
+            "projecte:interdiction_torch",
+            "minecraft:torch",
+            [7.0 / 16.0, 0.0, 7.0 / 16.0, 9.0 / 16.0, 10.0 / 16.0, 9.0 / 16.0],
+        );
+        block_shaped(
+            event,
+            "projecte:interdiction_lantern",
+            "minecraft:lantern",
+            [5.0 / 16.0, 0.0, 5.0 / 16.0, 11.0 / 16.0, 10.0 / 16.0, 11.0 / 16.0],
+        );
+        block_shaped(event, "projecte:transmutation_interface", "minecraft:furnace", FULL_CUBE);
+        block_shaped(event, "projecte:compact_sun", "minecraft:furnace", FULL_CUBE);
+        const CHEST_BOX: [f64; 6] = [
+            1.0 / 16.0, 0.0, 1.0 / 16.0, 15.0 / 16.0, 15.0 / 16.0, 15.0 / 16.0,
+        ];
+        for color in [
+            "white", "orange", "magenta", "light_blue", "yellow", "lime", "pink", "gray",
+            "light_gray", "cyan", "purple", "blue", "brown", "green", "red", "black",
+        ] {
+            block_shaped(
+                event,
+                &format!("projecte:{color}_advanced_alchemical_chest"),
+                "minecraft:chest",
+                CHEST_BOX,
+            );
+        }
     }
 
     fn items(&self, _context: &RegistrationContext, event: &mut ItemsEvent<'_>) {
@@ -209,6 +239,22 @@ impl Hooks for ProjectE {
         item(event, "projecte:divining_rod_1", "minecraft:stick", 1);
         item(event, "projecte:divining_rod_2", "minecraft:stick", 1);
         item(event, "projecte:divining_rod_3", "minecraft:stick", 1);
+        // Matter tools and armour: vanilla templates until original models are
+        // imported; their ProjectE item models already exist in assets/.
+        for (id, template) in [
+            ("dm_axe", "iron_axe"), ("dm_boots", "iron_boots"),
+            ("dm_chestplate", "iron_chestplate"), ("dm_hammer", "iron_pickaxe"),
+            ("dm_helmet", "iron_helmet"), ("dm_hoe", "iron_hoe"),
+            ("dm_leggings", "iron_leggings"), ("dm_pick", "iron_pickaxe"),
+            ("dm_shears", "iron_shears"), ("dm_shovel", "iron_shovel"),
+            ("dm_sword", "iron_sword"), ("rm_axe", "iron_axe"),
+            ("rm_boots", "iron_boots"), ("rm_chestplate", "iron_chestplate"),
+            ("rm_hammer", "iron_pickaxe"), ("rm_helmet", "iron_helmet"),
+            ("rm_pick", "iron_pickaxe"), ("rm_shears", "iron_shears"),
+            ("rm_shovel", "iron_shovel"), ("rm_sword", "iron_sword"),
+        ] {
+            item(event, &format!("projecte:{id}"), &format!("minecraft:{template}"), 1);
+        }
         let fuel_templates = [
             "minecraft:coal",
             "minecraft:blaze_powder",

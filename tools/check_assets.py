@@ -19,21 +19,35 @@ SRC = ROOT / "src"
 # src/lib.rs; a new id must be added here, to the assets and to the creative tab
 # in the same commit.
 REGISTERED = """
-projecte:transmutation_table projecte:energy_collector projecte:energy_collector_mk2
-projecte:energy_collector_mk3 projecte:antimatter_relay projecte:antimatter_relay_mk2
-projecte:antimatter_relay_mk3 projecte:energy_condenser projecte:condenser_mk2
-projecte:condenser_mk3 projecte:alchemical_chest projecte:alchemical_coal_block
-projecte:mobius_fuel_block projecte:aeternalis_fuel_block projecte:dark_matter_block
-projecte:red_matter_block projecte:magenta_matter_block projecte:dm_pedestal
-projecte:dm_furnace projecte:rm_furnace projecte:alchemical_barrel
-projecte:transmutation_tablet projecte:philosophers_stone projecte:klein_star_ein
-projecte:klein_star_zwei projecte:klein_star_drei projecte:klein_star_vier
-projecte:klein_star_sphere projecte:klein_star_omega projecte:dark_matter
-projecte:red_matter projecte:magenta_matter projecte:low_covalence_dust
-projecte:medium_covalence_dust projecte:high_covalence_dust projecte:tome
-projecte:alchemical_coal projecte:mobius_fuel projecte:aeternalis_fuel
-projecte:repair_talisman projecte:nova_catalyst projecte:nova_cataclysm
-projecte:divining_rod_1 projecte:divining_rod_2 projecte:divining_rod_3
+projecte:aeternalis_fuel projecte:aeternalis_fuel_block projecte:alchemical_barrel
+projecte:alchemical_chest projecte:alchemical_coal projecte:alchemical_coal_block
+projecte:black_advanced_alchemical_chest projecte:blue_advanced_alchemical_chest projecte:brown_advanced_alchemical_chest
+projecte:collector_mk1 projecte:collector_mk2 projecte:collector_mk3
+projecte:compact_sun projecte:condenser_mk1 projecte:condenser_mk2
+projecte:condenser_mk3 projecte:cyan_advanced_alchemical_chest projecte:dark_matter
+projecte:dark_matter_block projecte:divining_rod_1 projecte:divining_rod_2
+projecte:divining_rod_3 projecte:dm_axe projecte:dm_boots
+projecte:dm_chestplate projecte:dm_furnace projecte:dm_hammer
+projecte:dm_helmet projecte:dm_hoe projecte:dm_leggings
+projecte:dm_pedestal projecte:dm_pick projecte:dm_shears
+projecte:dm_shovel projecte:dm_sword projecte:gray_advanced_alchemical_chest
+projecte:green_advanced_alchemical_chest projecte:high_covalence_dust projecte:interdiction_lantern
+projecte:interdiction_torch projecte:klein_star_drei projecte:klein_star_ein
+projecte:klein_star_omega projecte:klein_star_sphere projecte:klein_star_vier
+projecte:klein_star_zwei projecte:light_blue_advanced_alchemical_chest projecte:light_gray_advanced_alchemical_chest
+projecte:lime_advanced_alchemical_chest projecte:low_covalence_dust projecte:magenta_advanced_alchemical_chest
+projecte:magenta_matter projecte:magenta_matter_block projecte:medium_covalence_dust
+projecte:mobius_fuel projecte:mobius_fuel_block projecte:nova_cataclysm
+projecte:nova_catalyst projecte:orange_advanced_alchemical_chest projecte:philosophers_stone
+projecte:pink_advanced_alchemical_chest projecte:purple_advanced_alchemical_chest projecte:red_advanced_alchemical_chest
+projecte:red_matter projecte:red_matter_block projecte:relay_mk1
+projecte:relay_mk2 projecte:relay_mk3 projecte:repair_talisman
+projecte:rm_axe projecte:rm_boots projecte:rm_chestplate
+projecte:rm_furnace projecte:rm_hammer projecte:rm_helmet
+projecte:rm_pick projecte:rm_shears projecte:rm_shovel
+projecte:rm_sword projecte:tome projecte:transmutation_interface
+projecte:transmutation_table projecte:transmutation_tablet projecte:white_advanced_alchemical_chest
+projecte:yellow_advanced_alchemical_chest
 """.split()
 ids = set(REGISTERED)
 problems = []

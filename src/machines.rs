@@ -10,17 +10,30 @@ use mod_api::*;
 use crate::{condenser, data, emc, energy};
 
 pub(crate) const COLLECTORS: [&str; 3] = [
-    "projecte:energy_collector",
-    "projecte:energy_collector_mk2",
-    "projecte:energy_collector_mk3",
+    "projecte:collector_mk1",
+    "projecte:collector_mk2",
+    "projecte:collector_mk3",
 ];
 pub(crate) const RELAYS: [&str; 3] = [
-    "projecte:antimatter_relay",
-    "projecte:antimatter_relay_mk2",
-    "projecte:antimatter_relay_mk3",
+    "projecte:relay_mk1",
+    "projecte:relay_mk2",
+    "projecte:relay_mk3",
 ];
 pub(crate) const ALCHEMICAL_CHEST: &str = "projecte:alchemical_chest";
 const ALCHEMICAL_CHEST_BLOCK_ENTITY: &str = "projecte:alchemical_chest";
+
+/// Interdiction torch/lantern: ProjectE's repel blocks.
+pub(crate) const INTERDICTION_TORCH: &str = "projecte:interdiction_torch";
+pub(crate) const INTERDICTION_LANTERN: &str = "projecte:interdiction_lantern";
+pub(crate) const INTERDICTION_RADIUS: f64 = 8.0;
+pub(crate) const INTERDICTION_LIGHT: u8 = 14;
+
+/// Nova explosive blocks: fuse is vanilla TNT's 80 ticks divided by four.
+pub(crate) const NOVA_CATALYST: &str = "projecte:nova_catalyst";
+pub(crate) const NOVA_CATACLYSM: &str = "projecte:nova_cataclysm";
+pub(crate) const NOVA_FUSE_TICKS: u32 = 20;
+pub(crate) const NOVA_CATALYST_RADIUS: f32 = 16.0;
+pub(crate) const NOVA_CATACLYSM_RADIUS: f32 = 48.0;
 
 pub(crate) const BLOCK_ENTITY: &str = "projecte:machine";
 const EMC_KEY: &str = "emc";
@@ -133,6 +146,100 @@ pub(crate) fn is_machine(block: &str) -> bool {
     Machine::of(block).is_some()
 }
 
+pub(crate) fn is_interdiction(block: &str) -> bool {
+    block == INTERDICTION_TORCH || block == INTERDICTION_LANTERN
+}
+
+pub(crate) fn nova_radius(block: &str) -> Option<f32> {
+    match block {
+        NOVA_CATALYST => Some(NOVA_CATALYST_RADIUS),
+        NOVA_CATACLYSM => Some(NOVA_CATACLYSM_RADIUS),
+        _ => None,
+    }
+}
+
+/// ProjectE's `WorldHelper.repelEntity`: push away with
+/// `(entity - center) / (1.5 * (distance + 0.1))`.
+pub(crate) fn repel_vector(center: [f64; 3], entity: [f64; 3]) -> [f64; 3] {
+    let delta = [
+        entity[0] - center[0],
+        entity[1] - center[1],
+        entity[2] - center[2],
+    ];
+    let distance = delta
+        .iter()
+        .map(|value| value * value)
+        .sum::<f64>()
+        .sqrt()
+        + 0.1;
+    let scale = 1.0 / (1.5 * distance);
+    [delta[0] * scale, delta[1] * scale, delta[2] * scale]
+}
+
+/// Repel nearby mobs and projectiles from an interdiction block.
+///
+/// Only server-authoritative velocity writes are made; the client sees the
+/// result through the game's normal entity sync.
+pub(crate) fn interdiction_tick(host: &mut dyn ServerHost, level: LevelRef, pos: [i32; 3]) -> u32 {
+    let center = [
+        pos[0] as f64 + 0.5,
+        pos[1] as f64 + 0.5,
+        pos[2] as f64 + 0.5,
+    ];
+    let min = center.map(|value| value - INTERDICTION_RADIUS);
+    let max = center.map(|value| value + INTERDICTION_RADIUS);
+    let Some(entities) = level.entities_in(host, min, max) else {
+        return 0;
+    };
+    let mut repelled = 0;
+    for entity in entities {
+        // Vanilla's Mob category is the observable "mob" test; spectators and
+        // grounded projectiles are excluded by the game's own classification.
+        let is_mob = entity.classification(host).is_some();
+        if !is_mob || entity.on_ground(host).unwrap_or(false) {
+            continue;
+        }
+        let Some(at) = entity.position(host) else {
+            continue;
+        };
+        let push = repel_vector(center, at);
+        let velocity = entity.velocity(host).unwrap_or([0.0, 0.0, 0.0]);
+        if entity.set_velocity(host, [
+            velocity[0] + push[0],
+            velocity[1] + push[1],
+            velocity[2] + push[2],
+        ]) {
+            repelled += 1;
+        }
+    }
+    repelled
+}
+
+/// Detonate a nova charge without fire, as ProjectE's `NovaExplosion` does.
+pub(crate) fn nova_detonate(
+    host: &mut dyn ServerHost,
+    level: LevelRef,
+    pos: [i32; 3],
+    radius: f32,
+) -> bool {
+    let center = [
+        pos[0] as f64 + 0.5,
+        pos[1] as f64 + 0.5,
+        pos[2] as f64 + 0.5,
+    ];
+    level
+        .explode(
+            host,
+            None,
+            center,
+            radius,
+            false,
+            ExplosionInteraction::Tnt,
+            ExplosionSettings::default(),
+        )
+        .is_ok()
+}
+
 pub(crate) fn is_collectable(block: &str) -> bool {
     matches!(
         Machine::of(block),
@@ -141,6 +248,9 @@ pub(crate) fn is_collectable(block: &str) -> bool {
 }
 
 pub(crate) fn block_entity(block: &str) -> Option<(String, Compound)> {
+    if is_interdiction(block) {
+        return Some((format!("{block}_entity"), Compound::new()));
+    }
     if block == ALCHEMICAL_CHEST {
         return Some((ALCHEMICAL_CHEST_BLOCK_ENTITY.to_owned(), Compound::new()));
     }
@@ -869,7 +979,7 @@ mod tests {
             (RELAYS[0], 8, "projecte:relay_mk1", vec![7]),
             (RELAYS[1], 14, "projecte:relay_mk2", vec![13]),
             (RELAYS[2], 22, "projecte:relay_mk3", vec![21]),
-            (condenser::ENERGY_CONDENSER, 91, "projecte:energy_condenser", (0..91).collect()),
+            (condenser::ENERGY_CONDENSER, 91, condenser::ENERGY_CONDENSER, (0..91).collect()),
             (condenser::ENERGY_CONDENSER_MK2, 84, condenser::ENERGY_CONDENSER_MK2, (42..84).collect()),
             (
                 condenser::ENERGY_CONDENSER_MK3,

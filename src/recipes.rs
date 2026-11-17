@@ -68,15 +68,15 @@ pub(crate) const ALCHEMICAL_COAL_BLOCK: &str = "projecte:alchemical_coal_block";
 pub(crate) const MOBIUS_FUEL_BLOCK: &str = "projecte:mobius_fuel_block";
 pub(crate) const AETERNALIS_FUEL_BLOCK: &str = "projecte:aeternalis_fuel_block";
 
-pub(crate) const COLLECTOR: &str = "projecte:energy_collector";
-pub(crate) const COLLECTOR_MK2: &str = "projecte:energy_collector_mk2";
-pub(crate) const COLLECTOR_MK3: &str = "projecte:energy_collector_mk3";
-pub(crate) const RELAY: &str = "projecte:antimatter_relay";
-pub(crate) const RELAY_MK2: &str = "projecte:antimatter_relay_mk2";
-pub(crate) const RELAY_MK3: &str = "projecte:antimatter_relay_mk3";
+pub(crate) const COLLECTOR: &str = "projecte:collector_mk1";
+pub(crate) const COLLECTOR_MK2: &str = "projecte:collector_mk2";
+pub(crate) const COLLECTOR_MK3: &str = "projecte:collector_mk3";
+pub(crate) const RELAY: &str = "projecte:relay_mk1";
+pub(crate) const RELAY_MK2: &str = "projecte:relay_mk2";
+pub(crate) const RELAY_MK3: &str = "projecte:relay_mk3";
 pub(crate) const TABLE: &str = "projecte:transmutation_table";
 pub(crate) const ALCHEMICAL_CHEST: &str = "projecte:alchemical_chest";
-pub(crate) const ENERGY_CONDENSER: &str = "projecte:energy_condenser";
+pub(crate) const ENERGY_CONDENSER: &str = "projecte:condenser_mk1";
 pub(crate) const KLEIN_STAR_EIN: &str = "projecte:klein_star_ein";
 pub(crate) const KLEIN_STAR_ZWEI: &str = "projecte:klein_star_zwei";
 pub(crate) const KLEIN_STAR_DREI: &str = "projecte:klein_star_drei";
@@ -106,6 +106,26 @@ pub(crate) const NOVA_CATACLYSM: &str = "projecte:nova_cataclysm";
 pub(crate) const DIVINING_ROD_1: &str = "projecte:divining_rod_1";
 pub(crate) const DIVINING_ROD_2: &str = "projecte:divining_rod_2";
 pub(crate) const DIVINING_ROD_3: &str = "projecte:divining_rod_3";
+pub(crate) const DM_AXE: &str = "projecte:dm_axe";
+pub(crate) const DM_BOOTS: &str = "projecte:dm_boots";
+pub(crate) const DM_CHESTPLATE: &str = "projecte:dm_chestplate";
+pub(crate) const DM_HAMMER: &str = "projecte:dm_hammer";
+pub(crate) const DM_HELMET: &str = "projecte:dm_helmet";
+pub(crate) const DM_HOE: &str = "projecte:dm_hoe";
+pub(crate) const DM_LEGGINGS: &str = "projecte:dm_leggings";
+pub(crate) const DM_PICK: &str = "projecte:dm_pick";
+pub(crate) const DM_SHEARS: &str = "projecte:dm_shears";
+pub(crate) const DM_SHOVEL: &str = "projecte:dm_shovel";
+pub(crate) const DM_SWORD: &str = "projecte:dm_sword";
+pub(crate) const RM_AXE: &str = "projecte:rm_axe";
+pub(crate) const RM_BOOTS: &str = "projecte:rm_boots";
+pub(crate) const RM_CHESTPLATE: &str = "projecte:rm_chestplate";
+pub(crate) const RM_HAMMER: &str = "projecte:rm_hammer";
+pub(crate) const RM_HELMET: &str = "projecte:rm_helmet";
+pub(crate) const RM_PICK: &str = "projecte:rm_pick";
+pub(crate) const RM_SHEARS: &str = "projecte:rm_shears";
+pub(crate) const RM_SHOVEL: &str = "projecte:rm_shovel";
+pub(crate) const RM_SWORD: &str = "projecte:rm_sword";
 
 /// Every recipe that needs the Philosopher's Stone without consuming it.
 ///
@@ -165,7 +185,7 @@ pub(crate) const SHAPED: &[ShapedRecipe] = &[
     // ProjectE `collector_mk1`: glowstone ring, glass above a diamond-block
     // core, furnace below it. The glass is part of the shape, not decoration.
     ShapedRecipe {
-        name: "energy_collector",
+        name: "collector_mk1",
         pattern: ["GTG", "GDG", "GFG"],
         key: &[
             ('G', GLOWSTONE),
@@ -178,7 +198,7 @@ pub(crate) const SHAPED: &[ShapedRecipe] = &[
     },
     // ProjectE `relay_mk1`: seven obsidian, glass above the diamond-block core.
     ShapedRecipe {
-        name: "antimatter_relay",
+        name: "relay_mk1",
         pattern: ["OSO", "ODO", "OOO"],
         key: &[('O', OBSIDIAN), ('S', GLASS), ('D', DIAMOND_BLOCK)],
         result: RELAY,
@@ -204,7 +224,7 @@ pub(crate) const SHAPED: &[ShapedRecipe] = &[
     },
     // Energy Condenser MK1: obsidian corners, diamond sides, Alchemical Chest core.
     ShapedRecipe {
-        name: "energy_condenser",
+        name: "condenser_mk1",
         pattern: ["ODO", "DCD", "ODO"],
         key: &[('O', OBSIDIAN), ('D', DIAMOND), ('C', ALCHEMICAL_CHEST)],
         result: ENERGY_CONDENSER,
@@ -213,14 +233,14 @@ pub(crate) const SHAPED: &[ShapedRecipe] = &[
     // ProjectE `collector_mk2` / `mk3`: seven glowstone, the matter tier in
     // the TOP-CENTRE slot, the previous collector in the middle.
     ShapedRecipe {
-        name: "energy_collector_mk2",
+        name: "collector_mk2",
         pattern: ["GUG", "GPG", "GGG"],
         key: &[('G', GLOWSTONE), ('U', DARK_MATTER), ('P', COLLECTOR)],
         result: COLLECTOR_MK2,
         count: 1,
     },
     ShapedRecipe {
-        name: "energy_collector_mk3",
+        name: "collector_mk3",
         pattern: ["GUG", "GPG", "GGG"],
         key: &[('G', GLOWSTONE), ('U', RED_MATTER), ('P', COLLECTOR_MK2)],
         result: COLLECTOR_MK3,
@@ -228,14 +248,14 @@ pub(crate) const SHAPED: &[ShapedRecipe] = &[
     },
     // ProjectE `relay_mk2` / `mk3`: an obsidian ring, no glowstone at all.
     ShapedRecipe {
-        name: "antimatter_relay_mk2",
+        name: "relay_mk2",
         pattern: ["OUO", "OPO", "OOO"],
         key: &[('O', OBSIDIAN), ('U', DARK_MATTER), ('P', RELAY)],
         result: RELAY_MK2,
         count: 1,
     },
     ShapedRecipe {
-        name: "antimatter_relay_mk3",
+        name: "relay_mk3",
         pattern: ["OUO", "OPO", "OOO"],
         key: &[('O', OBSIDIAN), ('U', RED_MATTER), ('P', RELAY_MK2)],
         result: RELAY_MK3,
@@ -285,7 +305,7 @@ pub(crate) const SHAPED: &[ShapedRecipe] = &[
     },
     // ProjectE `condenser_mk2`: four of each matter block around MK1.
     ShapedRecipe {
-        name: "energy_condenser_mk2",
+        name: "condenser_mk2",
         pattern: ["RDR", "DCD", "RDR"],
         key: &[
             ('R', RED_MATTER_BLOCK),
@@ -314,7 +334,7 @@ pub(crate) const SHAPED: &[ShapedRecipe] = &[
     },
     // ProjectE `condenser_mk3`: five MK2 condensers and four magenta blocks.
     ShapedRecipe {
-        name: "energy_condenser_mk3",
+        name: "condenser_mk3",
         pattern: ["MCM", "CCC", "MCM"],
         key: &[('M', MAGENTA_MATTER_BLOCK), ('C', CONDENSER_MK2)],
         result: CONDENSER_MK3,
@@ -400,6 +420,148 @@ pub(crate) const SHAPED: &[ShapedRecipe] = &[
         pattern: ["DDD", "DSD", "DDD"],
         key: &[('D', HIGH_COVALENCE_DUST), ('S', DIVINING_ROD_2)],
         result: DIVINING_ROD_3,
+        count: 1,
+    },
+    // Phase 1 of the content audit: Dark/Red Matter tools and armour.
+    // Recipes and ids are from ProjectE (MIT, github.com/sinkillerj/ProjectE).
+    ShapedRecipe {
+        name: "dm_axe",
+        pattern: ["MM ", "MD ", " D "],
+        key: &[('M', DARK_MATTER), ('D', DIAMOND)],
+        result: DM_AXE,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "dm_boots",
+        pattern: ["M M", "M M", "   "],
+        key: &[('M', DARK_MATTER)],
+        result: DM_BOOTS,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "dm_chestplate",
+        pattern: ["M M", "MMM", "MMM"],
+        key: &[('M', DARK_MATTER)],
+        result: DM_CHESTPLATE,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "dm_hammer",
+        pattern: ["MDM", " D ", " D "],
+        key: &[('M', DARK_MATTER), ('D', DIAMOND)],
+        result: DM_HAMMER,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "dm_helmet",
+        pattern: ["MMM", "M M", "   "],
+        key: &[('M', DARK_MATTER)],
+        result: DM_HELMET,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "dm_hoe",
+        pattern: ["MM ", " D ", " D "],
+        key: &[('M', DARK_MATTER), ('D', DIAMOND)],
+        result: DM_HOE,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "dm_leggings",
+        pattern: ["MMM", "M M", "M M"],
+        key: &[('M', DARK_MATTER)],
+        result: DM_LEGGINGS,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "dm_pick",
+        pattern: ["MMM", " D ", " D "],
+        key: &[('M', DARK_MATTER), ('D', DIAMOND)],
+        result: DM_PICK,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "dm_shears",
+        pattern: [" M ", "D  ", "   "],
+        key: &[('M', DARK_MATTER), ('D', DIAMOND)],
+        result: DM_SHEARS,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "dm_shovel",
+        pattern: ["M  ", "D  ", "D  "],
+        key: &[('M', DARK_MATTER), ('D', DIAMOND)],
+        result: DM_SHOVEL,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "dm_sword",
+        pattern: ["M  ", "M  ", "D  "],
+        key: &[('M', DARK_MATTER), ('D', DIAMOND)],
+        result: DM_SWORD,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "rm_axe",
+        pattern: ["RR ", "RA ", " M "],
+        key: &[('R', RED_MATTER), ('A', DM_AXE), ('M', DARK_MATTER)],
+        result: RM_AXE,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "rm_boots",
+        pattern: ["MDM", "M M", "   "],
+        key: &[('M', RED_MATTER), ('D', DM_BOOTS)],
+        result: RM_BOOTS,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "rm_chestplate",
+        pattern: ["MDM", "MMM", "MMM"],
+        key: &[('M', RED_MATTER), ('D', DM_CHESTPLATE)],
+        result: RM_CHESTPLATE,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "rm_hammer",
+        pattern: ["RMR", " H ", " M "],
+        key: &[('R', RED_MATTER), ('H', DM_HAMMER), ('M', DARK_MATTER)],
+        result: RM_HAMMER,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "rm_helmet",
+        pattern: ["MMM", "MDM", "   "],
+        key: &[('M', RED_MATTER), ('D', DM_HELMET)],
+        result: RM_HELMET,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "rm_pick",
+        pattern: ["RRR", " P ", " M "],
+        key: &[('R', RED_MATTER), ('P', DM_PICK), ('M', DARK_MATTER)],
+        result: RM_PICK,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "rm_shears",
+        pattern: [" R ", "S  ", "   "],
+        key: &[('R', RED_MATTER), ('S', DM_SHEARS)],
+        result: RM_SHEARS,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "rm_shovel",
+        pattern: ["R  ", "S  ", "M  "],
+        key: &[('R', RED_MATTER), ('S', DM_SHOVEL), ('M', DARK_MATTER)],
+        result: RM_SHOVEL,
+        count: 1,
+    },
+    ShapedRecipe {
+        name: "rm_sword",
+        pattern: ["R  ", "R  ", "S  "],
+        key: &[('R', RED_MATTER), ('S', DM_SWORD)],
+        result: RM_SWORD,
         count: 1,
     },
 ];
@@ -928,6 +1090,32 @@ mod tests {
         }
     }
 
+    fn const_for(name: &str) -> &'static str {
+        match name {
+            "dm_axe" => DM_AXE,
+            "dm_boots" => DM_BOOTS,
+            "dm_chestplate" => DM_CHESTPLATE,
+            "dm_hammer" => DM_HAMMER,
+            "dm_helmet" => DM_HELMET,
+            "dm_hoe" => DM_HOE,
+            "dm_leggings" => DM_LEGGINGS,
+            "dm_pick" => DM_PICK,
+            "dm_shears" => DM_SHEARS,
+            "dm_shovel" => DM_SHOVEL,
+            "dm_sword" => DM_SWORD,
+            "rm_axe" => RM_AXE,
+            "rm_boots" => RM_BOOTS,
+            "rm_chestplate" => RM_CHESTPLATE,
+            "rm_hammer" => RM_HAMMER,
+            "rm_helmet" => RM_HELMET,
+            "rm_pick" => RM_PICK,
+            "rm_shears" => RM_SHEARS,
+            "rm_shovel" => RM_SHOVEL,
+            "rm_sword" => RM_SWORD,
+            other => panic!("unknown tool {other}"),
+        }
+    }
+
     fn shaped_cost(recipe: &ShapedRecipe) -> u64 {
         recipe
             .pattern
@@ -950,7 +1138,7 @@ mod tests {
 
         let condenser = SHAPED
             .iter()
-            .find(|recipe| recipe.name == "energy_condenser")
+            .find(|recipe| recipe.name == "condenser_mk1")
             .expect("Energy Condenser recipe");
         assert_eq!(condenser.result, ENERGY_CONDENSER);
         assert_eq!(
@@ -1051,19 +1239,19 @@ mod tests {
     fn machine_patterns_match_the_reference_layout() {
         let collector = SHAPED
             .iter()
-            .find(|recipe| recipe.name == "energy_collector")
+            .find(|recipe| recipe.name == "collector_mk1")
             .unwrap();
         assert_eq!(collector.pattern, ["GTG", "GDG", "GFG"]);
         let relay = SHAPED
             .iter()
-            .find(|recipe| recipe.name == "antimatter_relay")
+            .find(|recipe| recipe.name == "relay_mk1")
             .unwrap();
         assert_eq!(relay.pattern, ["OSO", "ODO", "OOO"]);
-        for name in ["energy_collector_mk2", "energy_collector_mk3"] {
+        for name in ["collector_mk2", "collector_mk3"] {
             let upgrade = SHAPED.iter().find(|recipe| recipe.name == name).unwrap();
             assert_eq!(upgrade.pattern, ["GUG", "GPG", "GGG"], "{name}");
         }
-        for name in ["antimatter_relay_mk2", "antimatter_relay_mk3"] {
+        for name in ["relay_mk2", "relay_mk3"] {
             let upgrade = SHAPED.iter().find(|recipe| recipe.name == name).unwrap();
             assert_eq!(upgrade.pattern, ["OUO", "OPO", "OOO"], "{name}");
         }
@@ -1163,11 +1351,11 @@ mod tests {
                 .find(|recipe| recipe.name == name)
                 .unwrap_or_else(|| panic!("{name} is missing"))
         };
-        let condenser = spec("energy_condenser_mk2");
+        let condenser = spec("condenser_mk2");
         assert_eq!(condenser.pattern, ["RDR", "DCD", "RDR"]);
         assert_eq!(condenser.result, CONDENSER_MK2);
         assert_eq!(spec("transmutation_tablet").pattern, ["DSD", "STS", "DSD"]);
-        assert_eq!(spec("energy_condenser_mk3").pattern, ["MCM", "CCC", "MCM"]);
+        assert_eq!(spec("condenser_mk3").pattern, ["MCM", "CCC", "MCM"]);
         assert_eq!(spec("magenta_matter").pattern, ["AAA", "RRR", "AAA"]);
         assert_eq!(spec("magenta_matter_block").pattern, ["MM ", "MM ", "   "]);
         assert_eq!(spec("dm_pedestal").pattern, ["RDR", "RDR", "DDD"]);
@@ -1199,8 +1387,8 @@ mod tests {
     #[test]
     fn newly_ported_values_match_their_recipe_costs() {
         for name in [
-            "energy_condenser_mk2",
-            "energy_condenser_mk3",
+            "condenser_mk2",
+            "condenser_mk3",
             "magenta_matter",
             "magenta_matter_block",
             "transmutation_tablet",
@@ -1234,4 +1422,37 @@ mod tests {
             );
         }
     }
+    #[test]
+    fn matter_tool_and_armour_recipes_are_emc_neutral() {
+        for name in [
+            "dm_axe",
+            "dm_boots",
+            "dm_chestplate",
+            "dm_hammer",
+            "dm_helmet",
+            "dm_hoe",
+            "dm_leggings",
+            "dm_pick",
+            "dm_shears",
+            "dm_shovel",
+            "dm_sword",
+            "rm_axe",
+            "rm_boots",
+            "rm_chestplate",
+            "rm_hammer",
+            "rm_helmet",
+            "rm_pick",
+            "rm_shears",
+            "rm_shovel",
+            "rm_sword",
+        ] {
+            let recipe = SHAPED
+                .iter()
+                .find(|recipe| recipe.name == name)
+                .unwrap_or_else(|| panic!("{name} is missing"));
+            assert_eq!(recipe.result, const_for(name), "{name}");
+            assert_eq!(shaped_cost(recipe), crate::emc::value(recipe.result), "{name}");
+        }
+    }
+
 }

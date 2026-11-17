@@ -24,7 +24,7 @@ pub struct CondenserSpec {
 }
 
 /// First playable Condenser tier.
-pub const ENERGY_CONDENSER: &str = "projecte:energy_condenser";
+pub const ENERGY_CONDENSER: &str = "projecte:condenser_mk1";
 pub const MK1_SPEC: CondenserSpec = CondenserSpec {
     capacity: 10_000,
     max_input_items_per_tick: 1,
