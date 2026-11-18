@@ -90,8 +90,10 @@ def model_ok(path, seen=None):
     loader = data.get("loader")
     if isinstance(loader, str) and loader.startswith("neoforge:"):
         problems.append(f"{path}: Java-only loader {loader}")
-    if "parent" not in data and "elements" not in data:
-        problems.append(f"{path}: model has neither parent nor elements")
+    # A `minecraft:special` base model carries only display transforms, as
+    # vanilla's item/shield.json does; the geometry comes from a part model.
+    if "parent" not in data and "elements" not in data and "display" not in data:
+        problems.append(f"{path}: model has neither parent, elements nor display")
     parent = data.get("parent", "")
     if isinstance(parent, str):
         model_ok(parent, seen)
@@ -101,6 +103,21 @@ def model_ok(path, seen=None):
             if not texture.is_file():
                 problems.append(f"missing texture {value}")
     return True
+
+
+def definition_models(node):
+    """Every model id a 26.3 item definition names, at any depth."""
+    found = []
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if key in ("model", "base") and isinstance(value, str):
+                found.append(value)
+            else:
+                found.extend(definition_models(value))
+    elif isinstance(node, list):
+        for value in node:
+            found.extend(definition_models(value))
+    return found
 
 
 # These have dedicated item/generated models: their items/<id>.json must point
@@ -119,10 +136,12 @@ for ident in sorted(ids):
     if not definition.is_file():
         problems.append(f"{ident}: missing items definition")
         continue
-    item_model = json.loads(definition.read_text())["model"]["model"]
-    if name in ITEM_MODEL_REQUIRED and not item_model.startswith("projecte:item/"):
-        problems.append(f"{ident}: expected an item model, got {item_model}")
-    model_ok(item_model)
+    item_models = definition_models(json.loads(definition.read_text()))
+    if name in ITEM_MODEL_REQUIRED:
+        if not item_models or any(not m.startswith("projecte:item/") for m in item_models):
+            problems.append(f"{ident}: expected item models, got {item_models}")
+    for item_model in item_models:
+        model_ok(item_model)
     blockstate = ASSETS / "blockstates" / (name + ".json")
     if blockstate.is_file():
         state = json.loads(blockstate.read_text())
@@ -138,6 +157,11 @@ for ident in sorted(ids):
 
 for ident in sorted(tab_ids - ids):
     problems.append(f"{ident}: in creative tab but not registered")
+
+# The special shield renderers return these geometry models from code, so no
+# item definition names them directly.
+for name in ("dark_matter_shield", "red_matter_shield"):
+    model_ok(f"projecte:item/{name}")
 
 print(f"checked {len(ids)} registered ids, {len(tab_ids)} creative tab ids")
 for problem in problems:

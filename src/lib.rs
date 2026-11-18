@@ -4,7 +4,7 @@
 //! the one `#[horizon_mod] impl Hooks`; per-object moments live in Parts.
 
 use std::collections::{BTreeMap, BTreeSet};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 use mod_api::*;
@@ -30,6 +30,7 @@ mod machines;
 mod menus;
 mod progression;
 mod recipes;
+mod shield;
 mod transaction;
 mod transmutation;
 #[allow(dead_code)] // The UI is a deliberate shell until its gameplay hooks are wired.
@@ -116,6 +117,10 @@ impl Hooks for ProjectE {
             let key = r.item_key(spec.id);
             r.item_part(key, ChargePart);
         }
+        for id in UNBREAKABLE {
+            let key = r.item_key(&format!("projecte:{id}"));
+            r.item_part(key, UnbreakablePart);
+        }
         r.menu_part(ui::atlas::MENU, TableMenuPart);
     }
 
@@ -157,6 +162,25 @@ impl Hooks for ProjectE {
 
     fn register_configs(&self, _host: HostSide<'_>, event: &mut RegisterConfigsEvent<'_>) {
         config::register(event);
+    }
+
+    /// Vanilla draws its shield through a special model: the base model carries
+    /// the display transforms and the renderer supplies the geometry. Our
+    /// shields use the same path so first-person, third-person, GUI and
+    /// blocking poses match `PEShield`/`ShieldISTER`, with our own textures.
+    fn register_special_model_renderer(
+        &self,
+        _context: &RegistrationContext,
+        event: &mut RegisterSpecialModelRendererEvent<'_>,
+    ) {
+        event.renderers.register(
+            "projecte:shield_dark".into(),
+            Arc::new(shield::ShieldModel::new("projecte:item/dark_matter_shield")),
+        );
+        event.renderers.register(
+            "projecte:shield_red".into(),
+            Arc::new(shield::ShieldModel::new("projecte:item/red_matter_shield")),
+        );
     }
 
     fn key_mapping_pre(&self, host: &mut dyn ClientHost, event: &mut KeyMappingPreEvent<'_>) -> Flow {
@@ -303,7 +327,7 @@ impl Hooks for ProjectE {
             ("rm_pick", "iron_pickaxe"), ("rm_shears", "shears"),
             ("rm_shovel", "iron_shovel"), ("rm_sword", "iron_sword"),
         ] {
-            item(event, &format!("projecte:{id}"), &format!("minecraft:{template}"), 1);
+            unbreakable_item(event, &format!("projecte:{id}"), &format!("minecraft:{template}"));
         }
         // Phase 2: rings, amulets, stones, lenses and relics.
         for (id, template) in [
@@ -343,7 +367,11 @@ impl Hooks for ProjectE {
             ("rm_hoe", "iron_hoe"), ("rm_katar", "iron_sword"),
             ("rm_morning_star", "iron_sword"),
         ] {
-            item(event, &format!("projecte:{id}"), &format!("minecraft:{template}"), 1);
+            if UNBREAKABLE.contains(&id) {
+                unbreakable_item(event, &format!("projecte:{id}"), &format!("minecraft:{template}"));
+            } else {
+                item(event, &format!("projecte:{id}"), &format!("minecraft:{template}"), 1);
+            }
         }
         let fuel_templates = [
             "minecraft:coal",
@@ -895,6 +923,18 @@ impl ItemPart for ChargePart {
     }
 }
 
+/// Upstream's `PETool`/`PEArmor`/`PEShield`/`PETrident` override
+/// `damageItem` to return 0. Horizon asks attached item parts before the
+/// stack loses durability; cancelling leaves the stack whole.
+struct UnbreakablePart;
+
+#[mod_api::horizon_part]
+impl ItemPart for UnbreakablePart {
+    fn damage_item(&self, _host: &mut dyn ServerHost, _event: &mut DamageItemEvent<'_>) -> Flow {
+        Flow::Cancel
+    }
+}
+
 /// The Philosopher's Stone's own item behaviour: world transmutation.
 struct StonePart;
 
@@ -997,6 +1037,26 @@ fn item(event: &mut ItemsEvent<'_>, id: &str, template: &str, max: u8) {
     declaration.max_stack_size = Some(max);
     event.items.push(declaration);
 }
+
+/// A stack-size-one item that never wears: upstream's `PETool`, `PEArmor`,
+/// `PEShield` and `PETrident` all override `damageItem` to return 0.
+/// `UnbreakablePart` cancels the wear in `register`; this helper only keeps
+/// the declaration and the id list in step.
+fn unbreakable_item(event: &mut ItemsEvent<'_>, id: &str, template: &str) {
+    item(event, id, template, 1);
+}
+
+/// Every item registered through `unbreakable_item`, keyed without its
+/// namespace. `register` attaches `UnbreakablePart` to each.
+const UNBREAKABLE: &[&str] = &[
+    "dm_axe", "dm_boots", "dm_chestplate", "dm_hammer", "dm_helmet", "dm_hoe",
+    "dm_leggings", "dm_pick", "dm_shears", "dm_shovel", "dm_sword", "rm_axe",
+    "rm_boots", "rm_chestplate", "rm_hammer", "rm_helmet", "rm_pick",
+    "rm_shears", "rm_shovel", "rm_sword", "dark_matter_shield",
+    "red_matter_shield", "dark_matter_trident", "red_matter_trident",
+    "archangel_smite", "gem_boots", "gem_chestplate", "gem_helmet",
+    "gem_leggings", "rm_leggings", "rm_hoe", "rm_katar", "rm_morning_star",
+];
 
 fn level_of(host: &dyn Host, uuid: u128) -> Option<LevelRef> {
     let player = host.player(uuid)?;

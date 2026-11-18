@@ -1,6 +1,26 @@
 {
   "model": {
-    "type": "minecraft:model",
-    "model": "projecte:item/dark_matter_shield"
+    "type": "minecraft:condition",
+    "property": "minecraft:using_item",
+    "on_false": {
+      "type": "minecraft:special",
+      "base": "projecte:item/dark_matter_shield_base",
+      "model": {
+        "type": "projecte:shield_dark"
+      }
+    },
+    "on_true": {
+      "type": "minecraft:special",
+      "base": "projecte:item/dark_matter_shield_blocking_base",
+      "model": {
+        "type": "projecte:shield_dark"
+      }
+    },
+    "transformation": {
+      "left_rotation": [0.0, 0.0, 0.0, 1.0],
+      "right_rotation": [0.0, 0.0, 0.0, 1.0],
+      "scale": [1.0, -1.0, -1.0],
+      "translation": [0.0, 0.0, 0.0]
+    }
   }
 }
