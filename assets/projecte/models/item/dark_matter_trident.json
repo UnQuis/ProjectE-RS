@@ -1,0 +1,18 @@
+{
+  "gui_light": "front",
+  "perspectives": {
+    "fixed": {
+      "parent": "projecte:item/dark_matter_trident_gui"
+    },
+    "ground": {
+      "parent": "projecte:item/dark_matter_trident_gui"
+    },
+    "gui": {
+      "parent": "projecte:item/dark_matter_trident_gui"
+    }
+  },
+  "textures": {
+    "layer0": "projecte:item/dark_matter_trident"
+  },
+  "parent": "minecraft:item/generated"
+}

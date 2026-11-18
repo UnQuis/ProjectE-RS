@@ -1,0 +1,6 @@
+{
+  "parent": "projecte:block/base_chest",
+  "textures": {
+    "chest": "projecte:block/advanced_alchemical_chest/brown"
+  }
+}

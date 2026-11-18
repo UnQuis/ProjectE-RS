@@ -1,3 +1,11 @@
-[workspace]
-members = ["engine"]
-resolver = "2"
+[package]
+name = "mod-projecte"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+mod_api = { package = "horizon-mod-api", path = ".horizon/sdk/api/crates/horizon-mod-api" }

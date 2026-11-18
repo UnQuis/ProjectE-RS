@@ -1,0 +1,74 @@
+{
+  "alchemical_collection.collect": {
+    "sounds": [
+      "mob/ghast/fireball4"
+    ],
+    "subtitle": "sound_event.projecte.alchemical_collection.collect"
+  },
+  "charge": {
+    "sounds": [
+      "projecte:item/pecharge"
+    ],
+    "subtitle": "sound_event.projecte.charge"
+  },
+  "destruct": {
+    "sounds": [
+      "projecte:item/pedestruct"
+    ],
+    "subtitle": "sound_event.projecte.destruct"
+  },
+  "heal": {
+    "sounds": [
+      "projecte:item/peheal"
+    ],
+    "subtitle": "sound_event.projecte.heal"
+  },
+  "knowledge_sharing_book.store": {
+    "sounds": [
+      "random/orb"
+    ],
+    "subtitle": "sound_event.projecte.knowledge_sharing_book.store"
+  },
+  "knowledge_sharing_book.use": {
+    "sounds": [
+      "random/break"
+    ],
+    "subtitle": "sound_event.projecte.knowledge_sharing_book.use"
+  },
+  "knowledge_sharing_book.use_none": {
+    "sounds": [
+      "random/fizz"
+    ],
+    "subtitle": "sound_event.projecte.knowledge_sharing_book.use_none"
+  },
+  "power": {
+    "sounds": [
+      "projecte:item/pepower"
+    ],
+    "subtitle": "sound_event.projecte.power"
+  },
+  "transmute": {
+    "sounds": [
+      "projecte:item/petransmute"
+    ],
+    "subtitle": "sound_event.projecte.transmute"
+  },
+  "uncharge": {
+    "sounds": [
+      "projecte:item/peuncharge"
+    ],
+    "subtitle": "sound_event.projecte.uncharge"
+  },
+  "watermagic": {
+    "sounds": [
+      "projecte:item/pewatermagic"
+    ],
+    "subtitle": "sound_event.projecte.watermagic"
+  },
+  "windmagic": {
+    "sounds": [
+      "projecte:item/pewindmagic"
+    ],
+    "subtitle": "sound_event.projecte.windmagic"
+  }
+}

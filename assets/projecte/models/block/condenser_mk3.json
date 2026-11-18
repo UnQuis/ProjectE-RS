@@ -1,0 +1,77 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "all": "projecte:block/condenser_mk3",
+    "particle": "projecte:block/condenser_mk3"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        0,
+        0
+      ],
+      "to": [
+        16,
+        16,
+        16
+      ],
+      "faces": {
+        "down": {
+          "texture": "#all",
+          "uv": [
+            4,
+            8,
+            8,
+            12
+          ]
+        },
+        "up": {
+          "texture": "#all",
+          "uv": [
+            8,
+            0,
+            12,
+            4
+          ]
+        },
+        "north": {
+          "texture": "#all",
+          "uv": [
+            4,
+            8,
+            8,
+            12
+          ]
+        },
+        "south": {
+          "texture": "#all",
+          "uv": [
+            4,
+            8,
+            8,
+            12
+          ]
+        },
+        "east": {
+          "texture": "#all",
+          "uv": [
+            4,
+            8,
+            8,
+            12
+          ]
+        },
+        "west": {
+          "texture": "#all",
+          "uv": [
+            4,
+            8,
+            8,
+            12
+          ]
+        }
+      }
+    }
+  ]
+}

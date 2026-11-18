@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "filter=true": {
+      "model": "projecte:block/transmutation_interface"
+    },
+    "filter=false": {
+      "model": "projecte:block/transmutation_interface_nofilter"
+    }
+  }
+}
